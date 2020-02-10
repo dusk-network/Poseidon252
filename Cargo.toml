@@ -14,7 +14,7 @@ hades252 = { git = "https://github.com/dusk-network/hades252" }
 
 [dependencies.bulletproofs]
 git = "https://github.com/dusk-network/bulletproofs"
-branch = "dalek-v2"
+branch = "develop"
 features = ["yoloproofs"]
 
 [dev-dependencies]
