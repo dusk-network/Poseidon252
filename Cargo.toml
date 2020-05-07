@@ -7,15 +7,11 @@ authors = [
 edition = "2018"
 
 [dependencies]
-curve25519-dalek = { version = "2", features = ["serde", "avx2_backend"] }
+dusk-bls12_381 = "0.1"
 merlin = "2"
 lazy_static = "1.3.0"
-hades252 = { git = "https://github.com/dusk-network/hades252" }
-
-[dependencies.bulletproofs]
-git = "https://github.com/dusk-network/bulletproofs"
-branch = "develop"
-features = ["yoloproofs"]
+hades252 = { git = "https://github.com/dusk-network/hades252", branch = "master" }
+dusk-plonk = {version = "0.1", features = ["trace-print"]}
 
 [dev-dependencies]
 rand = "0.7"
