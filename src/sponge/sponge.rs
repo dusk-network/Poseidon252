@@ -11,7 +11,12 @@ use hades252::WIDTH;
 pub fn sponge_hash(messages: &[Scalar]) -> Scalar {
     let mut strategy = ScalarStrategy::new();
 
-    let mut words = pad(messages, WIDTH, Scalar::zero(), Scalar::one());
+    // The value used to pad the words is zero.
+    let padder = Scalar::zero();
+    // One will identify the end of messages.
+    let eom = Scalar::one();
+
+    let mut words = pad(messages, WIDTH, padder, eom);
     // If the words len is less than the Hades252 permutation `WIDTH` we directly
     // call the permutation saving useless additions by zero.
     if words.len() == WIDTH {
@@ -37,8 +42,11 @@ pub fn sponge_hash(messages: &[Scalar]) -> Scalar {
 /// The `hash` function takes an arbitrary number of plonk `Variable`s and returns the
 /// hash, using the `Hades` GadgetStragegy
 pub fn sponge_hash_gadget(composer: &mut StandardComposer, messages: &[Variable]) -> Variable {
+    // The value used to pad the words is zero.
     let padder = composer.zero_var;
+    // One will identify the end of messages.
     let eom = composer.add_input(Scalar::one());
+
     let mut words = pad(messages, WIDTH, padder, eom);
     // If the words len is less than the Hades252 permutation `WIDTH` we directly
     // call the permutation saving useless additions by zero.
@@ -81,9 +89,9 @@ mod tests {
 
     fn poseidon_sponge_params(width: usize) -> (Vec<Scalar>, Scalar) {
         let mut input = vec![Scalar::zero(); width];
-        input.iter_mut().for_each(
-            |s| *s = Scalar::one(), /*Scalar::random(&mut rand::thread_rng())*/
-        );
+        input
+            .iter_mut()
+            .for_each(|s| *s = Scalar::random(&mut rand::thread_rng()));
         let output = sponge_hash(&input);
         (input, output)
     }
