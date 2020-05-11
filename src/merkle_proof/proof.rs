@@ -27,8 +27,7 @@ pub fn merkle_opening_gadget(composer: &mut StandardComposer, branch: PoseidonBr
             .leaves
             .iter()
             .zip(lvl_vars.iter_mut())
-            .enumerate()
-            .for_each(|(idx, (leaf, var))| {
+            .for_each(|(leaf, var)| {
                 *var = composer.add_input(*leaf);
             });
         // Hash the level & check against the previously-obtained lvl_hash which is
@@ -40,9 +39,10 @@ pub fn merkle_opening_gadget(composer: &mut StandardComposer, branch: PoseidonBr
         // We want to re-use the circuit so we need to set the upper level hashes that were
         // pre-computed on the `PoseidonBranch` generation as secret variables instead of
         // circuit descriptors.
+        let upper_lvl_hash_var = composer.add_input(level.upper_lvl_hash);
         composer.add_gate(
             lvl_hash,
-            composer.add_input(level.upper_lvl_hash),
+            upper_lvl_hash_var,
             composer.zero_var,
             -Scalar::one(),
             Scalar::one(),

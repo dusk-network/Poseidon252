@@ -1,6 +1,6 @@
 //! Definitions of the merkle tree structure seen in Poseidon.
 
-use crate::merkle_lvl_hash::merkle_lvl_hash;
+use crate::merkle_lvl_hash::hash;
 use dusk_bls12_381::Scalar;
 use hades252::ScalarStrategy;
 use hades252::WIDTH;
@@ -64,6 +64,11 @@ where
                             None => Scalar::zero(),
                         };
                     });
+                // Once we have the level, compute the upper hash and look for it in the
+                // upper level
+                // XXX: We will probably need a peekable iter to get the upper level leaf and
+                // commpare it.
+                level.offset();
                 pos_level
             })
         }
@@ -120,8 +125,6 @@ mod tests {
     use super::*;
     use kelvin::{Blake2b, Combine, Content, ErasedAnnotation, Sink, Source};
     use kelvin_hamt::{HAMTSearch, HAMT};
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
     use std::io;
     use std::io::Read;
 
@@ -148,7 +151,7 @@ mod tests {
                     None => leaves[idx] = Scalar::zero(),
                 };
             });
-            let res = merkle_lvl_hash::merkle_level_hash(&leaves);
+            let res = hash::merkle_level_hash(&leaves);
             Some(PoseidonAnnotation(res))
         }
     }
