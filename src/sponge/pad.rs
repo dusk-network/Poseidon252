@@ -1,7 +1,7 @@
 //! Padding support for sponge hash
 //!
 
-pub(crate) fn pad<T>(messages: &[T], width: usize, pad_value: T, eom: T) -> Vec<T>
+pub(crate) fn pad<T>(messages: &[T], width: usize, pad_value: T, eom_value: T) -> Vec<T>
 where
     T: Clone,
 {
@@ -11,7 +11,7 @@ where
     let size = (length / arity + offset) * width;
 
     let zero = pad_value;
-    let one = eom;
+    let one = eom_value;
     let mut words = vec![zero; size];
     let mut messages = messages.iter();
 
@@ -36,93 +36,68 @@ mod tests {
 
     #[test]
     fn test_scalar_padding_width_3() {
-        let zero = Scalar::zero();
-        let one = Scalar::one();
+        let pad_value = Scalar::zero();
+        let eom_value = Scalar::one();
         let two = Scalar::from(2u64);
         let three = Scalar::from(3u64);
         let four = Scalar::from(4u64);
 
-        assert_eq!(&pad(&[two], 3, zero, one), &[zero, two, one]);
         assert_eq!(
-            &pad(&[two, three], 3, zero, one),
-            &[zero, two, three, zero, one, zero]
+            &pad(&[two], 3, pad_value, eom_value),
+            &[pad_value, two, eom_value]
         );
         assert_eq!(
-            &pad(&[two, three, four], 3, zero, one),
-            &[zero, two, three, zero, four, one]
+            &pad(&[two, three], 3, pad_value, eom_value),
+            &[pad_value, two, three, pad_value, eom_value, pad_value]
+        );
+        assert_eq!(
+            &pad(&[two, three, four], 3, pad_value, eom_value),
+            &[pad_value, two, three, pad_value, four, eom_value]
         );
     }
 
     #[test]
     fn test_scalar_padding_width_4() {
-        let zero = Scalar::zero();
-        let one = Scalar::one();
+        let pad_value = Scalar::zero();
+        let eom_value = Scalar::one();
         let two = Scalar::from(2u64);
         let three = Scalar::from(3u64);
         let four = Scalar::from(4u64);
 
-        assert_eq!(&pad(&[two], 4, zero, one), &[zero, two, one, zero]);
-        assert_eq!(&pad(&[two, three], 4, zero, one), &[zero, two, three, one]);
         assert_eq!(
-            &pad(&[two, three, four], 4, zero, one),
-            &[zero, two, three, four, zero, one, zero, zero]
+            &pad(&[two], 4, pad_value, eom_value),
+            &[pad_value, two, eom_value, pad_value]
+        );
+        assert_eq!(
+            &pad(&[two, three], 4, pad_value, eom_value),
+            &[pad_value, two, three, eom_value]
+        );
+        assert_eq!(
+            &pad(&[two, three, four], 4, pad_value, eom_value),
+            &[pad_value, two, three, four, pad_value, eom_value, pad_value, pad_value]
         );
     }
 
     #[test]
     fn test_variable_padding() {
         let mut composer = StandardComposer::new();
-        let zero = composer.add_input(Scalar::zero());
-        let one = composer.add_input(Scalar::one());
+        let pad_value = composer.add_input(Scalar::zero());
+        let eom_value = composer.add_input(Scalar::one());
         let two = composer.add_input(Scalar::from(2u64));
         let three = composer.add_input(Scalar::from(3u64));
         let four = composer.add_input(Scalar::from(4u64));
 
-        assert_eq!(&pad(&[two], 3, zero, one), &[zero, two, one]);
         assert_eq!(
-            &pad(&[two, three], 3, zero, one),
-            &[zero, two, three, zero, one, zero]
+            &pad(&[two], 3, pad_value, eom_value),
+            &[pad_value, two, eom_value]
         );
         assert_eq!(
-            &pad(&[two, three, four], 3, zero, one),
-            &[zero, two, three, zero, four, one]
+            &pad(&[two, three], 3, pad_value, eom_value),
+            &[pad_value, two, three, pad_value, eom_value, pad_value]
+        );
+        assert_eq!(
+            &pad(&[two, three, four], 3, pad_value, eom_value),
+            &[pad_value, two, three, pad_value, four, eom_value]
         );
     }
-
-    /* No longer applies.
-    #[test]
-    fn test_lc_padding_width_3() {
-        let zero = LinearCombination::from(Scalar::zero());
-        let one = LinearCombination::from(Scalar::one());
-        let two = LinearCombination::from(Scalar::from(2u64));
-        let three = LinearCombination::from(Scalar::from(3u64));
-        let four = LinearCombination::from(Scalar::from(4u64));
-
-        assert_eq!(
-            &pad(&[two.clone()], 3),
-            &[zero.clone(), two.clone(), one.clone()]
-        );
-        assert_eq!(
-            &pad(&[two.clone(), three.clone()], 3),
-            &[
-                zero.clone(),
-                two.clone(),
-                three.clone(),
-                zero.clone(),
-                one.clone(),
-                zero.clone()
-            ]
-        );
-        assert_eq!(
-            &pad(&[two.clone(), three.clone(), four.clone()], 3),
-            &[
-                zero.clone(),
-                two.clone(),
-                three.clone(),
-                zero.clone(),
-                four.clone(),
-                one.clone()
-            ]
-        );
-    }*/
 }
