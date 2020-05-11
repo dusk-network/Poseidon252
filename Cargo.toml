@@ -10,7 +10,7 @@ edition = "2018"
 dusk-bls12_381 = "0.1"
 merlin = "2"
 lazy_static = "1.3.0"
-hades252 = { git = "https://github.com/dusk-network/hades252", branch = "master" }
+hades252 = { git = "https://github.com/dusk-network/hades252", version = "0.5.0" }
 dusk-plonk = {version = "0.1", features = ["trace-print"]}
 
 [dev-dependencies]
