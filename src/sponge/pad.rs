@@ -36,68 +36,59 @@ mod tests {
 
     #[test]
     fn test_scalar_padding_width_3() {
-        let pad_value = Scalar::zero();
-        let eom_value = Scalar::one();
+        let padder = Scalar::zero();
+        let eom = Scalar::one();
         let two = Scalar::from(2u64);
         let three = Scalar::from(3u64);
         let four = Scalar::from(4u64);
 
+        assert_eq!(&pad(&[two], 3, padder, eom), &[padder, two, eom]);
         assert_eq!(
-            &pad(&[two], 3, pad_value, eom_value),
-            &[pad_value, two, eom_value]
+            &pad(&[two, three], 3, padder, eom),
+            &[padder, two, three, padder, eom, padder]
         );
         assert_eq!(
-            &pad(&[two, three], 3, pad_value, eom_value),
-            &[pad_value, two, three, pad_value, eom_value, pad_value]
-        );
-        assert_eq!(
-            &pad(&[two, three, four], 3, pad_value, eom_value),
-            &[pad_value, two, three, pad_value, four, eom_value]
+            &pad(&[two, three, four], 3, padder, eom),
+            &[padder, two, three, padder, four, eom]
         );
     }
 
     #[test]
     fn test_scalar_padding_width_4() {
-        let pad_value = Scalar::zero();
-        let eom_value = Scalar::one();
+        let padder = Scalar::zero();
+        let eom = Scalar::one();
         let two = Scalar::from(2u64);
         let three = Scalar::from(3u64);
         let four = Scalar::from(4u64);
 
+        assert_eq!(&pad(&[two], 4, padder, eom), &[padder, two, eom, padder]);
         assert_eq!(
-            &pad(&[two], 4, pad_value, eom_value),
-            &[pad_value, two, eom_value, pad_value]
+            &pad(&[two, three], 4, padder, eom),
+            &[padder, two, three, eom]
         );
         assert_eq!(
-            &pad(&[two, three], 4, pad_value, eom_value),
-            &[pad_value, two, three, eom_value]
-        );
-        assert_eq!(
-            &pad(&[two, three, four], 4, pad_value, eom_value),
-            &[pad_value, two, three, four, pad_value, eom_value, pad_value, pad_value]
+            &pad(&[two, three, four], 4, padder, eom),
+            &[padder, two, three, four, padder, eom, padder, padder]
         );
     }
 
     #[test]
     fn test_variable_padding() {
         let mut composer = StandardComposer::new();
-        let pad_value = composer.add_input(Scalar::zero());
-        let eom_value = composer.add_input(Scalar::one());
+        let padder = composer.add_input(Scalar::zero());
+        let eom = composer.add_input(Scalar::one());
         let two = composer.add_input(Scalar::from(2u64));
         let three = composer.add_input(Scalar::from(3u64));
         let four = composer.add_input(Scalar::from(4u64));
 
+        assert_eq!(&pad(&[two], 3, padder, eom), &[padder, two, eom]);
         assert_eq!(
-            &pad(&[two], 3, pad_value, eom_value),
-            &[pad_value, two, eom_value]
+            &pad(&[two, three], 3, padder, eom),
+            &[padder, two, three, padder, eom, padder]
         );
         assert_eq!(
-            &pad(&[two, three], 3, pad_value, eom_value),
-            &[pad_value, two, three, pad_value, eom_value, pad_value]
-        );
-        assert_eq!(
-            &pad(&[two, three, four], 3, pad_value, eom_value),
-            &[pad_value, two, three, pad_value, four, eom_value]
+            &pad(&[two, three, four], 3, padder, eom),
+            &[padder, two, three, padder, four, eom]
         );
     }
 }
