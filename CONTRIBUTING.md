@@ -30,7 +30,8 @@ or the issue (or by email if you prefer it by any reason.)
 
 - Be descriptive in the titles of your PRs and also provide good descriptions about
 which things are being added, changed, fixed or removed also addressing the corresponding
-issue that it is addressing to. See https://chris.beams.io/posts/git-commit/ for more info.
+issue that it is addressing to. 
+See [How to Write a Git Commit Message]( https://chris.beams.io/posts/git-commit/) for more info.
 
 - Any pull request that it's not passing our CI tests & builds will not be merged. 
 This implies incorrect formatting errors, compilation errors, clippy lints, or any
