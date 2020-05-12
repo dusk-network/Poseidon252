@@ -31,6 +31,10 @@ pub fn merkle_opening_gadget(composer: &mut StandardComposer, branch: PoseidonBr
     branch
         .levels
         .iter()
+        // zip an iter over the same branch levels but that points to one level avobe
+        // in respect of the actual level that we are hashing.
+        // This is indeed used to check that the resulting hash is inside of the upper
+        // level leaves so we can add a constraint.
         .zip(branch.levels.iter().skip(1))
         .for_each(|(level, upper_level)| {
             // Generate the Variables for the corresponding level.
@@ -67,4 +71,51 @@ pub fn merkle_opening_gadget(composer: &mut StandardComposer, branch: PoseidonBr
     // which will be a Public Input. On this case, it is not possible to make any kind
     // of cheating on the Prover side by modifying the underlying `PoseidonBranch` data.
     composer.constrain_to_constant(lvl_hash, Scalar::zero(), -branch.root);
+}
+
+pub fn merkle_opening_scalar_verification(branch: PoseidonBranch, root: Scalar) -> bool {
+    // Check that the root is indeed the one that we think
+    if branch.root != root {
+        return false;
+    };
+    // Allocate space for the last level computed hash as a variable to compare
+    // it against the root.
+    let mut lvl_hash = Scalar::zero();
+
+    // Define a flag to catch errors inside of the tree-hashing chain.
+    let mut chain_err = false;
+
+    // Start the tree-level hashing towards the root.
+    //
+    // On each level we will check that the hash of the whole level is indeed
+    // the one that we expect.
+    //
+    // It is guaranteed that the `PoseidonBranch::PoseidonLevel` will come with `upper_lvl_hash` field
+    // which points to the position of the next level where the hash of the actual level is stored.
+    // So then we will add a constraint that checks equalty to chain up the whole hashing procedure.
+    branch
+        .levels
+        .iter()
+        // zip an iter over the same branch levels but that points to one level avobe
+        // in respect of the actual level that we are hashing.
+        // This is indeed used to check that the resulting hash is inside of the upper
+        // level leaves so we can add a constraint.
+        .zip(branch.levels.iter().skip(1))
+        .for_each(|(level, upper_level)| {
+            // Hash the level & check against the previously-obtained lvl_hash which is
+            // guaranteed to be in the upper level.
+            lvl_hash = merkle_level_hash_without_bitflags(&level);
+            // Constraint the lvl hash to be the expected one that was pre-computed before during the
+            // `PoseidonBranch` generation.
+            //
+            if lvl_hash != upper_level.leaves[level.upper_lvl_hash] {
+                chain_err = true;
+            };
+        });
+
+    // Add the last check regarding the last lvl-hash against the tree root.
+    if (lvl_hash != branch.root) | chain_err {
+        return false;
+    };
+    true
 }
