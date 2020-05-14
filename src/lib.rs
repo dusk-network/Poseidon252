@@ -15,3 +15,10 @@ pub mod sponge;
 /// This is due to the fact that actually we rely in Hades252 crate
 /// which `WIDTH` parameter is 5.
 pub const ARITY: usize = hades252::WIDTH - 1;
+
+/// Wrapping struct that defines used to implement over it
+/// the hashing logic that Kelvin needs in order to provide
+/// Merkle Paths as `Branch` using Poseidon as the main Hasing
+/// algorithm.
+///
+pub use hashing_utils::poseidon_annotation::PoseidonAnnotation;

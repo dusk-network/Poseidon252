@@ -130,9 +130,10 @@ mod tests {
     use super::*;
     use crate::hashing_utils::scalar_storage::StorageScalar;
     use crate::PoseidonAnnotation;
-    use kelvin::Compound;
+    use kelvin::{Blake2b, Compound};
     use kelvin_hamt::HAMTSearch;
     use kelvin_hamt::NarrowHAMT;
+    use std::borrow::Borrow;
 
     #[test]
     fn scalar_merkle_proof() {
@@ -141,26 +142,24 @@ mod tests {
 
     #[test]
     fn zero_knowledge_merkle_proof() {
-        // XXX: We need to wait for kelvin to provide us with custom-ARITY tree generation.
-        // Otherways, the proofs will not work correctly.
-        /*
-        let mut hamt: NarrowHAMT<usize, StorageScalar, PoseidonAnnotation, _> = NarrowHAMT::new();
-        for i in 0..1024 {
+        // Generate a tree with random scalars inside.
+        let mut hamt: NarrowHAMT<_, _, PoseidonAnnotation, Blake2b> = NarrowHAMT::new();
+        for i in 0..1024u64 {
             hamt.insert(i, StorageScalar(Scalar::from(i as u64)))
                 .unwrap();
         }
-        // make a proof that (42, 42) is in the hamt
 
-        if let Some(branch) = hamt.search(&mut HAMTSearch::from(&42)).unwrap() {
-            let levels = branch.levels();
+        // Get the root of the tree.
+        let root = Scalar::from_bytes(&hamt.root_hash()).unwrap();
 
-            for (i, level) in levels.iter().enumerate() {
-                println!("level {}", i);
-                for child in level.children() {
-                    println!("  {:?}", child.annotation())
-                }
-            }
-        }*/
-        assert!(true)
+        // We want to proof that we know the Scalar tight to the key 42usize
+        // and that indeed, it is inside the merkle tree.
+
+        // In this case, the key 42 corresponds to the Scalar(42).
+        // We're supposing that we're provided with a Kelvin::Branch to perform
+        // the proof.
+        let branch = hamt.search(&mut HAMTSearch::from(&42)).unwrap().unwrap();
+
+        let branch = PoseidonBranch::from(&branch);
     }
 }
