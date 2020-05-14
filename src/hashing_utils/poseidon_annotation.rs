@@ -3,7 +3,7 @@ use super::scalar_storage::StorageScalar;
 use crate::merkle_lvl_hash::hash;
 use crate::ARITY;
 use dusk_bls12_381::Scalar;
-use kelvin::{ByteHash, Combine, Content, ErasedAnnotation, Sink, Source};
+use kelvin::{ByteHash, Combine, Content, ErasedAnnotation, Sink, Source, KV};
 use std::borrow::Borrow;
 use std::io;
 use std::io::Read;
@@ -58,6 +58,12 @@ where
         Ok(PoseidonAnnotation(StorageScalar(
             Scalar::from_bytes(&bytes).unwrap(),
         )))
+    }
+}
+
+impl<T> From<&KV<T, StorageScalar>> for PoseidonAnnotation {
+    fn from(kv: &KV<T, StorageScalar>) -> Self {
+        PoseidonAnnotation(kv.val.clone())
     }
 }
 

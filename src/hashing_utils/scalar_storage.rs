@@ -3,6 +3,8 @@
 
 use dusk_bls12_381::Scalar;
 use kelvin::{ByteHash, Content, Sink, Source};
+use std::borrow::Borrow;
+use std::hash::{Hash, Hasher};
 use std::io;
 use std::io::{BufWriter, Read, Write};
 
@@ -14,6 +16,18 @@ use std::io::{BufWriter, Read, Write};
 /// This Struct is the one that we will use inside of our SmartContract storage logic to
 /// encode/compress all of our Data Structures data into a single `Scalar`.
 pub struct StorageScalar(pub(crate) Scalar);
+
+impl Default for StorageScalar {
+    fn default() -> Self {
+        StorageScalar(Scalar::default())
+    }
+}
+
+impl Borrow<Scalar> for StorageScalar {
+    fn borrow(&self) -> &Scalar {
+        &self.0
+    }
+}
 
 impl Into<Scalar> for StorageScalar {
     fn into(self) -> Scalar {
