@@ -11,7 +11,8 @@ use std::io::Read;
 #[derive(Clone, Debug)]
 /// Wrapping struct that defines used to implement over it
 /// the hashing logic that Kelvin needs in order to provide
-/// Merkle Paths as `Branch`.
+/// Merkle Paths as `Branch` using Poseidon as the main Hasing
+/// algorithm.
 pub struct PoseidonAnnotation(pub(crate) StorageScalar);
 
 impl<A> Combine<A> for PoseidonAnnotation {
@@ -24,7 +25,7 @@ impl<A> Combine<A> for PoseidonAnnotation {
         A: Borrow<Self> + Clone,
         E: ErasedAnnotation<A>,
     {
-        let mut leaves = [Scalar::zero(); ARITY];
+        let mut leaves: [Option<Scalar>; ARITY] = [None; ARITY];
         elements
             .iter()
             .zip(leaves.iter_mut())
@@ -32,9 +33,9 @@ impl<A> Combine<A> for PoseidonAnnotation {
                 match element.annotation() {
                     Some(annotation) => {
                         let h: &PoseidonAnnotation = (*annotation).borrow();
-                        *leave = h.inner().0;
+                        *leave = Some(h.inner().0);
                     }
-                    None => *leave = Scalar::zero(),
+                    None => *leave = None,
                 };
             });
         let res = hash::merkle_level_hash(&leaves);
