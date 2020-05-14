@@ -80,6 +80,9 @@ pub fn merkle_level_hash_gadget_without_bitflags(
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
+    use dusk_plonk::fft::EvaluationDomain;
+    use merlin::Transcript;
 
     fn gen_random_merkle_level() -> ([Option<Scalar>; ARITY], Scalar) {
         let mut input = [Some(Scalar::zero()); ARITY];
@@ -120,5 +123,51 @@ pub mod tests {
         let obtained_hash = merkle_level_hash_without_bitflags(&level);
 
         assert_eq!(obtained_hash, expected_hash);
+    }
+
+    #[test]
+    fn test_merkle_level_gadget_bitflags() {
+        // Gen Public Params and Keys.
+        let pub_params = PublicParameters::setup(1 << 12, &mut rand::thread_rng()).unwrap();
+        let (ck, vk) = pub_params.trim(1 << 11).unwrap();
+        let mut transcript = Transcript::new(b"Test");
+
+        // Generate input merkle level
+        let (level_sacalars, expected_hash) = gen_random_merkle_level();
+
+        // Generate a composer
+        let mut composer = StandardComposer::new();
+
+        // Get the leafs as Variable and add the bitflags that
+        // According to the gen_random_merkle_level, our level will have
+        // the following: [Some(leaf), Some(leaf), None, Some(leaf)]
+        //
+        // This means having a bitflags = 1101 = Variable(Scalar::from(13u64)).
+        // So we will compute the hash without the bitflags requirement
+        // already providing it. And it should match the expected one.
+        let mut leaves = [
+            // Set the bitflags we already expect
+            composer.add_input(Scalar::from(13u64)),
+            // Set the rest of the values as the leaf or zero
+            composer.add_input(level_sacalars[0].unwrap_or(Scalar::zero())),
+            composer.add_input(level_sacalars[1].unwrap_or(Scalar::zero())),
+            composer.add_input(level_sacalars[2].unwrap_or(Scalar::zero())),
+            composer.add_input(level_sacalars[3].unwrap_or(Scalar::zero())),
+        ];
+
+        let obtained_hash = merkle_level_hash_gadget_without_bitflags(&mut composer, &mut leaves);
+        let expected_hash = composer.add_input(expected_hash);
+        // Check with an assert_equal gate that the hash computed is indeed correct.
+        composer.assert_equal(obtained_hash, expected_hash);
+
+        // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
+        // to zero polynomials.
+        composer.add_dummy_constraints();
+
+        let prep_circ =
+            composer.preprocess(&ck, &mut transcript, &EvaluationDomain::new(2048).unwrap());
+
+        let proof = composer.prove(&ck, &prep_circ, &mut transcript.clone());
+        assert!(proof.verify(&prep_circ, &mut transcript, &vk, &vec![Scalar::zero()]));
     }
 }
