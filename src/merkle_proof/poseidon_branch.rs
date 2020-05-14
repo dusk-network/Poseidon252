@@ -121,36 +121,3 @@ impl Default for PoseidonLevel {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::hashing_utils::scalar_storage::StorageScalar;
-    use kelvin_hamt::{HAMTSearch, HAMT};
-
-    #[test]
-    fn merkle_proof() {
-        // XXX: We need to wait for kelvin to provide us with custom-ARITY tree generation.
-        // Otherways, the proofs will not work correctly.
-
-        /*let mut hamt = HAMT::new();
-
-        for i in 0..1024 {
-            hamt.insert(i, StorageScalar(Scalar::from(i as u64)))
-                .unwrap();
-        }
-        // make a proof that (42, 42) is in the hamt
-
-        if let Some(branch) = hamt.search(&mut HAMTSearch::from(&42)).unwrap() {
-            let levels = branch.levels();
-
-            for (i, level) in levels.iter().enumerate() {
-                println!("level {}", i);
-                for child in level.children() {
-                    println!("  {:?}", child.annotation())
-                }
-            }
-        }*/
-        assert!(true)
-    }
-}
