@@ -73,6 +73,11 @@ pub fn merkle_opening_gadget(composer: &mut StandardComposer, branch: PoseidonBr
     composer.constrain_to_constant(lvl_hash, Scalar::zero(), -branch.root);
 }
 
+/// Provided a `PoseidonBranch` and a Merkle Tree root, verify that
+/// the path to the root is correct.
+///
+/// This hashing-chain is performed using Poseidon hashing algorithm
+/// and relies on the `Hades252` permutation.
 pub fn merkle_opening_scalar_verification(branch: PoseidonBranch, root: Scalar) -> bool {
     // Check that the root is indeed the one that we think
     if branch.root != root {
@@ -118,4 +123,44 @@ pub fn merkle_opening_scalar_verification(branch: PoseidonBranch, root: Scalar) 
         return false;
     };
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::hashing_utils::scalar_storage::StorageScalar;
+    use crate::PoseidonAnnotation;
+    use kelvin::Compound;
+    use kelvin_hamt::HAMTSearch;
+    use kelvin_hamt::NarrowHAMT;
+
+    #[test]
+    fn scalar_merkle_proof() {
+        assert!(true)
+    }
+
+    #[test]
+    fn zero_knowledge_merkle_proof() {
+        // XXX: We need to wait for kelvin to provide us with custom-ARITY tree generation.
+        // Otherways, the proofs will not work correctly.
+        /*
+        let mut hamt: NarrowHAMT<usize, StorageScalar, PoseidonAnnotation, _> = NarrowHAMT::new();
+        for i in 0..1024 {
+            hamt.insert(i, StorageScalar(Scalar::from(i as u64)))
+                .unwrap();
+        }
+        // make a proof that (42, 42) is in the hamt
+
+        if let Some(branch) = hamt.search(&mut HAMTSearch::from(&42)).unwrap() {
+            let levels = branch.levels();
+
+            for (i, level) in levels.iter().enumerate() {
+                println!("level {}", i);
+                for child in level.children() {
+                    println!("  {:?}", child.annotation())
+                }
+            }
+        }*/
+        assert!(true)
+    }
 }
