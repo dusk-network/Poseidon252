@@ -2,6 +2,7 @@
 
 use crate::ARITY;
 use dusk_bls12_381::Scalar;
+use crate::hashing_utils::scalar_storage::StorageScalar;
 use hades252::WIDTH;
 use kelvin::{Branch, ByteHash, Compound};
 use std::borrow::Borrow;
@@ -22,13 +23,13 @@ pub struct PoseidonBranch {
 /// inside of the `PoseidonBranch` structure with the bitflags already
 /// computed and the offsets pointing to the next levels pointing also to
 /// the correct places.
-impl<C, H> From<Branch<'_, C, H>> for PoseidonBranch
+impl<C, H> From<&Branch<'_, C, H>> for PoseidonBranch
 where
     C: Compound<H>,
-    C::Annotation: Borrow<Scalar>,
+    C::Annotation: Borrow<StorageScalar>,
     H: ByteHash,
 {
-    fn from(branch: Branch<C, H>) -> PoseidonBranch {
+    fn from(branch: &Branch<C, H>) -> PoseidonBranch {
         let mut poseidon_branch = PoseidonBranch::with_capacity(branch.levels().len() - 1);
         // Skip root and store it directly.
         poseidon_branch.root = branch
@@ -38,7 +39,7 @@ where
             .annotation()
             .unwrap()
             .borrow()
-            .to_owned();
+            .to_owned().into();
         // Store the levels with the bitflags already computed inside
         // of our PoseidonBranch structure.
         // We skip the root level and we reverse the levels iterator to start
@@ -63,7 +64,7 @@ where
                     .for_each(|(idx, (src, dest))| {
                         *dest = match src.annotation() {
                             Some(borrow) => {
-                                let annotation: &Scalar = (*borrow).borrow();
+                                let annotation: &Scalar = &(*borrow).borrow().borrow();
                                 // If the Annotation contains a value, we set the bitflag to 1.
                                 // Since the first element will be the most significant bit of the
                                 // bitflags, we need to shift it according to the `ARITY`.

@@ -15,6 +15,12 @@ use std::io::Read;
 /// algorithm.
 pub struct PoseidonAnnotation(pub(crate) StorageScalar);
 
+impl Borrow<StorageScalar> for PoseidonAnnotation {
+    fn borrow(&self) -> &StorageScalar {
+        &self.0
+    }
+}
+
 impl<A> Combine<A> for PoseidonAnnotation {
     /// This implements the logic that Kelvin needs in order to know how to
     /// hash an entire merkle tree level.
