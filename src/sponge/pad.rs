@@ -1,6 +1,20 @@
-//! Padding support for sponge hash
+//! Padding support for sponge hash.
+//!
+//! Poseidon Hash algorithm requires a padding logic when we want to make usage
+//! of the [sponge_hash fn](::super::sponge::sponge_hash).
+//!
+//! The logic is intended to prevent hash collisions when we are hashing unlimited
+//! ammounts of data using Poseidon252.
 //!
 
+/// Padds a collection of messages returning a padded version.
+///
+/// The logic is quite simple:
+/// If re recieve a slice of messages bigger than the `Poseidon252 WIDTH`, we need
+/// to pad this info on a way we can apply the Poseidon252 Permutation.
+///
+/// To do so, we use `pad_value` and `eom` as a way to generate chuncks of `len = WIDTH`
+/// that can then be then digested by the [sponge_hash fn](::super::sponge::sponge_hash).
 pub(crate) fn pad<T>(messages: &[T], width: usize, pad_value: T, eom: T) -> Vec<T>
 where
     T: Clone,
