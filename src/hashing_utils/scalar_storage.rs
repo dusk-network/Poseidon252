@@ -4,9 +4,8 @@
 use dusk_bls12_381::Scalar;
 use kelvin::{ByteHash, Content, Sink, Source};
 use std::borrow::Borrow;
-use std::hash::{Hash, Hasher};
 use std::io;
-use std::io::{BufWriter, Read, Write};
+use std::io::Read;
 
 #[derive(Debug, Clone)]
 /// This struct is a Wrapper type over the bls12-381 `Scalar` which has implemented
@@ -34,19 +33,6 @@ impl Into<Scalar> for StorageScalar {
         self.0
     }
 }
-
-/*impl<T> From<T> for StorageScalar
-where
-    T: Write,
-{
-    fn from(t: T) -> Self {
-        let mut bytes = BufWriter::new(t);
-        let len = bytes.iter();
-
-        // Define Dmitry's logic to encode any data structure as a Scalar.
-        unimplemented!()
-    }
-}*/
 
 // Implements logic for storing Scalar inside of kelvin
 impl<H> Content<H> for StorageScalar
