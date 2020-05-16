@@ -118,7 +118,7 @@ pub mod tests {
                 leaves[3].unwrap_or(Scalar::zero()),
             ],
             // We don't care about this in this specific functionallity test.
-            upper_lvl_hash: 0usize,
+            offset: 0usize,
         };
         let obtained_hash = merkle_level_hash_without_bitflags(&level);
 

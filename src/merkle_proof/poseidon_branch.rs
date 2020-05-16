@@ -1,8 +1,8 @@
 //! Definitions of the merkle tree structure seen in Poseidon.
 
+use crate::hashing_utils::scalar_storage::StorageScalar;
 use crate::ARITY;
 use dusk_bls12_381::Scalar;
-use crate::hashing_utils::scalar_storage::StorageScalar;
 use hades252::WIDTH;
 use kelvin::{Branch, ByteHash, Compound};
 use std::borrow::Borrow;
@@ -39,12 +39,11 @@ where
             .annotation()
             .unwrap()
             .borrow()
-            .to_owned().into();
+            .to_owned()
+            .into();
         // Store the levels with the bitflags already computed inside
         // of our PoseidonBranch structure.
-        // We skip the root level and we reverse the levels iterator to start
-        // storing the levels from the bottom of the branch.
-        for level in branch.levels().iter().skip(1).rev() {
+        for level in branch.levels().iter().rev() {
             // Generate a default mutable `PoseidonLevel`, add the corresponding data
             // extracted from the `Branch` and push it to our poseidon branch previously
             // generated.
@@ -73,7 +72,7 @@ where
                                 // A level with: [Some(val), None, None, None] should correspond to
                                 // Bitflags(1000). This means that we need to shift the first element
                                 // by `ARITY` and lately decrease the shift order by `idx`.
-                                level_bitflags += 1u64 << (ARITY - idx);
+                                level_bitflags += 1u64 << ((ARITY - 1) - idx);
                                 *annotation
                             }
                             None => Scalar::zero(),
@@ -84,14 +83,14 @@ where
                 //
                 // We need now to add the bitflags element in pos_level.leaves[0]
                 pos_level.leaves[0] = Scalar::from(level_bitflags);
-                // Once we have the level, we get the position where the hash of this level is
-                // stored on the upper level.
+                // Once we have the level, we get the position where the hash of the previous level is
+                // stored on the this level.
                 // NOTE that this position is in respect of a WIDTH = `ARITY` so we need to
                 // keep in mind that we've added an extra term (bitflags) and so, the index that
                 // the branch is returning is indeed pointing one position before on the next level
                 // that we will compute later. We just add 1 to it to inline the value with the
                 // new `WIDTH`
-                pos_level.upper_lvl_hash = level.offset() + 1;
+                pos_level.offset = level.offset() + 1;
                 pos_level
             })
         }
@@ -110,14 +109,14 @@ impl PoseidonBranch {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PoseidonLevel {
-    pub(crate) upper_lvl_hash: usize,
+    pub(crate) offset: usize,
     pub(crate) leaves: [Scalar; WIDTH],
 }
 
 impl Default for PoseidonLevel {
     fn default() -> Self {
         PoseidonLevel {
-            upper_lvl_hash: 0usize,
+            offset: 0usize,
             leaves: [Scalar::zero(); WIDTH],
         }
     }
