@@ -1,6 +1,20 @@
-//! The `pad` module implements the Sponge's padding algorithm
+//! The `Sponge` techniqe in Poseidon allows to hash an unlimited ammount of data
+//! into a single `Scalar`.
+//!
+//! The sponge hash techniqe requires a padding to be applied before the data can
+//! be hashed.
+//! This is done to avoid hash collitions as stated in the paper of the Poseidon Hash
+//! algorithm. See: (https://eprint.iacr.org/2019/458.pdf)[https://eprint.iacr.org/2019/458.pdf].
+//!
+//! The inputs of the `sponge_hash` are always `Scalar` or need to be capable of being represented
+//! as it.
+//!
+//! The module provides two sponge hash implementations:
+//! - Sponge hash using `Scalar` as backend. Which hashes the inputed `Scalar`s and returns a single
+//! `Scalar`.
+//! - Sponge hash gadget using `dusk_plonk::Variable` as a backend. This techniqe is used/required
+//! when you want to proof pre-images of unconstrained data inside of Zero-Knowledge PLONK circuits.
 use super::pad::*;
-
 use dusk_bls12_381::Scalar;
 use dusk_plonk::constraint_system::{StandardComposer, Variable};
 use hades252::strategies::*;
@@ -81,9 +95,9 @@ mod tests {
 
     fn poseidon_sponge_params(width: usize) -> (Vec<Scalar>, Scalar) {
         let mut input = vec![Scalar::zero(); width];
-        input.iter_mut().for_each(
-            |s| *s = Scalar::one(), /*Scalar::random(&mut rand::thread_rng())*/
-        );
+        input
+            .iter_mut()
+            .for_each(|s| *s = Scalar::random(&mut rand::thread_rng()));
         let output = sponge_hash(&input);
         (input, output)
     }
