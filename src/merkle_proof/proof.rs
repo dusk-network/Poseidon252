@@ -3,22 +3,29 @@
 
 use super::poseidon_branch::PoseidonBranch;
 use crate::merkle_lvl_hash::hash::*;
+use crate::{PoseidonAnnotation, StorageScalar};
 use dusk_bls12_381::Scalar;
 use dusk_plonk::constraint_system::{StandardComposer, Variable};
 use hades252::WIDTH;
 
 // XXX: Fix this.
-/// Provided a `PoseidonBranch`, a `&mut StandardComposer` and a leaf value, print inside of the
+/// Provided a `kelvin::Branch`, a `&mut StandardComposer`, a leaf value and a root, print inside of the
 /// constraint system a Merkle Tree Proof that hashes up from the searched leaf in kelvin until
 /// the root of the tree constraining each level hashed on the process.
 ///
-/// NOTE: The root of the PoseidonBranch (root of the Merkle tree) will be set as Public Input so we
+/// NOTE: The root of the `Branch` (root of the Merkle tree) will be set as Public Input so we
 /// can re-use the circuits that rely on this gadget.
-pub fn merkle_opening_gadget(
+pub fn merkle_opening_gadget<T, H>(
     composer: &mut StandardComposer,
-    branch: PoseidonBranch,
+    branch: kelvin::Branch<kelvin_hamt::NarrowHAMT<T, StorageScalar, PoseidonAnnotation, H>, H>,
     proven_leaf: Variable,
-) {
+    proven_root: Scalar,
+) where
+    H: kelvin::ByteHash,
+    T: kelvin::Content<H>,
+{
+    // Generate a `PoseidonBranch` from the kelvin Branch.
+    let branch = PoseidonBranch::from(&branch);
     // Allocate space for each level Variables that will be generated.
     let mut lvl_vars = [composer.zero_var; WIDTH];
     // Allocate space for the last level computed hash as a variable to compare
@@ -84,6 +91,7 @@ pub fn merkle_opening_gadget(
     // which will be a Public Input. On this case, it is not possible to make any kind
     // of cheating on the Prover side by modifying the underlying `PoseidonBranch` data.
     composer.constrain_to_constant(prev_lvl_hash, Scalar::zero(), -branch.root);
+    assert_eq!(branch.root, proven_root);
 }
 
 /// Provided a `PoseidonBranch` and a Merkle Tree root, verify that
@@ -91,18 +99,23 @@ pub fn merkle_opening_gadget(
 ///
 /// This hashing-chain is performed using Poseidon hashing algorithm
 /// and relies on the `Hades252` permutation.
-pub fn merkle_opening_scalar_verification(
-    branch: PoseidonBranch,
+pub fn merkle_opening_scalar_verification<T, H>(
+    branch: kelvin::Branch<kelvin_hamt::NarrowHAMT<T, StorageScalar, PoseidonAnnotation, H>, H>,
     root: Scalar,
     leaf: Scalar,
-) -> bool {
+) -> bool
+where
+    H: kelvin::ByteHash,
+    T: kelvin::Content<H>,
+{
+    let branch = PoseidonBranch::from(&branch);
     // Check that the root is indeed the one that we think
     if branch.root != root {
         return false;
     };
     // Allocate space for the last level computed hash as a variable to compare
     // it against the root.
-    let mut lvl_hash = Scalar::zero();
+    let mut lvl_hash: Scalar;
 
     // Define a flag to catch errors inside of the tree-hashing chain.
     let mut chain_err = false;
@@ -147,11 +160,9 @@ mod tests {
     use crate::hashing_utils::scalar_storage::StorageScalar;
     use crate::PoseidonAnnotation;
     use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
-    use dusk_plonk::constraint_system::StandardComposer;
     use dusk_plonk::fft::EvaluationDomain;
     use kelvin::{Blake2b, Compound};
-    use kelvin_hamt::HAMTSearch;
-    use kelvin_hamt::NarrowHAMT;
+    use kelvin_hamt::{HAMTSearch, NarrowHAMT};
     use merlin::Transcript;
 
     #[test]
@@ -172,11 +183,18 @@ mod tests {
             // the proof.
             let branch = hamt.search(&mut HAMTSearch::from(&i)).unwrap().unwrap();
 
-            // Get the PoseidonBranch structure needed to perform the Merkle Openning proof.
-            let branch = PoseidonBranch::from(&branch);
+            // Get tree root.
+            let root = branch
+                .levels()
+                .first()
+                .unwrap()
+                .annotation()
+                .unwrap()
+                .to_owned();
+
             assert!(merkle_opening_scalar_verification(
-                branch.clone(),
-                branch.root,
+                branch,
+                root.0.into(),
                 Scalar::from(i),
             ));
         }
@@ -205,13 +223,19 @@ mod tests {
             // the proof.
             let branch = hamt.search(&mut HAMTSearch::from(i)).unwrap().unwrap();
 
+            // Get tree root.
+            let root = branch
+                .levels()
+                .first()
+                .unwrap()
+                .annotation()
+                .unwrap()
+                .to_owned();
+
             // Add the proven leaf value to the Constraint System
             let proven_leaf = composer.add_input(Scalar::from(*i));
 
-            // Get the PoseidonBranch structure needed to perform the Merkle Openning proof.
-            let branch = PoseidonBranch::from(&branch);
-
-            merkle_opening_gadget(&mut composer, branch, proven_leaf);
+            merkle_opening_gadget(&mut composer, branch, proven_leaf, root.0.into());
 
             // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
             // to zero polynomials.
@@ -225,7 +249,6 @@ mod tests {
 
             let proof = composer.prove(&ck, &prep_circ, &mut transcript.clone());
             assert!(proof.verify(&prep_circ, &mut transcript, &vk, &composer.public_inputs()));
-            println!("Circ size: {}", composer.circuit_size());
         }
     }
 }

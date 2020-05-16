@@ -13,8 +13,10 @@ use std::borrow::Borrow;
 /// level of the Kelvin tree.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PoseidonBranch {
-    pub(crate) root: Scalar,
-    pub(crate) levels: Vec<PoseidonLevel>,
+    /// Root of the Merkle Tree
+    pub root: Scalar,
+    /// Levels of the MerkleTree with it's corresponding leaves and offset.
+    pub levels: Vec<PoseidonLevel>,
 }
 
 /// Provides a conversion between Branch and PoseidonBranch.
@@ -99,6 +101,8 @@ where
 }
 
 impl PoseidonBranch {
+    /// Generates a default PoseidonBranch with the specified capacity for storing
+    /// `n` levels inside.
     pub fn with_capacity(n: usize) -> Self {
         PoseidonBranch {
             root: Scalar::zero(),
@@ -108,9 +112,16 @@ impl PoseidonBranch {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// Represents a Merkle-Tree Level inside of a `PoseidonBranch`.
+/// It stores the leaves as `Scalar` and the offset which represents
+/// the position on the level where the hash of the previous `PoseidonLevel`
+/// is stored in.
 pub struct PoseidonLevel {
-    pub(crate) offset: usize,
-    pub(crate) leaves: [Scalar; WIDTH],
+    /// Position on the level where the hash of the previous `PoseidonLevel`
+    /// is stored in.
+    pub offset: usize,
+    /// Leaves of the Level.
+    pub leaves: [Scalar; WIDTH],
 }
 
 impl Default for PoseidonLevel {

@@ -13,7 +13,7 @@ use std::io::Read;
 /// the hashing logic that Kelvin needs in order to provide
 /// Merkle Paths as `Branch` using Poseidon as the main Hasing
 /// algorithm.
-pub struct PoseidonAnnotation(pub(crate) StorageScalar);
+pub struct PoseidonAnnotation(pub StorageScalar);
 
 impl Borrow<StorageScalar> for PoseidonAnnotation {
     fn borrow(&self) -> &StorageScalar {
