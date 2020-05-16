@@ -1,3 +1,26 @@
+//! The Merkle Level Hashing is a technique that Poseidon is optimized-by-design
+//! to perform.
+//!
+//! This technique allows us to perform hashes of an entire Merkle Tree using
+//! `Hades252` as backend.
+//! The technique requires the computation of a `bitflags` element which is always
+//! positioned as the first item of the level when we hash it, and it basically generated
+//! in respect of the presence or absence of a leaf in the tree level.
+//! This allows to prevent hashing collitions.
+//!
+//! At the moment, this library is designed and optimized to work only with trees of `ARITY`
+//! up to 4. **That means that trees with a bigger ARITY SHOULD NEVER be used with this lib.**
+//!
+//! The module contains the implementation of 4 variants of the same algorithm to support the
+//! majority of the configurations that the user may need:
+//! - Scalar backend for hashing Merkle Tree levels outside of ZK-Circuits whith two variants:
+//! One of them computes the bitflags item while the other assumes that it has already been
+//! computed and placed in the first Level position.
+//!
+//! - `dusk_plonk::Variable` backend for hashing Merkle Tree levels inside of ZK-Circuits,
+//!  specifically, PLONK circuits. This implementation comes also whith two variants;
+//! One of them computes the bitflags item while the other assumes that it has already been
+//! computed and placed in the first Level position.
 use crate::merkle_proof::poseidon_branch::PoseidonLevel;
 use crate::ARITY;
 use dusk_bls12_381::Scalar;
@@ -8,6 +31,7 @@ use hades252::WIDTH;
 /// The `poseidon_hash` function takes a Merkle Tree Level with up to `ARITY`
 /// leaves and applies the poseidon hash, using the `hades252::ScalarStragegy` and
 /// computing the corresponding bitflags.
+#[allow(dead_code)]
 pub fn merkle_level_hash(leaves: &[Option<Scalar>]) -> Scalar {
     let mut strategy = ScalarStrategy::new();
     let mut accum = 0u64;
@@ -41,6 +65,7 @@ pub(crate) fn merkle_level_hash_without_bitflags(poseidon_level: &PoseidonLevel)
 /// The `poseidon_hash` function takes a Merkle Tree level with up to `ARITY`
 /// leaves and applies the poseidon hash, using the `hades252::GadgetStragegy` and
 /// computing the corresponding bitflags.
+#[allow(dead_code)]
 pub fn merkle_level_hash_gadget(
     composer: &mut StandardComposer,
     leaves: &[Option<Variable>],
@@ -68,7 +93,7 @@ pub fn merkle_level_hash_gadget(
 /// The `poseidon_hash` function takes a Merkle Tree level which has
 /// already computed the bitflags term and applies the poseidon hash,
 /// using the `hades252::GadgetStragegy` returning the resulting `Variable`.
-pub fn merkle_level_hash_gadget_without_bitflags(
+pub(crate) fn merkle_level_hash_gadget_without_bitflags(
     composer: &mut StandardComposer,
     leaves: &mut [Variable; WIDTH],
 ) -> Variable {

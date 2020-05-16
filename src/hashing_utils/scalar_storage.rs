@@ -14,7 +14,7 @@ use std::io::Read;
 ///
 /// This Struct is the one that we will use inside of our SmartContract storage logic to
 /// encode/compress all of our Data Structures data into a single `Scalar`.
-pub struct StorageScalar(pub(crate) Scalar);
+pub struct StorageScalar(pub Scalar);
 
 impl Default for StorageScalar {
     fn default() -> Self {
