@@ -1,6 +1,8 @@
 //! Reference implementation for the Poseidon Sponge function
 #![deny(missing_docs)]
 
+///
+pub mod hashing_utils;
 /// Reference implementation for the Poseidon Merkle hash function
 pub mod merkle_lvl_hash;
 /// Reference implementation for the gadget that builds a merkle opening proof
