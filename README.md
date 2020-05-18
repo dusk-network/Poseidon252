@@ -1,5 +1,4 @@
 [![Build Status](https://travis-ci.com/dusk-network/Poseidon252.svg?branch=master)](https://travis-ci.com/dusk-network/Poseidon252)
-[![codecov](https://codecov.io/gh/dusk-network/Poseidon252/branch/master/graph/badge.svg)](https://codecov.io/gh/dusk-network/Poseidon252)
 [![Repository](https://dusk-network.github.io/Poseidon252/repo-badge.svg)](https://github.com/dusk-network/Poseidon252)
 [![Documentation](https://dusk-network.github.io/Poseidon252/badge.svg)](https://dusk-network.github.io/Poseidon252/index.html)
 
