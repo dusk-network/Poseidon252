@@ -37,9 +37,9 @@ where
         poseidon_branch.root = branch
             .levels()
             .first()
-            .unwrap()
+            .expect("Unexpected Error: Kelvin Branch always has a root")
             .annotation()
-            .unwrap()
+            .expect("Unexpected Error: Kelvin Branch should always suceed applying annotations")
             .borrow()
             .to_owned()
             .into();
@@ -65,7 +65,8 @@ where
                     .for_each(|(idx, (src, dest))| {
                         *dest = match src.annotation() {
                             Some(borrow) => {
-                                let annotation: &Scalar = &(*borrow).borrow().borrow();
+                                let stor_scalar: &StorageScalar = &(*borrow).borrow();
+                                let annotation: &Scalar = stor_scalar.borrow();
                                 // If the Annotation contains a value, we set the bitflag to 1.
                                 // Since the first element will be the most significant bit of the
                                 // bitflags, we need to shift it according to the `ARITY`.
@@ -73,8 +74,9 @@ where
                                 // So for example:
                                 // A level with: [Some(val), None, None, None] should correspond to
                                 // Bitflags(1000). This means that we need to shift the first element
-                                // by `ARITY` and lately decrease the shift order by `idx`.
-                                level_bitflags += 1u64 << ((ARITY - 1) - idx);
+                                // by `ARITY - 1` to select the correct position of the bit
+                                // and then decrease the shift order by `idx`.
+                                level_bitflags |= 1u64 << ((ARITY - 1) - idx);
                                 *annotation
                             }
                             None => Scalar::zero(),
