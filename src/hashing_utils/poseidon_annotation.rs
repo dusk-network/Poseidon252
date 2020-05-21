@@ -58,12 +58,15 @@ where
     }
     fn restore(source: &mut Source<H>) -> io::Result<Self> {
         let mut bytes = [0u8; 32];
-        for (idx, byte) in source.bytes().enumerate() {
-            bytes[idx] = byte.unwrap();
-        }
-        Ok(PoseidonAnnotation(StorageScalar(
-            Scalar::from_bytes(&bytes).unwrap(),
-        )))
+        // The solution with iterators is a way more messy.
+        // See: https://doc.rust-lang.org/stable/rust-by-example/error/iter_result.html
+        source.read_exact(&mut bytes)?;
+        let might_be_scalar = Scalar::from_bytes(&bytes);
+        if might_be_scalar.is_none().unwrap_u8() == 1u8 {
+            return Err(std::io::ErrorKind::InvalidData.into());
+        };
+        // Now it's safe to unwrap.
+        return Ok(PoseidonAnnotation(StorageScalar(might_be_scalar.unwrap())));
     }
 }
 
