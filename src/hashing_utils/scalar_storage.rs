@@ -28,6 +28,10 @@ impl Borrow<Scalar> for StorageScalar {
     }
 }
 
+// This is implemented since `PoseidonAnnotation` wraps up over `StorageScalar`.
+// Therefore, in rust to get the interal `Scalar` from the annotation you'll
+// need to call `annotation.0.0` and this is not valid.
+// This trait impl solves the problem.
 impl Into<Scalar> for StorageScalar {
     fn into(self) -> Scalar {
         self.0
@@ -44,9 +48,14 @@ where
     }
     fn restore(source: &mut Source<H>) -> io::Result<Self> {
         let mut bytes = [0u8; 32];
-        for (idx, byte) in source.bytes().enumerate() {
-            bytes[idx] = byte.unwrap();
-        }
-        Ok(StorageScalar(Scalar::from_bytes(&bytes).unwrap()))
+        // The solution with iterators is a way more messy.
+        // See: https://doc.rust-lang.org/stable/rust-by-example/error/iter_result.html
+        source.read_exact(&mut bytes)?;
+        let might_be_scalar = Scalar::from_bytes(&bytes);
+        if might_be_scalar.is_none().unwrap_u8() == 1u8 {
+            return Err(std::io::ErrorKind::InvalidData.into());
+        };
+        // Now it's safe to unwrap.
+        return Ok(StorageScalar(might_be_scalar.unwrap()));
     }
 }
