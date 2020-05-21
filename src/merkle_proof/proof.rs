@@ -174,7 +174,7 @@ mod tests {
         }
 
         for i in 0..1024u64 {
-            // We want to proof that we know the Scalar tight to the key Xusize
+            // We want to proof that we know the Scalar tied to the key Xusize
             // and that indeed, it is inside the merkle tree.
 
             // In this case, the key X corresponds to the Scalar(X).
@@ -214,7 +214,7 @@ mod tests {
         for i in [0u64, 567, 1023].iter() {
             let mut composer = StandardComposer::new();
             let mut transcript = Transcript::new(b"Test");
-            // We want to proof that we know the Scalar tight to the key Xusize
+            // We want to proof that we know the Scalar tied to the key Xusize
             // and that indeed, it is inside the merkle tree.
 
             // In this case, the key X corresponds to the Scalar(X).

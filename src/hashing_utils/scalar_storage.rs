@@ -10,7 +10,7 @@ use std::io::Read;
 #[derive(Debug, Clone)]
 /// This struct is a Wrapper type over the bls12-381 `Scalar` which has implemented
 /// inside the logic to allows `Kelvin` Merkle Trees understand how to store `Scalar`s
-/// inside of them leaves.
+/// inside of their leaves.
 ///
 /// This Struct is the one that we will use inside of our SmartContract storage logic to
 /// encode/compress all of our Data Structures data into a single `Scalar`.
