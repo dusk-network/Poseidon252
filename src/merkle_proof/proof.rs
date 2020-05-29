@@ -1,12 +1,12 @@
 //! Merkle-tree hashing functions using Poseidon252
 //!
-
 use super::poseidon_branch::PoseidonBranch;
 use crate::merkle_lvl_hash::hash::*;
 use crate::{PoseidonAnnotation, StorageScalar};
 use dusk_bls12_381::Scalar;
 use dusk_plonk::constraint_system::{StandardComposer, Variable};
 use hades252::WIDTH;
+use nstack::NStack;
 
 /// Provided a `kelvin::Branch`, a `&mut StandardComposer`, a leaf value and a root, print inside of the
 /// constraint system a Merkle Tree Proof that hashes up from the searched leaf in kelvin until
@@ -14,14 +14,13 @@ use hades252::WIDTH;
 ///
 /// NOTE: The root of the `Branch` (root of the Merkle tree) will be set as Public Input so we
 /// can re-use the circuits that rely on this gadget.
-pub fn merkle_opening_gadget<T, H>(
+pub fn merkle_opening_gadget<H>(
     composer: &mut StandardComposer,
-    branch: kelvin::Branch<kelvin_hamt::NarrowHAMT<T, StorageScalar, PoseidonAnnotation, H>, H>,
+    branch: kelvin::Branch<NStack<StorageScalar, PoseidonAnnotation, H>, H>,
     proven_leaf: Variable,
     proven_root: Scalar,
 ) where
     H: kelvin::ByteHash,
-    T: kelvin::Content<H>,
 {
     // Generate a `PoseidonBranch` from the kelvin Branch.
     let branch = PoseidonBranch::from(&branch);
@@ -54,7 +53,8 @@ pub fn merkle_opening_gadget<T, H>(
     // Check that the leaf we've searched for is indeed the one specified in the bottom level offset.
     composer.assert_equal(lvl_vars[bottom_lvl.offset], proven_leaf);
     // Store in lvl_hash the hash of this bottom level.
-    prev_lvl_hash = merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
+    prev_lvl_hash =
+        merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
 
     branch.levels.iter().skip(1).for_each(|level| {
         // Generate the Variables for the corresponding level.
@@ -83,7 +83,8 @@ pub fn merkle_opening_gadget<T, H>(
         );
         // Hash the level & store it in prev_lvl_hash which should be in the upper
         // level if the proof is consistent.
-        prev_lvl_hash = merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
+        prev_lvl_hash =
+            merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
     });
 
     // Add the last check regarding the last lvl-hash agains the tree root
@@ -98,14 +99,13 @@ pub fn merkle_opening_gadget<T, H>(
 ///
 /// This hashing-chain is performed using Poseidon hashing algorithm
 /// and relies on the `Hades252` permutation.
-pub fn merkle_opening_scalar_verification<T, H>(
-    branch: kelvin::Branch<kelvin_hamt::NarrowHAMT<T, StorageScalar, PoseidonAnnotation, H>, H>,
+pub fn merkle_opening_scalar_verification<H>(
+    branch: kelvin::Branch<NStack<StorageScalar, PoseidonAnnotation, H>, H>,
     root: Scalar,
     leaf: Scalar,
 ) -> bool
 where
     H: kelvin::ByteHash,
-    T: kelvin::Content<H>,
 {
     let branch = PoseidonBranch::from(&branch);
     // Check that the root is indeed the one that we think
@@ -161,16 +161,16 @@ mod tests {
     use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
     use dusk_plonk::fft::EvaluationDomain;
     use kelvin::{Blake2b, Compound};
-    use kelvin_hamt::{HAMTSearch, NarrowHAMT};
     use merlin::Transcript;
+    use nstack::NStack;
+    use std::borrow::Borrow;
 
     #[test]
     fn scalar_merkle_proof() {
         // Generate a tree with random scalars inside.
-        let mut hamt: NarrowHAMT<_, _, PoseidonAnnotation, Blake2b> = NarrowHAMT::new();
+        let mut nstack: NStack<_, PoseidonAnnotation, Blake2b> = NStack::new();
         for i in 0..1024u64 {
-            hamt.insert(i, StorageScalar(Scalar::from(i as u64)))
-                .unwrap();
+            nstack.push(StorageScalar(Scalar::from(i as u64))).unwrap();
         }
 
         for i in 0..1024u64 {
@@ -180,16 +180,18 @@ mod tests {
             // In this case, the key X corresponds to the Scalar(X).
             // We're supposing that we're provided with a Kelvin::Branch to perform
             // the proof.
-            let branch = hamt.search(&mut HAMTSearch::from(&i)).unwrap().unwrap();
+            let branch = nstack.get(i).unwrap().unwrap();
 
             // Get tree root.
-            let root = branch
-                .levels()
-                .first()
-                .unwrap()
-                .annotation()
-                .unwrap()
-                .to_owned();
+            let root = StorageScalar::from(
+                branch
+                    .levels()
+                    .first()
+                    .unwrap()
+                    .annotation()
+                    .unwrap()
+                    .borrow(),
+            );
 
             assert!(merkle_opening_scalar_verification(
                 branch,
@@ -202,13 +204,13 @@ mod tests {
     #[test]
     fn zero_knowledge_merkle_proof() {
         // Generate Composer & Public Parameters
-        let pub_params = PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
+        let pub_params =
+            PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
         let (ck, vk) = pub_params.trim(1 << 16).unwrap();
         // Generate a tree with random scalars inside.
-        let mut hamt: NarrowHAMT<_, _, PoseidonAnnotation, Blake2b> = NarrowHAMT::new();
+        let mut nstack: NStack<_, PoseidonAnnotation, Blake2b> = NStack::new();
         for i in 0..1024u64 {
-            hamt.insert(i, StorageScalar(Scalar::from(i as u64)))
-                .unwrap();
+            nstack.push(StorageScalar(Scalar::from(i as u64))).unwrap();
         }
 
         for i in [0u64, 567, 1023].iter() {
@@ -220,21 +222,28 @@ mod tests {
             // In this case, the key X corresponds to the Scalar(X).
             // We're supposing that we're provided with a Kelvin::Branch to perform
             // the proof.
-            let branch = hamt.search(&mut HAMTSearch::from(i)).unwrap().unwrap();
+            let branch = nstack.get(*i).unwrap().unwrap();
 
             // Get tree root.
-            let root = branch
-                .levels()
-                .first()
-                .unwrap()
-                .annotation()
-                .unwrap()
-                .to_owned();
+            let root = StorageScalar::from(
+                branch
+                    .levels()
+                    .first()
+                    .unwrap()
+                    .annotation()
+                    .unwrap()
+                    .borrow(),
+            );
 
             // Add the proven leaf value to the Constraint System
             let proven_leaf = composer.add_input(Scalar::from(*i));
 
-            merkle_opening_gadget(&mut composer, branch, proven_leaf, root.0.into());
+            merkle_opening_gadget(
+                &mut composer,
+                branch,
+                proven_leaf,
+                root.0.into(),
+            );
 
             // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
             // to zero polynomials.
@@ -246,8 +255,14 @@ mod tests {
                 &EvaluationDomain::new(composer.circuit_size()).unwrap(),
             );
 
-            let proof = composer.prove(&ck, &prep_circ, &mut transcript.clone());
-            assert!(proof.verify(&prep_circ, &mut transcript, &vk, &composer.public_inputs()));
+            let proof =
+                composer.prove(&ck, &prep_circ, &mut transcript.clone());
+            assert!(proof.verify(
+                &prep_circ,
+                &mut transcript,
+                &vk,
+                &composer.public_inputs()
+            ));
         }
     }
 }
