@@ -69,6 +69,7 @@
 //!
 //! ### Zero Knowledge Merkle Opening Proof example:
 //! ```no_run
+//! use std::borrow::Borrow;
 //! use poseidon252::{StorageScalar, PoseidonAnnotation};
 //! use poseidon252::merkle_proof::merkle_opening_gadget;
 //! use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
@@ -76,15 +77,15 @@
 //! use dusk_plonk::fft::EvaluationDomain;
 //! use dusk_bls12_381::Scalar;
 //! use kelvin::{Blake2b, Compound};
-//! use kelvin_hamt::{HAMTSearch, NarrowHAMT};
+//! use nstack::NStack;
 //! use merlin::Transcript;
 //! // Generate Composer & Public Parameters
 //! let pub_params = PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
 //! let (ck, vk) = pub_params.trim(1 << 16).unwrap();
 //! // Generate a tree with random scalars inside.
-//! let mut hamt: NarrowHAMT<_, _, PoseidonAnnotation, Blake2b> = NarrowHAMT::new();
+//! let mut nstack: NStack<_, PoseidonAnnotation, Blake2b> = NStack::new();
 //! for i in 0..1024u64 {
-//!     hamt.insert(i, StorageScalar(Scalar::from(i as u64)))
+//!     nstack.push(StorageScalar(Scalar::from(i as u64)))
 //!         .unwrap();
 //! }
 //!
@@ -97,16 +98,17 @@
 //!     // In this case, the key X corresponds to the Scalar(X).
 //!     // We're supposing that we're provided with a Kelvin::Branch to perform
 //!     // the proof.
-//!     let branch = hamt.search(&mut HAMTSearch::from(i)).unwrap().unwrap();
+//!     let branch = nstack.get(*i).unwrap().unwrap();
 //!
 //!     // Get tree root.
-//!     let root = branch
+//!     let root = StorageScalar::from(branch
 //!         .levels()
 //!         .first()
 //!         .unwrap()
 //!         .annotation()
 //!         .unwrap()
-//!         .to_owned();
+//!         .to_owned()
+//!         .borrow());
 //!
 //!     // Add the proven leaf value to the Constraint System
 //!     let proven_leaf = composer.add_input(Scalar::from(*i));
@@ -134,16 +136,17 @@
 //!
 //! ### Standard Merkle Opening Proof example:
 //! ```no_run
+//! use std::borrow::Borrow;
 //! use poseidon252::{StorageScalar, PoseidonAnnotation};
 //! use poseidon252::merkle_proof::merkle_opening_scalar_verification;
 //! use dusk_bls12_381::Scalar;
 //! use kelvin::{Blake2b, Compound};
-//! use kelvin_hamt::{HAMTSearch, NarrowHAMT};
+//! use nstack::NStack;
 //!
 //! // Generate a tree with random scalars inside.
-//! let mut hamt: NarrowHAMT<_, _, PoseidonAnnotation, Blake2b> = NarrowHAMT::new();
+//! let mut nstack: NStack<_, PoseidonAnnotation, Blake2b> = NStack::new();
 //! for i in 0..1024u64 {
-//!     hamt.insert(i, StorageScalar(Scalar::from(i as u64)))
+//!     nstack.push(StorageScalar(Scalar::from(i as u64)))
 //!         .unwrap();
 //! }
 //!
@@ -154,16 +157,17 @@
 //!     // In this case, the key X corresponds to the Scalar(X).
 //!     // We're supposing that we're provided with a Kelvin::Branch to perform
 //!     // the proof.
-//!     let branch = hamt.search(&mut HAMTSearch::from(&i)).unwrap().unwrap();
+//!     let branch = nstack.get(i).unwrap().unwrap();
 //!
 //!     // Get tree root.
-//!     let root = branch
+//!     let root = StorageScalar::from(branch
 //!         .levels()
 //!         .first()
 //!         .unwrap()
 //!         .annotation()
 //!         .unwrap()
-//!         .to_owned();
+//!         .to_owned()
+//!         .borrow());
 //!
 //!     // Verify the `Branch`.
 //!     assert!(merkle_opening_scalar_verification(
