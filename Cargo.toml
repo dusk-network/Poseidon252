@@ -1,6 +1,6 @@
 [package]
 name = "poseidon252"
-version = "0.3.0"
+version = "0.2.0"
 authors = [
   "zer0 <matteo@dusk.network>", "vlopes11 <victor@dusk.network>", "CPerezz <carlos@dusk.network>"
 ]
