@@ -26,7 +26,9 @@ pub fn merkle_opening_gadget<H>(
     // Generate a `PoseidonBranch` from the kelvin Branch.
     let mut branch = PoseidonBranch::from(&branch);
 
-    branch.extend(17);
+    let n_extensions = branch.extend(17);
+
+    let proven_root = extend_scalar(proven_root, n_extensions);
 
     debug_assert!(branch.valid());
 
