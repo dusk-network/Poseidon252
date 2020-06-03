@@ -211,6 +211,10 @@ pub mod sponge;
 /// This is due to the fact that actually we rely in Hades252 crate
 /// which `WIDTH` parameter is 5.
 pub const ARITY: usize = hades252::WIDTH - 1;
+/// The length of the branches used in the proofs
+///
+/// Shorter branches are padded to this length to be able to precompute proofs
+pub const POSEIDON_BRANCH_LENGTH: usize = 17;
 
 /// Wrapping struct that defines used to implement over it
 /// the hashing logic that Kelvin needs in order to provide

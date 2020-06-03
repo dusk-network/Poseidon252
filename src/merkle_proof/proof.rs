@@ -1,7 +1,8 @@
 //! Merkle-tree hashing functions using Poseidon252
 //!
-use super::poseidon_branch::PoseidonBranch;
+use super::poseidon_branch::{PoseidonBranch, PoseidonLevel};
 use crate::merkle_lvl_hash::hash::*;
+use crate::ARITY;
 use crate::{PoseidonAnnotation, StorageScalar};
 use dusk_bls12_381::Scalar;
 use dusk_plonk::constraint_system::{StandardComposer, Variable};
@@ -23,7 +24,12 @@ pub fn merkle_opening_gadget<H>(
     H: kelvin::ByteHash,
 {
     // Generate a `PoseidonBranch` from the kelvin Branch.
-    let branch = PoseidonBranch::from(&branch);
+    let mut branch = PoseidonBranch::from(&branch);
+
+    branch.extend(17);
+
+    debug_assert!(branch.valid());
+
     // Allocate space for each level Variables that will be generated.
     let mut lvl_vars = [composer.zero_var; WIDTH];
     // Allocate space for the last level computed hash as a variable to compare
@@ -94,6 +100,21 @@ pub fn merkle_opening_gadget<H>(
     assert_eq!(branch.root, proven_root);
 }
 
+/// Applies the extension padding n times to the scalar
+fn extend_scalar(mut scalar: Scalar, n: usize) -> Scalar {
+    for _ in 0..n {
+        let flag = Scalar::from(0b1000);
+        let mut leaves = [Scalar::zero(); ARITY + 1];
+
+        leaves[0] = flag;
+        leaves[1] = scalar;
+
+        let level = PoseidonLevel { leaves, offset: 1 };
+        scalar = merkle_level_hash_without_bitflags(&level);
+    }
+    scalar
+}
+
 /// Provided a `PoseidonBranch` and a Merkle Tree root, verify that
 /// the path to the root is correct.
 ///
@@ -107,9 +128,15 @@ pub fn merkle_opening_scalar_verification<H>(
 where
     H: kelvin::ByteHash,
 {
-    let branch = PoseidonBranch::from(&branch);
+    let mut branch = PoseidonBranch::from(&branch);
+    let n_extensions = branch.extend(17);
+
+    debug_assert!(branch.valid());
+
+    let extended_root = extend_scalar(root, n_extensions);
+
     // Check that the root is indeed the one that we think
-    if branch.root != root {
+    if branch.root != extended_root {
         return false;
     };
     // Allocate space for the last level computed hash as a variable to compare
