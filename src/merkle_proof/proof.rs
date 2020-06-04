@@ -32,8 +32,6 @@ pub fn merkle_opening_gadget<H>(
     let n_extensions = branch.extend(branch_length);
     let proven_root = extend_scalar(proven_root, n_extensions);
 
-    debug_assert!(branch.valid());
-
     // Allocate space for each level Variables that will be generated.
     let mut lvl_vars = [composer.zero_var; WIDTH];
     // Allocate space for the last level computed hash as a variable to compare
@@ -137,8 +135,6 @@ where
 {
     let mut branch = PoseidonBranch::from(&branch);
     let n_extensions = branch.extend(branch_length);
-
-    debug_assert!(branch.valid());
 
     let extended_root = extend_scalar(root, n_extensions);
 

@@ -141,23 +141,6 @@ impl PoseidonBranch {
         }
         n_extensions
     }
-
-    /// Validate that all the hashes in the branch match up
-    pub fn valid(&self) -> bool {
-        let mut expected = None;
-
-        for level in &self.levels {
-            if let Some(expected) = expected {
-                let should_equal = level.leaves[level.offset];
-
-                if expected != should_equal {
-                    return false;
-                }
-            }
-            expected = Some(hash::merkle_level_hash_without_bitflags(level));
-        }
-        Some(self.root) == expected
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
