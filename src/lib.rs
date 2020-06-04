@@ -114,8 +114,8 @@
 //!     let proven_leaf = composer.add_input(Scalar::from(*i));
 //!
 //!     // Print inside of the Composer Constraint System the Merkle Proof
-//!     // with all of the needed checks.
-//!     merkle_opening_gadget(&mut composer, branch, proven_leaf, root.0.into());
+//!     // with all of the needed checks. Using branch length of 17
+//!     merkle_opening_gadget(&mut composer, branch, proven_leaf, root.0.into(), 17);
 //!
 //!     // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
 //!     // to zero polynomials.
@@ -169,11 +169,12 @@
 //!         .to_owned()
 //!         .borrow());
 //!
-//!     // Verify the `Branch`.
+//!     // Verify the `Branch`. Use a branch length of 17.
 //!     assert!(merkle_opening_scalar_verification(
 //!         branch,
 //!         root.0.into(),
 //!         Scalar::from(i),
+//!         17,
 //!     ));
 //! }
 //! ```
@@ -211,10 +212,6 @@ pub mod sponge;
 /// This is due to the fact that actually we rely in Hades252 crate
 /// which `WIDTH` parameter is 5.
 pub const ARITY: usize = hades252::WIDTH - 1;
-/// The length of the branches used in the proofs
-///
-/// Shorter branches are padded to this length to be able to precompute proofs
-pub const POSEIDON_BRANCH_LENGTH: usize = 17;
 
 /// Wrapping struct that defines used to implement over it
 /// the hashing logic that Kelvin needs in order to provide

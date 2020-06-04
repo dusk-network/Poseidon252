@@ -2,7 +2,6 @@
 use crate::hashing_utils::scalar_storage::StorageScalar;
 use crate::merkle_lvl_hash::hash;
 use crate::ARITY;
-use crate::POSEIDON_BRANCH_LENGTH;
 use dusk_bls12_381::Scalar;
 use hades252::WIDTH;
 use kelvin::{Branch, ByteHash, Compound};
@@ -34,8 +33,7 @@ where
     H: ByteHash,
 {
     fn from(branch: &Branch<C, H>) -> PoseidonBranch {
-        let mut poseidon_branch =
-            PoseidonBranch::with_capacity(POSEIDON_BRANCH_LENGTH);
+        let mut poseidon_branch = PoseidonBranch::new();
 
         // Skip root and store it directly.
         poseidon_branch.root = branch
@@ -108,6 +106,15 @@ where
 }
 
 impl PoseidonBranch {
+    /// Generates a default PoseidonBranch with the specified capacity for storing
+    /// `n` levels inside.
+    pub fn new() -> Self {
+        PoseidonBranch {
+            root: Scalar::zero(),
+            levels: vec![],
+        }
+    }
+
     /// Generates a default PoseidonBranch with the specified capacity for storing
     /// `n` levels inside.
     pub fn with_capacity(n: usize) -> Self {

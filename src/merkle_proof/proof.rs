@@ -13,6 +13,8 @@ use nstack::NStack;
 /// constraint system a Merkle Tree Proof that hashes up from the searched leaf in kelvin until
 /// the root of the tree constraining each level hashed on the process.
 ///
+/// `branch_length` controls how much padding should be added to the branch to make it the correct length.
+///
 /// NOTE: The root of the `Branch` (root of the Merkle tree) will be set as Public Input so we
 /// can re-use the circuits that rely on this gadget.
 pub fn merkle_opening_gadget<H>(
@@ -20,14 +22,14 @@ pub fn merkle_opening_gadget<H>(
     branch: kelvin::Branch<NStack<StorageScalar, PoseidonAnnotation, H>, H>,
     proven_leaf: Variable,
     proven_root: Scalar,
+    branch_length: usize,
 ) where
     H: kelvin::ByteHash,
 {
     // Generate a `PoseidonBranch` from the kelvin Branch.
     let mut branch = PoseidonBranch::from(&branch);
 
-    let n_extensions = branch.extend(17);
-
+    let n_extensions = branch.extend(branch_length);
     let proven_root = extend_scalar(proven_root, n_extensions);
 
     debug_assert!(branch.valid());
@@ -120,18 +122,21 @@ fn extend_scalar(mut scalar: Scalar, n: usize) -> Scalar {
 /// Provided a `PoseidonBranch` and a Merkle Tree root, verify that
 /// the path to the root is correct.
 ///
+/// `branch_length` controls how much padding should be added to the branch to make it the correct length.
+///
 /// This hashing-chain is performed using Poseidon hashing algorithm
 /// and relies on the `Hades252` permutation.
 pub fn merkle_opening_scalar_verification<H>(
     branch: kelvin::Branch<NStack<StorageScalar, PoseidonAnnotation, H>, H>,
     root: Scalar,
     leaf: Scalar,
+    branch_length: usize,
 ) -> bool
 where
     H: kelvin::ByteHash,
 {
     let mut branch = PoseidonBranch::from(&branch);
-    let n_extensions = branch.extend(17);
+    let n_extensions = branch.extend(branch_length);
 
     debug_assert!(branch.valid());
 
@@ -226,6 +231,7 @@ mod tests {
                 branch,
                 root.0.into(),
                 Scalar::from(i),
+                17,
             ));
         }
     }
@@ -272,6 +278,7 @@ mod tests {
                 branch,
                 proven_leaf,
                 root.0.into(),
+                17,
             );
 
             // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
