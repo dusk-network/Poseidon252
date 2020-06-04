@@ -248,6 +248,8 @@ mod tests {
             nstack.push(StorageScalar(Scalar::from(i as u64))).unwrap();
         }
 
+        let mut composer_sizes = vec![];
+
         for i in [0u64, 567, 1023].iter() {
             let mut composer = StandardComposer::new();
             let mut transcript = Transcript::new(b"Test");
@@ -291,8 +293,11 @@ mod tests {
                 &EvaluationDomain::new(composer.circuit_size()).unwrap(),
             );
 
+            composer_sizes.push(composer.circuit_size());
+
             let proof =
                 composer.prove(&ck, &prep_circ, &mut transcript.clone());
+
             assert!(proof.verify(
                 &prep_circ,
                 &mut transcript,
@@ -300,5 +305,9 @@ mod tests {
                 &composer.public_inputs()
             ));
         }
+
+        // Assert that all the proofs are of the same size
+        composer_sizes.dedup();
+        assert_eq!(composer_sizes.len(), 1)
     }
 }
