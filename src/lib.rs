@@ -114,8 +114,8 @@
 //!     let proven_leaf = composer.add_input(Scalar::from(*i));
 //!
 //!     // Print inside of the Composer Constraint System the Merkle Proof
-//!     // with all of the needed checks.
-//!     merkle_opening_gadget(&mut composer, branch, proven_leaf, root.0.into());
+//!     // with all of the needed checks. Using branch length of 17
+//!     merkle_opening_gadget(&mut composer, branch, proven_leaf, root.0.into(), 17);
 //!
 //!     // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
 //!     // to zero polynomials.
@@ -169,11 +169,12 @@
 //!         .to_owned()
 //!         .borrow());
 //!
-//!     // Verify the `Branch`.
+//!     // Verify the `Branch`. Use a branch length of 17.
 //!     assert!(merkle_opening_scalar_verification(
 //!         branch,
 //!         root.0.into(),
 //!         Scalar::from(i),
+//!         17,
 //!     ));
 //! }
 //! ```

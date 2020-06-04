@@ -31,7 +31,6 @@ use hades252::WIDTH;
 /// The `poseidon_hash` function takes a Merkle Tree Level with up to `ARITY`
 /// leaves and applies the poseidon hash, using the `hades252::ScalarStragegy` and
 /// computing the corresponding bitflags.
-#[allow(dead_code)]
 pub fn merkle_level_hash(leaves: &[Option<Scalar>]) -> Scalar {
     let mut strategy = ScalarStrategy::new();
     let mut accum = 0u64;
@@ -55,7 +54,9 @@ pub fn merkle_level_hash(leaves: &[Option<Scalar>]) -> Scalar {
 
 /// The `poseidon_hash` function takes a `PoseidonLevel` which has already computed
 /// the bitflags and hashes it returning the resulting `Scalar`.
-pub(crate) fn merkle_level_hash_without_bitflags(poseidon_level: &PoseidonLevel) -> Scalar {
+pub(crate) fn merkle_level_hash_without_bitflags(
+    poseidon_level: &PoseidonLevel,
+) -> Scalar {
     let mut strategy = ScalarStrategy::new();
     let mut res = poseidon_level.leaves.clone();
     strategy.perm(&mut res);
@@ -153,7 +154,8 @@ pub mod tests {
     #[test]
     fn test_merkle_level_gadget_bitflags() {
         // Gen Public Params and Keys.
-        let pub_params = PublicParameters::setup(1 << 12, &mut rand::thread_rng()).unwrap();
+        let pub_params =
+            PublicParameters::setup(1 << 12, &mut rand::thread_rng()).unwrap();
         let (ck, vk) = pub_params.trim(1 << 11).unwrap();
         let mut transcript = Transcript::new(b"Test");
 
@@ -180,7 +182,10 @@ pub mod tests {
             composer.add_input(level_sacalars[3].unwrap_or(Scalar::zero())),
         ];
 
-        let obtained_hash = merkle_level_hash_gadget_without_bitflags(&mut composer, &mut leaves);
+        let obtained_hash = merkle_level_hash_gadget_without_bitflags(
+            &mut composer,
+            &mut leaves,
+        );
         let expected_hash = composer.add_input(expected_hash);
         // Check with an assert_equal gate that the hash computed is indeed correct.
         composer.assert_equal(obtained_hash, expected_hash);
@@ -189,10 +194,18 @@ pub mod tests {
         // to zero polynomials.
         composer.add_dummy_constraints();
 
-        let prep_circ =
-            composer.preprocess(&ck, &mut transcript, &EvaluationDomain::new(2048).unwrap());
+        let prep_circ = composer.preprocess(
+            &ck,
+            &mut transcript,
+            &EvaluationDomain::new(2048).unwrap(),
+        );
 
         let proof = composer.prove(&ck, &prep_circ, &mut transcript.clone());
-        assert!(proof.verify(&prep_circ, &mut transcript, &vk, &vec![Scalar::zero()]));
+        assert!(proof.verify(
+            &prep_circ,
+            &mut transcript,
+            &vk,
+            &vec![Scalar::zero()]
+        ));
     }
 }

@@ -1,7 +1,8 @@
 //! Merkle-tree hashing functions using Poseidon252
 //!
-use super::poseidon_branch::PoseidonBranch;
+use super::poseidon_branch::{PoseidonBranch, PoseidonLevel};
 use crate::merkle_lvl_hash::hash::*;
+use crate::ARITY;
 use crate::{PoseidonAnnotation, StorageScalar};
 use dusk_bls12_381::Scalar;
 use dusk_plonk::constraint_system::{StandardComposer, Variable};
@@ -12,6 +13,8 @@ use nstack::NStack;
 /// constraint system a Merkle Tree Proof that hashes up from the searched leaf in kelvin until
 /// the root of the tree constraining each level hashed on the process.
 ///
+/// `branch_length` controls how much padding should be added to the branch to make it the correct length.
+///
 /// NOTE: The root of the `Branch` (root of the Merkle tree) will be set as Public Input so we
 /// can re-use the circuits that rely on this gadget.
 pub fn merkle_opening_gadget<H>(
@@ -19,11 +22,16 @@ pub fn merkle_opening_gadget<H>(
     branch: kelvin::Branch<NStack<StorageScalar, PoseidonAnnotation, H>, H>,
     proven_leaf: Variable,
     proven_root: Scalar,
+    branch_length: usize,
 ) where
     H: kelvin::ByteHash,
 {
     // Generate a `PoseidonBranch` from the kelvin Branch.
-    let branch = PoseidonBranch::from(&branch);
+    let mut branch = PoseidonBranch::from(&branch);
+
+    let n_extensions = branch.extend(branch_length);
+    let proven_root = extend_scalar(proven_root, n_extensions);
+
     // Allocate space for each level Variables that will be generated.
     let mut lvl_vars = [composer.zero_var; WIDTH];
     // Allocate space for the last level computed hash as a variable to compare
@@ -94,8 +102,25 @@ pub fn merkle_opening_gadget<H>(
     assert_eq!(branch.root, proven_root);
 }
 
+/// Applies the extension padding n times to the scalar
+fn extend_scalar(mut scalar: Scalar, n: usize) -> Scalar {
+    for _ in 0..n {
+        let flag = Scalar::from(0b1000);
+        let mut leaves = [Scalar::zero(); ARITY + 1];
+
+        leaves[0] = flag;
+        leaves[1] = scalar;
+
+        let level = PoseidonLevel { leaves, offset: 1 };
+        scalar = merkle_level_hash_without_bitflags(&level);
+    }
+    scalar
+}
+
 /// Provided a `PoseidonBranch` and a Merkle Tree root, verify that
 /// the path to the root is correct.
+///
+/// `branch_length` controls how much padding should be added to the branch to make it the correct length.
 ///
 /// This hashing-chain is performed using Poseidon hashing algorithm
 /// and relies on the `Hades252` permutation.
@@ -103,13 +128,18 @@ pub fn merkle_opening_scalar_verification<H>(
     branch: kelvin::Branch<NStack<StorageScalar, PoseidonAnnotation, H>, H>,
     root: Scalar,
     leaf: Scalar,
+    branch_length: usize,
 ) -> bool
 where
     H: kelvin::ByteHash,
 {
-    let branch = PoseidonBranch::from(&branch);
+    let mut branch = PoseidonBranch::from(&branch);
+    let n_extensions = branch.extend(branch_length);
+
+    let extended_root = extend_scalar(root, n_extensions);
+
     // Check that the root is indeed the one that we think
-    if branch.root != root {
+    if branch.root != extended_root {
         return false;
     };
     // Allocate space for the last level computed hash as a variable to compare
@@ -197,6 +227,7 @@ mod tests {
                 branch,
                 root.0.into(),
                 Scalar::from(i),
+                17,
             ));
         }
     }
@@ -212,6 +243,8 @@ mod tests {
         for i in 0..1024u64 {
             nstack.push(StorageScalar(Scalar::from(i as u64))).unwrap();
         }
+
+        let mut composer_sizes = vec![];
 
         for i in [0u64, 567, 1023].iter() {
             let mut composer = StandardComposer::new();
@@ -243,6 +276,7 @@ mod tests {
                 branch,
                 proven_leaf,
                 root.0.into(),
+                17,
             );
 
             // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
@@ -255,8 +289,11 @@ mod tests {
                 &EvaluationDomain::new(composer.circuit_size()).unwrap(),
             );
 
+            composer_sizes.push(composer.circuit_size());
+
             let proof =
                 composer.prove(&ck, &prep_circ, &mut transcript.clone());
+
             assert!(proof.verify(
                 &prep_circ,
                 &mut transcript,
@@ -264,5 +301,9 @@ mod tests {
                 &composer.public_inputs()
             ));
         }
+
+        // Assert that all the proofs are of the same size
+        composer_sizes.dedup();
+        assert_eq!(composer_sizes.len(), 1)
     }
 }

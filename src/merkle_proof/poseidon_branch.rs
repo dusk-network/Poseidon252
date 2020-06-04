@@ -1,11 +1,12 @@
 //! Definitions of the merkle tree structure seen in Poseidon.
-
 use crate::hashing_utils::scalar_storage::StorageScalar;
+use crate::merkle_lvl_hash::hash;
 use crate::ARITY;
 use dusk_bls12_381::Scalar;
 use hades252::WIDTH;
 use kelvin::{Branch, ByteHash, Compound};
 use std::borrow::Borrow;
+use std::mem;
 
 /// The `Poseidon` structure will accept a number of inputs equal to the arity.
 ///
@@ -32,7 +33,8 @@ where
     H: ByteHash,
 {
     fn from(branch: &Branch<C, H>) -> PoseidonBranch {
-        let mut poseidon_branch = PoseidonBranch::with_capacity(branch.levels().len() - 1);
+        let mut poseidon_branch = PoseidonBranch::new();
+
         // Skip root and store it directly.
         poseidon_branch.root = branch
             .levels()
@@ -64,9 +66,10 @@ where
                     .enumerate()
                     .for_each(|(idx, (src, dest))| {
                         *dest = match src.annotation() {
-                            Some(borrow) => {
-                                let stor_scalar: &StorageScalar = &(*borrow).borrow();
-                                let annotation: &Scalar = stor_scalar.borrow();
+                            Some(annotation) => {
+                                let stor_scalar: &StorageScalar =
+                                    &(*annotation).borrow();
+                                let scalar: &Scalar = stor_scalar.borrow();
                                 // If the Annotation contains a value, we set the bitflag to 1.
                                 // Since the first element will be the most significant bit of the
                                 // bitflags, we need to shift it according to the `ARITY`.
@@ -77,7 +80,7 @@ where
                                 // by `ARITY - 1` to select the correct position of the bit
                                 // and then decrease the shift order by `idx`.
                                 level_bitflags |= 1u64 << ((ARITY - 1) - idx);
-                                *annotation
+                                *scalar
                             }
                             None => Scalar::zero(),
                         };
@@ -105,11 +108,38 @@ where
 impl PoseidonBranch {
     /// Generates a default PoseidonBranch with the specified capacity for storing
     /// `n` levels inside.
+    pub fn new() -> Self {
+        PoseidonBranch {
+            root: Scalar::zero(),
+            levels: vec![],
+        }
+    }
+
+    /// Generates a default PoseidonBranch with the specified capacity for storing
+    /// `n` levels inside.
     pub fn with_capacity(n: usize) -> Self {
         PoseidonBranch {
             root: Scalar::zero(),
             levels: Vec::with_capacity(n),
         }
+    }
+
+    /// Extends the branch to the specified length
+    pub fn extend(&mut self, target_depth: usize) -> usize {
+        let n_extensions = target_depth - self.levels.len();
+        while self.levels.len() < target_depth {
+            let old_root = mem::take(&mut self.root);
+            let flag = Scalar::from(0b1000);
+            let mut leaves = [Scalar::zero(); ARITY + 1];
+
+            leaves[0] = flag;
+            leaves[1] = old_root;
+
+            let level = PoseidonLevel { leaves, offset: 1 };
+            self.root = hash::merkle_level_hash_without_bitflags(&level);
+            self.levels.push(level);
+        }
+        n_extensions
     }
 }
 
