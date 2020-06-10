@@ -34,6 +34,12 @@ impl From<&StorageScalar> for StorageScalar {
     }
 }
 
+impl From<u64> for StorageScalar {
+    fn from(val: u64) -> StorageScalar {
+        StorageScalar(Scalar::from(val))
+    }
+}
+
 // This is implemented since `PoseidonAnnotation` wraps up over `StorageScalar`.
 // Therefore, in rust to get the interal `Scalar` from the annotation you'll
 // need to call `annotation.0.0` and this is not valid.
@@ -52,6 +58,7 @@ where
     fn persist(&mut self, sink: &mut Sink<H>) -> io::Result<()> {
         self.0.to_bytes().persist(sink)
     }
+
     fn restore(source: &mut Source<H>) -> io::Result<Self> {
         let mut bytes = [0u8; 32];
         // The solution with iterators is a way more messy.
