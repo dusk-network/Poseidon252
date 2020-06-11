@@ -1,9 +1,9 @@
 //! Merkle-tree hashing functions using Poseidon252
 //!
-use super::poseidon_branch::{PoseidonBranch, PoseidonLevel};
+use super::poseidon_branch::{extend_scalar, PoseidonBranch};
 use crate::merkle_lvl_hash::hash::*;
-use crate::ARITY;
 use crate::{PoseidonAnnotation, StorageScalar};
+
 use dusk_bls12_381::Scalar;
 use dusk_plonk::constraint_system::{StandardComposer, Variable};
 use hades252::WIDTH;
@@ -100,21 +100,6 @@ pub fn merkle_opening_gadget<H>(
     // of cheating on the Prover side by modifying the underlying `PoseidonBranch` data.
     composer.constrain_to_constant(prev_lvl_hash, Scalar::zero(), -branch.root);
     assert_eq!(branch.root, proven_root);
-}
-
-/// Applies the extension padding n times to the scalar
-fn extend_scalar(mut scalar: Scalar, n: usize) -> Scalar {
-    for _ in 0..n {
-        let flag = Scalar::from(0b1000);
-        let mut leaves = [Scalar::zero(); ARITY + 1];
-
-        leaves[0] = flag;
-        leaves[1] = scalar;
-
-        let level = PoseidonLevel { leaves, offset: 1 };
-        scalar = merkle_level_hash_without_bitflags(&level);
-    }
-    scalar
 }
 
 /// Provided a `PoseidonBranch` and a Merkle Tree root, verify that

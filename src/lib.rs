@@ -207,6 +207,10 @@ pub mod merkle_proof;
 /// Reference implementation for the Poseidon Sponge hash function
 pub mod sponge;
 
+/// The module handling posedion-trees
+pub mod tree;
+pub use tree::PoseidonTree;
+
 /// Maximum arity supported for trees.
 ///
 /// This is due to the fact that actually we rely in Hades252 crate
