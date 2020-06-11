@@ -70,7 +70,7 @@
 //! ### Zero Knowledge Merkle Opening Proof example:
 //! ```no_run
 //! use std::borrow::Borrow;
-//! use poseidon252::{StorageScalar, PoseidonAnnotation};
+//! use poseidon252::{StorageScalar, PoseidonTree};
 //! use poseidon252::merkle_proof::merkle_opening_gadget;
 //! use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
 //! use dusk_plonk::constraint_system::{Variable, StandardComposer};
@@ -83,9 +83,9 @@
 //! let pub_params = PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
 //! let (ck, vk) = pub_params.trim(1 << 16).unwrap();
 //! // Generate a tree with random scalars inside.
-//! let mut nstack: NStack<_, PoseidonAnnotation, Blake2b> = NStack::new();
+//! let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
 //! for i in 0..1024u64 {
-//!     nstack.push(StorageScalar(Scalar::from(i as u64)))
+//!     ptree.push(StorageScalar(Scalar::from(i as u64)))
 //!         .unwrap();
 //! }
 //!
@@ -98,24 +98,17 @@
 //!     // In this case, the key X corresponds to the Scalar(X).
 //!     // We're supposing that we're provided with a Kelvin::Branch to perform
 //!     // the proof.
-//!     let branch = nstack.get(*i).unwrap().unwrap();
+//!     let branch = ptree.poseidon_branch(*i).unwrap().unwrap();
 //!
 //!     // Get tree root.
-//!     let root = StorageScalar::from(branch
-//!         .levels()
-//!         .first()
-//!         .unwrap()
-//!         .annotation()
-//!         .unwrap()
-//!         .to_owned()
-//!         .borrow());
+//!     let root = ptree.root().unwrap();
 //!
 //!     // Add the proven leaf value to the Constraint System
 //!     let proven_leaf = composer.add_input(Scalar::from(*i));
 //!
 //!     // Print inside of the Composer Constraint System the Merkle Proof
-//!     // with all of the needed checks. Using branch length of 17
-//!     merkle_opening_gadget(&mut composer, branch, proven_leaf, root.0.into(), 17);
+//!     // with all of the needed checks.
+//!     merkle_opening_gadget(&mut composer, branch, proven_leaf, root);
 //!
 //!     // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
 //!     // to zero polynomials.
@@ -137,16 +130,15 @@
 //! ### Standard Merkle Opening Proof example:
 //! ```no_run
 //! use std::borrow::Borrow;
-//! use poseidon252::{StorageScalar, PoseidonAnnotation};
+//! use poseidon252::{StorageScalar, PoseidonTree};
 //! use poseidon252::merkle_proof::merkle_opening_scalar_verification;
 //! use dusk_bls12_381::Scalar;
 //! use kelvin::{Blake2b, Compound};
-//! use nstack::NStack;
 //!
 //! // Generate a tree with random scalars inside.
-//! let mut nstack: NStack<_, PoseidonAnnotation, Blake2b> = NStack::new();
+//! let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
 //! for i in 0..1024u64 {
-//!     nstack.push(StorageScalar(Scalar::from(i as u64)))
+//!     ptree.push(StorageScalar(Scalar::from(i as u64)))
 //!         .unwrap();
 //! }
 //!
@@ -157,24 +149,16 @@
 //!     // In this case, the key X corresponds to the Scalar(X).
 //!     // We're supposing that we're provided with a Kelvin::Branch to perform
 //!     // the proof.
-//!     let branch = nstack.get(i).unwrap().unwrap();
+//!     let branch = ptree.poseidon_branch(i).unwrap().unwrap();
 //!
 //!     // Get tree root.
-//!     let root = StorageScalar::from(branch
-//!         .levels()
-//!         .first()
-//!         .unwrap()
-//!         .annotation()
-//!         .unwrap()
-//!         .to_owned()
-//!         .borrow());
+//!     let root = ptree.root().unwrap();
 //!
 //!     // Verify the `Branch`. Use a branch length of 17.
 //!     assert!(merkle_opening_scalar_verification(
 //!         branch,
-//!         root.0.into(),
+//!         root,
 //!         Scalar::from(i),
-//!         17,
 //!     ));
 //! }
 //! ```
