@@ -143,6 +143,21 @@ impl PoseidonBranch {
     }
 }
 
+/// Applies the extension padding n times to a scalar
+pub(crate) fn extend_scalar(mut scalar: Scalar, n: usize) -> Scalar {
+    for _ in 0..n {
+        let flag = Scalar::from(0b1000);
+        let mut leaves = [Scalar::zero(); ARITY + 1];
+
+        leaves[0] = flag;
+        leaves[1] = scalar;
+
+        let level = PoseidonLevel { leaves, offset: 1 };
+        scalar = hash::merkle_level_hash_without_bitflags(&level);
+    }
+    scalar
+}
+
 #[derive(Debug, Clone, PartialEq)]
 /// Represents a Merkle-Tree Level inside of a `PoseidonBranch`.
 /// It stores the leaves as `Scalar` and the offset which represents

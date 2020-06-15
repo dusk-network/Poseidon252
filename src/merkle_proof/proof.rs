@@ -1,13 +1,11 @@
 //! Merkle-tree hashing functions using Poseidon252
 //!
-use super::poseidon_branch::{PoseidonBranch, PoseidonLevel};
+use super::poseidon_branch::PoseidonBranch;
 use crate::merkle_lvl_hash::hash::*;
-use crate::ARITY;
-use crate::{PoseidonAnnotation, StorageScalar};
+
 use dusk_bls12_381::Scalar;
 use dusk_plonk::constraint_system::{StandardComposer, Variable};
 use hades252::WIDTH;
-use nstack::NStack;
 
 /// Provided a `kelvin::Branch`, a `&mut StandardComposer`, a leaf value and a root, print inside of the
 /// constraint system a Merkle Tree Proof that hashes up from the searched leaf in kelvin until
@@ -17,21 +15,12 @@ use nstack::NStack;
 ///
 /// NOTE: The root of the `Branch` (root of the Merkle tree) will be set as Public Input so we
 /// can re-use the circuits that rely on this gadget.
-pub fn merkle_opening_gadget<H>(
+pub fn merkle_opening_gadget(
     composer: &mut StandardComposer,
-    branch: kelvin::Branch<NStack<StorageScalar, PoseidonAnnotation, H>, H>,
+    branch: PoseidonBranch,
     proven_leaf: Variable,
     proven_root: Scalar,
-    branch_length: usize,
-) where
-    H: kelvin::ByteHash,
-{
-    // Generate a `PoseidonBranch` from the kelvin Branch.
-    let mut branch = PoseidonBranch::from(&branch);
-
-    let n_extensions = branch.extend(branch_length);
-    let proven_root = extend_scalar(proven_root, n_extensions);
-
+) {
     // Allocate space for each level Variables that will be generated.
     let mut lvl_vars = [composer.zero_var; WIDTH];
     // Allocate space for the last level computed hash as a variable to compare
@@ -102,21 +91,6 @@ pub fn merkle_opening_gadget<H>(
     assert_eq!(branch.root, proven_root);
 }
 
-/// Applies the extension padding n times to the scalar
-fn extend_scalar(mut scalar: Scalar, n: usize) -> Scalar {
-    for _ in 0..n {
-        let flag = Scalar::from(0b1000);
-        let mut leaves = [Scalar::zero(); ARITY + 1];
-
-        leaves[0] = flag;
-        leaves[1] = scalar;
-
-        let level = PoseidonLevel { leaves, offset: 1 };
-        scalar = merkle_level_hash_without_bitflags(&level);
-    }
-    scalar
-}
-
 /// Provided a `PoseidonBranch` and a Merkle Tree root, verify that
 /// the path to the root is correct.
 ///
@@ -124,22 +98,13 @@ fn extend_scalar(mut scalar: Scalar, n: usize) -> Scalar {
 ///
 /// This hashing-chain is performed using Poseidon hashing algorithm
 /// and relies on the `Hades252` permutation.
-pub fn merkle_opening_scalar_verification<H>(
-    branch: kelvin::Branch<NStack<StorageScalar, PoseidonAnnotation, H>, H>,
+pub fn merkle_opening_scalar_verification(
+    branch: PoseidonBranch,
     root: Scalar,
     leaf: Scalar,
-    branch_length: usize,
-) -> bool
-where
-    H: kelvin::ByteHash,
-{
-    let mut branch = PoseidonBranch::from(&branch);
-    let n_extensions = branch.extend(branch_length);
-
-    let extended_root = extend_scalar(root, n_extensions);
-
+) -> bool {
     // Check that the root is indeed the one that we think
-    if branch.root != extended_root {
+    if branch.root != root {
         return false;
     };
     // Allocate space for the last level computed hash as a variable to compare
@@ -187,20 +152,18 @@ where
 mod tests {
     use super::*;
     use crate::hashing_utils::scalar_storage::StorageScalar;
-    use crate::PoseidonAnnotation;
+    use crate::PoseidonTree;
     use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
     use dusk_plonk::fft::EvaluationDomain;
-    use kelvin::{Blake2b, Compound};
+    use kelvin::Blake2b;
     use merlin::Transcript;
-    use nstack::NStack;
-    use std::borrow::Borrow;
 
     #[test]
     fn scalar_merkle_proof() {
         // Generate a tree with random scalars inside.
-        let mut nstack: NStack<_, PoseidonAnnotation, Blake2b> = NStack::new();
+        let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
         for i in 0..1024u64 {
-            nstack.push(StorageScalar(Scalar::from(i as u64))).unwrap();
+            ptree.push(StorageScalar(Scalar::from(i as u64))).unwrap();
         }
 
         for i in 0..1024u64 {
@@ -210,24 +173,15 @@ mod tests {
             // In this case, the key X corresponds to the Scalar(X).
             // We're supposing that we're provided with a Kelvin::Branch to perform
             // the proof.
-            let branch = nstack.get(i).unwrap().unwrap();
+            let branch = ptree.poseidon_branch(i).unwrap().unwrap();
 
             // Get tree root.
-            let root = StorageScalar::from(
-                branch
-                    .levels()
-                    .first()
-                    .unwrap()
-                    .annotation()
-                    .unwrap()
-                    .borrow(),
-            );
+            let root = ptree.root().unwrap();
 
             assert!(merkle_opening_scalar_verification(
                 branch,
-                root.0.into(),
+                root,
                 Scalar::from(i),
-                17,
             ));
         }
     }
@@ -239,9 +193,9 @@ mod tests {
             PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
         let (ck, vk) = pub_params.trim(1 << 16).unwrap();
         // Generate a tree with random scalars inside.
-        let mut nstack: NStack<_, PoseidonAnnotation, Blake2b> = NStack::new();
+        let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
         for i in 0..1024u64 {
-            nstack.push(StorageScalar(Scalar::from(i as u64))).unwrap();
+            ptree.push(StorageScalar(Scalar::from(i as u64))).unwrap();
         }
 
         let mut composer_sizes = vec![];
@@ -255,29 +209,15 @@ mod tests {
             // In this case, the key X corresponds to the Scalar(X).
             // We're supposing that we're provided with a Kelvin::Branch to perform
             // the proof.
-            let branch = nstack.get(*i).unwrap().unwrap();
+            let branch = ptree.poseidon_branch(*i).unwrap().unwrap();
 
             // Get tree root.
-            let root = StorageScalar::from(
-                branch
-                    .levels()
-                    .first()
-                    .unwrap()
-                    .annotation()
-                    .unwrap()
-                    .borrow(),
-            );
+            let root = ptree.root().unwrap();
 
             // Add the proven leaf value to the Constraint System
             let proven_leaf = composer.add_input(Scalar::from(*i));
 
-            merkle_opening_gadget(
-                &mut composer,
-                branch,
-                proven_leaf,
-                root.0.into(),
-                17,
-            );
+            merkle_opening_gadget(&mut composer, branch, proven_leaf, root);
 
             // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
             // to zero polynomials.
