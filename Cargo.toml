@@ -13,6 +13,11 @@ nstack = "0.4"
 lazy_static = "1.3.0"
 hades252 = { git = "https://github.com/dusk-network/hades252", version = "0.5.0" }
 dusk-plonk = {version = "0.1", features = ["trace-print"]}
+bench-utils = { git = "https://github.com/scipr-lab/zexe/" }
+
+
+[features]
+print-trace = [ "bench-utils/print-trace" ]
 
 [dev-dependencies]
 rand = "0.7"

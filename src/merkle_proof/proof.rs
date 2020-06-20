@@ -103,6 +103,10 @@ pub fn merkle_opening_scalar_verification(
     root: Scalar,
     leaf: Scalar,
 ) -> bool {
+    use bench_utils::*;
+    let init_time = start_timer!(|| {
+        "Merkle Opening Scalar Verification. Arity-4 Height-17"
+    });
     // Check that the root is indeed the one that we think
     if branch.root != root {
         return false;
@@ -145,6 +149,7 @@ pub fn merkle_opening_scalar_verification(
     if (lvl_hash != branch.root) | chain_err {
         return false;
     };
+    end_timer!(init_time);
     true
 }
 
@@ -153,6 +158,7 @@ mod tests {
     use super::*;
     use crate::hashing_utils::scalar_storage::StorageScalar;
     use crate::PoseidonTree;
+    use bench_utils::*;
     use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
     use dusk_plonk::fft::EvaluationDomain;
     use kelvin::Blake2b;
@@ -160,6 +166,8 @@ mod tests {
 
     #[test]
     fn scalar_merkle_proof() {
+        // To run the benches run: `cargo test scalar_merkle_proof --release --features print-trace -- --nocapture`
+        // and edit the `PoseidonTree::new()` height parameter in order to get different benchmark results.
         // Generate a tree with random scalars inside.
         let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
         for i in 0..1024u64 {
@@ -188,6 +196,8 @@ mod tests {
 
     #[test]
     fn zero_knowledge_merkle_proof() {
+        // To run the benches run: `cargo test zero_knowledge_merkle_proof --release --features print-trace -- --nocapture`
+        // and edit the `PoseidonTree::new()` height parameter in order to get different benchmark results.
         // Generate Composer & Public Parameters
         let pub_params =
             PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
@@ -231,9 +241,12 @@ mod tests {
 
             composer_sizes.push(composer.circuit_size());
 
+            let init_time = start_timer!(|| {
+                "Merkle Opening Proof for Arity-4 Height-17 tree."
+            });
             let proof =
                 composer.prove(&ck, &prep_circ, &mut transcript.clone());
-
+            end_timer!(init_time);
             assert!(proof.verify(
                 &prep_circ,
                 &mut transcript,
