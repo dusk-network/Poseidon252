@@ -26,22 +26,26 @@ pub fn sponge_hash(messages: &[Scalar]) -> Scalar {
     // If the words len is bigger than the Hades252 permutation `WIDTH` then we
     // need to collapse the padded limbs. See bottom of pag. 16 of
     // https://eprint.iacr.org/2019/458.pdf
-    words
-        .chunks(WIDTH)
-        .fold(vec![Scalar::zero(); WIDTH], |mut inputs, values| {
+    words.chunks(WIDTH).fold(
+        vec![Scalar::zero(); WIDTH],
+        |mut inputs, values| {
             let mut values = values.iter();
             inputs
                 .iter_mut()
                 .for_each(|input| *input += values.next().unwrap());
             strategy.perm(&mut inputs);
             inputs
-        });
+        },
+    );
     words[1]
 }
 
 /// The `hash` function takes an arbitrary number of plonk `Variable`s and returns the
 /// hash, using the `Hades` GadgetStragegy
-pub fn sponge_hash_gadget(composer: &mut StandardComposer, messages: &[Variable]) -> Variable {
+pub fn sponge_hash_gadget(
+    composer: &mut StandardComposer,
+    messages: &[Variable],
+) -> Variable {
     // The value used to pad the words is zero.
     let padder = composer.zero_var;
     // One will identify the end of messages.
@@ -81,6 +85,7 @@ pub fn sponge_hash_gadget(composer: &mut StandardComposer, messages: &[Variable]
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bench_utils::*;
     use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
     use dusk_plonk::fft::EvaluationDomain;
     use merlin::Transcript;
@@ -98,7 +103,11 @@ mod tests {
 
     // Checks that the result of the hades permutation is the same as the one obtained by
     // the sponge gadget
-    fn new_composer(width: usize, i: Vec<Scalar>, out: Scalar) -> StandardComposer {
+    fn new_composer(
+        width: usize,
+        i: Vec<Scalar>,
+        out: Scalar,
+    ) -> StandardComposer {
         let mut composer = StandardComposer::new();
 
         let mut i_var = vec![composer.zero_var; width];
@@ -130,7 +139,8 @@ mod tests {
     #[test]
     fn sponge_gadget_width_3() {
         // Setup OG params.
-        let public_parameters = PublicParameters::setup(CAPACITY, &mut rand::thread_rng()).unwrap();
+        let public_parameters =
+            PublicParameters::setup(CAPACITY, &mut rand::thread_rng()).unwrap();
         let (ck, vk) = public_parameters.trim(CAPACITY).unwrap();
         let domain = EvaluationDomain::new(CAPACITY).unwrap();
 
@@ -156,8 +166,10 @@ mod tests {
 
     #[test]
     fn sponge_gadget_hades_width() {
+        // To run the benches run: `cargo test sponge_gadget_hades_width --release --features print-trace -- --nocapture`
         // Setup OG params.
-        let public_parameters = PublicParameters::setup(CAPACITY, &mut rand::thread_rng()).unwrap();
+        let public_parameters =
+            PublicParameters::setup(CAPACITY, &mut rand::thread_rng()).unwrap();
         let (ck, vk) = public_parameters.trim(CAPACITY).unwrap();
         let domain = EvaluationDomain::new(CAPACITY).unwrap();
 
@@ -170,7 +182,11 @@ mod tests {
         let circuit = composer.preprocess(&ck, &mut transcript, &domain);
 
         // Prove
+        let init_time =
+            start_timer!(|| { "Sponge Gadget Proof Hades252 WIDTH" });
+        // Prove
         let proof = composer.prove(&ck, &circuit, &mut transcript.clone());
+        end_timer!(init_time);
 
         // Verify
         assert!(proof.verify(
@@ -182,10 +198,14 @@ mod tests {
     }
 
     #[test]
-    fn sponge_gadget_width_15() {
+    fn sponge_gadget_width_x() {
+        // To run the benches run: `cargo test sponge_gadget_width_x --release --features print-trace -- --nocapture`
+        // Edit the `new_composer` & `poseidon_sponge_params` to the value you want to bench.
+
         // Setup OG params.
         let public_parameters =
-            PublicParameters::setup(CAPACITY * 8, &mut rand::thread_rng()).unwrap();
+            PublicParameters::setup(CAPACITY * 8, &mut rand::thread_rng())
+                .unwrap();
         let (ck, vk) = public_parameters.trim(CAPACITY * 8).unwrap();
         let domain = EvaluationDomain::new(CAPACITY * 8).unwrap();
 
@@ -197,9 +217,11 @@ mod tests {
         // Preprocess circuit
         let circuit = composer.preprocess(&ck, &mut transcript, &domain);
 
+        let init_time =
+            start_timer!(|| { "Sponge Gadget Proof for 15 inputs" });
         // Prove
         let proof = composer.prove(&ck, &circuit, &mut transcript.clone());
-
+        end_timer!(init_time);
         // Verify
         assert!(proof.verify(
             &circuit,
