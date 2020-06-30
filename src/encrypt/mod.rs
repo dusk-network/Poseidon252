@@ -35,26 +35,28 @@ impl io::Write for EncryptedData {
             return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
         }
 
-        let mut a = [0x00u8; 32];
-        let mut b = [0x00u8; 32];
+        let mut a = [0u8; 32];
+        let mut b = [0u8; 32];
 
-        let mut n = a.as_mut().write(&buf[0..32])?;
-        n += b.as_mut().write(&buf[32..64])?;
+        let mut n = a.as_mut().write(&buf[..32])?;
+        n += b.as_mut().write(&buf[32..])?;
 
         // Constant time option is REALLY inflexible, so this is required
         let a = Scalar::from_bytes(&a);
-        if a.is_some().into() {
-            self.a = a.unwrap();
-        } else {
+
+        if a.is_none().into() {
             return Err(io::Error::from(io::ErrorKind::InvalidData));
         }
 
+        self.a = a.unwrap();
+
         let b = Scalar::from_bytes(&b);
-        if b.is_some().into() {
-            self.b = b.unwrap();
-        } else {
+
+        if b.is_none().into() {
             return Err(io::Error::from(io::ErrorKind::InvalidData));
         }
+
+        self.b = b.unwrap();
 
         Ok(n)
     }
