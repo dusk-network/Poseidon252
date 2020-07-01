@@ -182,6 +182,8 @@
 
 #![deny(missing_docs)]
 
+/// Provides an encrypt and decrypt functionality
+pub mod encrypt;
 /// Helpers for kelvin hashing & storing trait implementations
 mod hashing_utils;
 /// Reference implementation for the Poseidon Merkle hash function
