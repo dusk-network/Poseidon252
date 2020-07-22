@@ -1,6 +1,6 @@
 use std::io;
 
-use dusk_bls12_381::Scalar;
+use dusk_plonk::bls12_381::Scalar;
 use kelvin::{
     annotation,
     annotations::{Cardinality, Count},
