@@ -4,6 +4,23 @@ cache: cargo
 os:
   - linux
 
+  ## Things to do before installation
+before_install:
+  - sudo apt-get update
+
+# Include needed packages
+addons:
+  apt:
+    packages:
+    ## All of these are needed by CodeCov.
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - cmake
+      - gcc
+      - binutils-dev
+      - build-essential
+
 matrix:
   fast_finish: false
   include:
@@ -18,6 +35,7 @@ matrix:
   - rust: nightly
     script:
       # Run tests/builds
+      - sudo apt install build-essential
       - cargo check
       - cargo build --release --verbose --all
       - cargo test --release --verbose --all
