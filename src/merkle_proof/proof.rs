@@ -3,8 +3,7 @@
 use super::poseidon_branch::PoseidonBranch;
 use crate::merkle_lvl_hash::hash::*;
 
-use dusk_bls12_381::Scalar;
-use dusk_plonk::constraint_system::{StandardComposer, Variable};
+use dusk_plonk::prelude::*;
 use hades252::WIDTH;
 
 /// Provided a `kelvin::Branch`, a `&mut StandardComposer`, a leaf value and a root, print inside of the
@@ -19,10 +18,13 @@ pub fn merkle_opening_gadget(
     composer: &mut StandardComposer,
     branch: PoseidonBranch,
     proven_leaf: Variable,
-    proven_root: Scalar,
+    proven_root: BlsScalar,
 ) {
+    // Generate and constraint zero.
+    let zero = composer.add_input(BlsScalar::zero());
+    composer.constrain_to_constant(zero, BlsScalar::zero(), BlsScalar::zero());
     // Allocate space for each level Variables that will be generated.
-    let mut lvl_vars = [composer.zero_var; WIDTH];
+    let mut lvl_vars = [zero; WIDTH];
     // Allocate space for the last level computed hash as a variable to compare
     // it against the root.
     let mut prev_lvl_hash: Variable;
@@ -71,12 +73,12 @@ pub fn merkle_opening_gadget(
         composer.add_gate(
             prev_lvl_hash,
             lvl_vars[level.offset],
-            composer.zero_var,
-            -Scalar::one(),
-            Scalar::one(),
-            Scalar::zero(),
-            Scalar::zero(),
-            Scalar::zero(),
+            zero,
+            -BlsScalar::one(),
+            BlsScalar::one(),
+            BlsScalar::zero(),
+            BlsScalar::zero(),
+            BlsScalar::zero(),
         );
         // Hash the level & store it in prev_lvl_hash which should be in the upper
         // level if the proof is consistent.
@@ -87,7 +89,14 @@ pub fn merkle_opening_gadget(
     // Add the last check regarding the last lvl-hash agains the tree root
     // which will be a Public Input. On this case, it is not possible to make any kind
     // of cheating on the Prover side by modifying the underlying `PoseidonBranch` data.
-    composer.constrain_to_constant(prev_lvl_hash, Scalar::zero(), -branch.root);
+    let root_var_announced = composer.add_input(proven_root);
+    composer.constrain_to_constant(
+        root_var_announced,
+        proven_root,
+        BlsScalar::zero(),
+    );
+    composer.assert_equal(root_var_announced, prev_lvl_hash);
+
     assert_eq!(branch.root, proven_root);
 }
 
@@ -100,8 +109,8 @@ pub fn merkle_opening_gadget(
 /// and relies on the `Hades252` permutation.
 pub fn merkle_opening_scalar_verification(
     branch: PoseidonBranch,
-    root: Scalar,
-    leaf: Scalar,
+    root: BlsScalar,
+    leaf: BlsScalar,
 ) -> bool {
     // Check that the root is indeed the one that we think
     if branch.root != root {
@@ -109,7 +118,7 @@ pub fn merkle_opening_scalar_verification(
     };
     // Allocate space for the last level computed hash as a variable to compare
     // it against the root.
-    let mut lvl_hash: Scalar;
+    let mut lvl_hash: BlsScalar;
 
     // Define a flag to catch errors inside of the tree-hashing chain.
     let mut chain_err = false;
@@ -153,17 +162,16 @@ mod tests {
     use super::*;
     use crate::hashing_utils::scalar_storage::StorageScalar;
     use crate::PoseidonTree;
-    use dusk_plonk::commitment_scheme::kzg10::PublicParameters;
-    use dusk_plonk::fft::EvaluationDomain;
     use kelvin::Blake2b;
-    use merlin::Transcript;
 
     #[test]
     fn scalar_merkle_proof() {
         // Generate a tree with random scalars inside.
         let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
         for i in 0..1024u64 {
-            ptree.push(StorageScalar(Scalar::from(i as u64))).unwrap();
+            ptree
+                .push(StorageScalar(BlsScalar::from(i as u64)))
+                .unwrap();
         }
 
         for i in 0..1024u64 {
@@ -181,7 +189,7 @@ mod tests {
             assert!(merkle_opening_scalar_verification(
                 branch,
                 root,
-                Scalar::from(i),
+                BlsScalar::from(i),
             ));
         }
     }
@@ -195,51 +203,50 @@ mod tests {
         // Generate a tree with random scalars inside.
         let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
         for i in 0..1024u64 {
-            ptree.push(StorageScalar(Scalar::from(i as u64))).unwrap();
+            ptree
+                .push(StorageScalar(BlsScalar::from(i as u64)))
+                .unwrap();
         }
 
         let mut composer_sizes = vec![];
 
         for i in [0u64, 567, 1023].iter() {
-            let mut composer = StandardComposer::new();
-            let mut transcript = Transcript::new(b"Test");
-            // We want to proof that we know the Scalar tied to the key Xusize
-            // and that indeed, it is inside the merkle tree.
+            let gadget_tester = |composer: &mut StandardComposer| {
+                // We want to proof that we know the Scalar tied to the key Xusize
+                // and that indeed, it is inside the merkle tree.
 
-            // In this case, the key X corresponds to the Scalar(X).
-            // We're supposing that we're provided with a Kelvin::Branch to perform
-            // the proof.
-            let branch = ptree.poseidon_branch(*i).unwrap().unwrap();
+                // In this case, the key X corresponds to the Scalar(X).
+                // We're supposing that we're provided with a Kelvin::Branch to perform
+                // the proof.
+                let branch = ptree.poseidon_branch(*i).unwrap().unwrap();
 
-            // Get tree root.
-            let root = ptree.root().unwrap();
+                // Get tree root.
+                let root = ptree.root().unwrap();
 
-            // Add the proven leaf value to the Constraint System
-            let proven_leaf = composer.add_input(Scalar::from(*i));
+                // Add the proven leaf value to the Constraint System
+                let proven_leaf = composer.add_input(BlsScalar::from(*i));
 
-            merkle_opening_gadget(&mut composer, branch, proven_leaf, root);
+                merkle_opening_gadget(&mut composer, branch, proven_leaf, root);
 
-            // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
-            // to zero polynomials.
-            composer.add_dummy_constraints();
+                // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
+                // to zero polynomials.
+                composer.add_dummy_constraints();
+                composer_sizes.push(composer.circuit_size());
+            };
 
-            let prep_circ = composer.preprocess(
-                &ck,
-                &mut transcript,
-                &EvaluationDomain::new(composer.circuit_size()).unwrap(),
-            );
+            // Proving
+            let mut prover = Prover::new(b"merkle_opening_tester");
+            gadget_tester(prover.mut_cs());
+            prover.preprocess(&ck).expect("Error on preprocessing");
+            let proof = prover.prove(&ck).expect("Error on proving");
 
-            composer_sizes.push(composer.circuit_size());
-
-            let proof =
-                composer.prove(&ck, &prep_circ, &mut transcript.clone());
-
-            assert!(proof.verify(
-                &prep_circ,
-                &mut transcript,
-                &vk,
-                &composer.public_inputs()
-            ));
+            // Verify
+            let mut verifier = Verifier::new(b"merkle_opening_tester");
+            gadget_tester(verifier.mut_cs());
+            verifier.preprocess(&ck).expect("Error on preprocessing");
+            assert!(verifier
+                .verify(&proof, &vk, &vec![BlsScalar::zero()])
+                .is_ok());
         }
 
         // Assert that all the proofs are of the same size

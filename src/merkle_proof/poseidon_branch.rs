@@ -2,7 +2,7 @@
 use crate::hashing_utils::scalar_storage::StorageScalar;
 use crate::merkle_lvl_hash::hash;
 use crate::ARITY;
-use dusk_bls12_381::Scalar;
+use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use hades252::WIDTH;
 use kelvin::{Branch, ByteHash, Compound};
 use std::borrow::Borrow;
@@ -15,7 +15,7 @@ use std::mem;
 #[derive(Debug, Clone, PartialEq)]
 pub struct PoseidonBranch {
     /// Root of the Merkle Tree
-    pub root: Scalar,
+    pub root: BlsScalar,
     /// Levels of the MerkleTree with it's corresponding leaves and offset.
     pub levels: Vec<PoseidonLevel>,
 }
@@ -69,7 +69,7 @@ where
                             Some(annotation) => {
                                 let stor_scalar: &StorageScalar =
                                     &(*annotation).borrow();
-                                let scalar: &Scalar = stor_scalar.borrow();
+                                let scalar: &BlsScalar = stor_scalar.borrow();
                                 // If the Annotation contains a value, we set the bitflag to 1.
                                 // Since the first element will be the most significant bit of the
                                 // bitflags, we need to shift it according to the `ARITY`.
@@ -82,14 +82,14 @@ where
                                 level_bitflags |= 1u64 << ((ARITY - 1) - idx);
                                 *scalar
                             }
-                            None => Scalar::zero(),
+                            None => BlsScalar::zero(),
                         };
                     });
                 // Now we should have our bitflags value computed as well as the
                 // `WIDTH` leaves set on the [1..4] positions of our poseidon_level.
                 //
                 // We need now to add the bitflags element in pos_level.leaves[0]
-                pos_level.leaves[0] = Scalar::from(level_bitflags);
+                pos_level.leaves[0] = BlsScalar::from(level_bitflags);
                 // Once we have the level, we get the position where the hash of the previous level is
                 // stored on the this level.
                 // NOTE that this position is in respect of a WIDTH = `ARITY` so we need to
@@ -110,7 +110,7 @@ impl PoseidonBranch {
     /// `n` levels inside.
     pub fn new() -> Self {
         PoseidonBranch {
-            root: Scalar::zero(),
+            root: BlsScalar::zero(),
             levels: vec![],
         }
     }
@@ -119,7 +119,7 @@ impl PoseidonBranch {
     /// `n` levels inside.
     pub fn with_capacity(n: usize) -> Self {
         PoseidonBranch {
-            root: Scalar::zero(),
+            root: BlsScalar::zero(),
             levels: Vec::with_capacity(n),
         }
     }
@@ -129,8 +129,8 @@ impl PoseidonBranch {
         let n_extensions = target_depth - self.levels.len();
         while self.levels.len() < target_depth {
             let old_root = mem::take(&mut self.root);
-            let flag = Scalar::from(0b1000);
-            let mut leaves = [Scalar::zero(); ARITY + 1];
+            let flag = BlsScalar::from(0b1000);
+            let mut leaves = [BlsScalar::zero(); ARITY + 1];
 
             leaves[0] = flag;
             leaves[1] = old_root;
@@ -144,10 +144,10 @@ impl PoseidonBranch {
 }
 
 /// Applies the extension padding n times to a scalar
-pub(crate) fn extend_scalar(mut scalar: Scalar, n: usize) -> Scalar {
+pub(crate) fn extend_scalar(mut scalar: BlsScalar, n: usize) -> BlsScalar {
     for _ in 0..n {
-        let flag = Scalar::from(0b1000);
-        let mut leaves = [Scalar::zero(); ARITY + 1];
+        let flag = BlsScalar::from(0b1000);
+        let mut leaves = [BlsScalar::zero(); ARITY + 1];
 
         leaves[0] = flag;
         leaves[1] = scalar;
@@ -160,7 +160,7 @@ pub(crate) fn extend_scalar(mut scalar: Scalar, n: usize) -> Scalar {
 
 #[derive(Debug, Clone, PartialEq)]
 /// Represents a Merkle-Tree Level inside of a `PoseidonBranch`.
-/// It stores the leaves as `Scalar` and the offset which represents
+/// It stores the leaves as `BlsScalar` and the offset which represents
 /// the position on the level where the hash of the previous `PoseidonLevel`
 /// is stored in.
 pub struct PoseidonLevel {
@@ -168,14 +168,14 @@ pub struct PoseidonLevel {
     /// is stored in.
     pub offset: usize,
     /// Leaves of the Level.
-    pub leaves: [Scalar; WIDTH],
+    pub leaves: [BlsScalar; WIDTH],
 }
 
 impl Default for PoseidonLevel {
     fn default() -> Self {
         PoseidonLevel {
             offset: 0usize,
-            leaves: [Scalar::zero(); WIDTH],
+            leaves: [BlsScalar::zero(); WIDTH],
         }
     }
 }
