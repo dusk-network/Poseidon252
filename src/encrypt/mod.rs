@@ -1,17 +1,20 @@
-use dusk_bls12_381::Scalar;
-
+use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use std::io;
 
 /// Encapsulates an encrypted data
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct EncryptedData {
-    a: Scalar,
-    b: Scalar,
+    a: BlsScalar,
+    b: BlsScalar,
 }
 
 impl EncryptedData {
     /// Perform the encryption of a given message provided a secret and a nonce
-    pub fn encrypt(message: &Scalar, secret: &Scalar, nonce: &Scalar) -> Self {
+    pub fn encrypt(
+        message: &BlsScalar,
+        secret: &BlsScalar,
+        nonce: &BlsScalar,
+    ) -> Self {
         let a = *message;
         let b = secret + nonce;
 
@@ -20,7 +23,11 @@ impl EncryptedData {
 
     /// Decrypt a previously encrypted message, provided the shared secret and nonce
     /// used for encryption. If the decryption is not successful, `None` is returned
-    pub fn decrypt(&self, secret: &Scalar, nonce: &Scalar) -> Option<Scalar> {
+    pub fn decrypt(
+        &self,
+        secret: &BlsScalar,
+        nonce: &BlsScalar,
+    ) -> Option<BlsScalar> {
         if self.b == secret + nonce {
             Some(self.a)
         } else {
@@ -42,7 +49,7 @@ impl io::Write for EncryptedData {
         n += b.as_mut().write(&buf[32..])?;
 
         // Constant time option is REALLY inflexible, so this is required
-        let a = Scalar::from_bytes(&a);
+        let a = BlsScalar::from_bytes(&a);
 
         if a.is_none().into() {
             return Err(io::Error::from(io::ErrorKind::InvalidData));
@@ -50,7 +57,7 @@ impl io::Write for EncryptedData {
 
         self.a = a.unwrap();
 
-        let b = Scalar::from_bytes(&b);
+        let b = BlsScalar::from_bytes(&b);
 
         if b.is_none().into() {
             return Err(io::Error::from(io::ErrorKind::InvalidData));
