@@ -183,7 +183,7 @@ pub mod tests {
             ];
 
             let obtained_hash = merkle_level_hash_gadget_without_bitflags(
-                &mut composer,
+                composer,
                 &mut leaves,
             );
             let expected_hash = composer.add_input(expected_hash);

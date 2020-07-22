@@ -211,7 +211,7 @@ mod tests {
         let mut composer_sizes = vec![];
 
         for i in [0u64, 567, 1023].iter() {
-            let gadget_tester = |composer: &mut StandardComposer| {
+            let mut gadget_tester = |composer: &mut StandardComposer| {
                 // We want to proof that we know the Scalar tied to the key Xusize
                 // and that indeed, it is inside the merkle tree.
 
@@ -226,7 +226,7 @@ mod tests {
                 // Add the proven leaf value to the Constraint System
                 let proven_leaf = composer.add_input(BlsScalar::from(*i));
 
-                merkle_opening_gadget(&mut composer, branch, proven_leaf, root);
+                merkle_opening_gadget(composer, branch, proven_leaf, root);
 
                 // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
                 // to zero polynomials.

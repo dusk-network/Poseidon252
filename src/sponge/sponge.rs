@@ -124,7 +124,7 @@ mod tests {
         let o_var = composer.add_input(out);
 
         // Apply Poseidon Sponge hash to the inputs
-        let computed_o_var = sponge_hash_gadget(&mut composer, &i_var);
+        let computed_o_var = sponge_hash_gadget(composer, &i_var);
 
         // Check that the Gadget sponge hash result = Scalar sponge hash result
         composer.add_gate(
@@ -153,7 +153,7 @@ mod tests {
         // Proving
         let (i, o) = poseidon_sponge_params(3usize);
         let mut prover = Prover::new(b"sponge_tester");
-        sponge_gadget_tester(3usize, i, o, prover.mut_cs());
+        sponge_gadget_tester(3usize, i.clone(), o, prover.mut_cs());
         prover.preprocess(&ck).expect("Error on preprocessing");
         let proof = prover.prove(&ck).expect("Error on proof generation");
 
@@ -178,7 +178,7 @@ mod tests {
         // Proving
         let (i, o) = poseidon_sponge_params(WIDTH);
         let mut prover = Prover::new(b"sponge_tester");
-        sponge_gadget_tester(WIDTH, i, o, prover.mut_cs());
+        sponge_gadget_tester(WIDTH, i.clone(), o, prover.mut_cs());
         prover.preprocess(&ck).expect("Error on preprocessing");
         let proof = prover.prove(&ck).expect("Error on proof generation");
 
@@ -203,7 +203,7 @@ mod tests {
         // Proving
         let (i, o) = poseidon_sponge_params(15usize);
         let mut prover = Prover::new(b"sponge_tester");
-        sponge_gadget_tester(15usize, i, o, prover.mut_cs());
+        sponge_gadget_tester(15usize, i.clone(), o, prover.mut_cs());
         prover.preprocess(&ck).expect("Error on preprocessing");
         let proof = prover.prove(&ck).expect("Error on proof generation");
 
