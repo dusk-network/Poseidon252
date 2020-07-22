@@ -49,12 +49,11 @@ pub fn sponge_hash_gadget(
     let zero = composer.add_input(BlsScalar::zero());
     composer.constrain_to_constant(zero, BlsScalar::zero(), BlsScalar::zero());
     let one = composer.add_input(BlsScalar::one());
-    composer.constrain_to_constant(one, BlsScalar::one(), BlsScalar::one());
+    composer.constrain_to_constant(one, BlsScalar::one(), BlsScalar::zero());
     // The value used to pad the words is zero.
     let padder = zero;
     // One will identify the end of messages.
     let eom = one;
-
     let mut words = pad(messages, WIDTH, padder, eom);
     // If the words len is less than the Hades252 permutation `WIDTH` we directly
     // call the permutation saving useless additions by zero.
@@ -139,6 +138,7 @@ mod tests {
         );
 
         composer.add_dummy_constraints();
+        composer.check_circuit_satisfied();
     }
 
     #[test]
@@ -195,8 +195,8 @@ mod tests {
     fn sponge_gadget_width_15() {
         // Setup OG params.
         let public_parameters =
-            PublicParameters::setup(CAPACITY, &mut rand::thread_rng()).unwrap();
-        let (ck, vk) = public_parameters.trim(CAPACITY).unwrap();
+            PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
+        let (ck, vk) = public_parameters.trim(1 << 17).unwrap();
 
         // Test with width = 15
 
