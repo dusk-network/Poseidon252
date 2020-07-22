@@ -1,6 +1,6 @@
 use std::io;
 
-use dusk_plonk::bls12_381::Scalar;
+use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use kelvin::{
     annotation,
     annotations::{Cardinality, Count},
@@ -82,10 +82,10 @@ where
     /// Returns the scalar root-hash of the poseidon tree
     ///
     /// This includes padding the value to the correct branch length equivalent
-    pub fn root(&self) -> io::Result<Scalar> {
+    pub fn root(&self) -> io::Result<BlsScalar> {
         if let Some(ann) = self.inner.annotation() {
             let borrow: &StorageScalar = ann.borrow();
-            let scalar: Scalar = borrow.clone().into();
+            let scalar: BlsScalar = borrow.clone().into();
 
             // FIXME, depth could be inferred from the cardinality
             if let Some(branch) = self.get(0)? {
@@ -96,7 +96,7 @@ where
             }
         } else {
             // empty case, use an empty level for hashing
-            let leaves = [Scalar::zero(); ARITY + 1];
+            let leaves = [BlsScalar::zero(); ARITY + 1];
             let level = PoseidonLevel { leaves, offset: 0 };
             let root = merkle_level_hash_without_bitflags(&level);
             Ok(extend_scalar(root, self.branch_depth as usize))
