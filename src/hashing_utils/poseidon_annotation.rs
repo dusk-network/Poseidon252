@@ -2,7 +2,7 @@
 use super::scalar_storage::StorageScalar;
 use crate::merkle_lvl_hash::hash;
 use crate::ARITY;
-use dusk_bls12_381::Scalar;
+use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use kelvin::{annotation, annotations::Cardinality, Combine, ErasedAnnotation};
 use std::borrow::Borrow;
 use std::io;
@@ -26,7 +26,7 @@ impl<A> Combine<A> for StorageScalar {
         A: Borrow<Self> + Clone,
         E: ErasedAnnotation<A>,
     {
-        let mut leaves: [Option<Scalar>; ARITY] = [None; ARITY];
+        let mut leaves: [Option<BlsScalar>; ARITY] = [None; ARITY];
         elements
             .iter()
             .zip(leaves.iter_mut())
