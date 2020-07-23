@@ -35,7 +35,6 @@ matrix:
   - rust: nightly
     script:
       # Run tests/builds
-      - sudo apt install build-essential
       - cargo check
       - cargo build --release --verbose --all
       - cargo test --release --verbose --all

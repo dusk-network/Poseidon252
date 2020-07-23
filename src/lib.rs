@@ -76,6 +76,7 @@
 //! use poseidon252::PoseidonTree;
 //! use kelvin::{Blake2b, Compound};
 //!
+//!
 //! // Generate Composer & Public Parameters
 //! let pub_params =
 //!     PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
