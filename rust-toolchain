@@ -1,3 +1,1 @@
-# A regression happened in rust-nightly 1.46.0. Therefore, we set the previous toolchain
-# to compile & run the tests with rust 1.45.0.
 nightly-2020-06-04
