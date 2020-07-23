@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["PoseidonAnnotation","The annotation for the PoseidonTree"],["PoseidonTree","A zk-friendly datastructure to store elements"]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["sponge_hash","The `hash` function takes an arbitrary number of Scalars and returns the hash, using the `Hades` ScalarStragegy"],["sponge_hash_gadget","The `hash` function takes an arbitrary number of plonk `Variable`s and returns the hash, using the `Hades` GadgetStragegy"]]});

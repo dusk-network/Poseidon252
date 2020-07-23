@@ -1,0 +1,187 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `poseidon252` crate."><meta name="keywords" content="rust, rustlang, rust-lang, poseidon252"><title>poseidon252 - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../dark.css"><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script src="../storage.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="shortcut icon" href="../favicon.ico"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../poseidon252/index.html'><div class='logo-container'><img src='../rust-logo.png' alt='logo'></div></a><p class='location'>Crate poseidon252</p><div class="sidebar-elems"><a id='all-types' href='all.html'><p>See all poseidon252's items</p></a><div class="block items"><ul><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#constants">Constants</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'poseidon252', ty: 'mod', relpath: '../'};</script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../src/poseidon252/lib.rs.html#1-227' title='goto source code'>[src]</a></span><span class='in-band'>Crate <a class="mod" href=''>poseidon252</a></span></h1><div class='docblock'><p><img src="https://travis-ci.com/dusk-network/Poseidon252.svg?branch=master" alt="Build Status" />](https://travis-ci.com/dusk-network/Poseidon252)
+<img src="https://dusk-network.github.io/Poseidon252/repo-badge.svg" alt="Repository" />](https://github.com/dusk-network/Poseidon252)
+<img src="https://dusk-network.github.io/Poseidon252/badge.svg" alt="Documentation" />](https://dusk-network.github.io/Poseidon252/index.html)</p>
+<h1 id="poseidon252" class="section-header"><a href="#poseidon252">Poseidon252</a></h1>
+<p>Reference implementation for the Poseidon Hashing algorithm.</p>
+<h4 id="reference" class="section-header"><a href="#reference">Reference</a></h4>
+<p><a href="https://eprint.iacr.org/2019/458.pdf">Starkad and Poseidon: New Hash Functions for Zero Knowledge Proof Systems</a></p>
+<p>This repository has been created so there's a unique library that holds the tools &amp; functions
+required to perform Poseidon Hashes.</p>
+<p>This hashes heavily rely on the Hades permutation, which is one of the key parts that Poseidon needs in order
+to work.
+This library uses the reference implementation of <a href="https://github.com/dusk-network/hades252">Hades252</a> which has been
+designed &amp; build by the <a href="https://dusk.network/">Dusk-Network team</a>.</p>
+<p><strong>The library provides the two hashing techniques of Poseidon:</strong></p>
+<h2 id="sponge-hash" class="section-header"><a href="#sponge-hash">Sponge Hash</a></h2>
+<p>The <code>Sponge</code> techniqe in Poseidon allows to hash an unlimited ammount of data
+into a single <code>Scalar</code>.
+The sponge hash techniqe requires a padding to be applied before the data can
+be hashed.</p>
+<p>This is done to avoid hash collitions as stated in the paper of the Poseidon Hash
+algorithm. See: (https://eprint.iacr.org/2019/458.pdf)[https://eprint.iacr.org/2019/458.pdf].
+The inputs of the <code>sponge_hash</code> are always <code>Scalar</code> or need to be capable of being represented
+as it.</p>
+<p>The module provides two sponge hash implementations:</p>
+<ul>
+<li>
+<p>Sponge hash using <code>Scalar</code> as backend. Which hashes the inputed <code>Scalar</code>s and returns a single
+<code>Scalar</code>.</p>
+</li>
+<li>
+<p>Sponge hash gadget using <code>dusk_plonk::Variable</code> as a backend. This techniqe is used/required
+when you want to proof pre-images of unconstrained data inside of Zero-Knowledge PLONK circuits.</p>
+</li>
+</ul>
+<h2 id="merkle-hash" class="section-header"><a href="#merkle-hash">Merkle Hash</a></h2>
+<p>The Merkle Level Hashing is a technique that Poseidon is optimized-by-design
+to perform.
+This technique allows us to perform hashes of an entire Merkle Tree using
+<code>Hades252</code> as backend.</p>
+<p>The technique requires the computation of a <code>bitflags</code> element which is always
+positioned as the first item of the level when we hash it, and it basically generated
+in respect of the presence or absence of a leaf in the tree level.
+This allows to prevent hashing collitions.</p>
+<p>At the moment, this library is designed and optimized to work only with trees of <code>ARITY</code>
+up to 4. <strong>That means that trees with a bigger ARITY SHOULD NEVER be used with this lib.</strong>
+The module contains the implementation of 4 variants of the same algorithm to support the
+majority of the configurations that the user may need:</p>
+<ul>
+<li>
+<p>Scalar backend for hashing Merkle Tree levels outside of ZK-Circuits whith two variants:
+One of them computes the bitflags item while the other assumes that it has already been
+computed and placed in the first Level position.</p>
+</li>
+<li>
+<p><code>dusk_plonk::Variable</code> backend for hashing Merkle Tree levels inside of ZK-Circuits,
+specifically, PLONK circuits. This implementation comes also whith two variants;
+One of them computes the bitflags item while the other assumes that it has already been
+computed and placed in the first Level position.</p>
+</li>
+</ul>
+<h3 id="zero-knowledge-merkle-opening-proof-example" class="section-header"><a href="#zero-knowledge-merkle-opening-proof-example">Zero Knowledge Merkle Opening Proof example:</a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">poseidon252</span>::{<span class="ident">StorageScalar</span>, <span class="ident">PoseidonAnnotation</span>};
+<span class="kw">use</span> <span class="ident">poseidon252</span>::<span class="ident">merkle_proof</span>::<span class="ident">merkle_opening_gadget</span>;
+<span class="kw">use</span> <span class="ident">dusk_plonk</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">poseidon252</span>::<span class="ident">PoseidonTree</span>;
+<span class="kw">use</span> <span class="ident">kelvin</span>::{<span class="ident">Blake2b</span>, <span class="ident">Compound</span>};
+
+
+<span class="comment">// Generate Composer &amp; Public Parameters</span>
+<span class="kw">let</span> <span class="ident">pub_params</span> <span class="op">=</span>
+    <span class="ident">PublicParameters</span>::<span class="ident">setup</span>(<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">17</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rand</span>::<span class="ident">thread_rng</span>()).<span class="ident">unwrap</span>();
+<span class="kw">let</span> (<span class="ident">ck</span>, <span class="ident">vk</span>) <span class="op">=</span> <span class="ident">pub_params</span>.<span class="ident">trim</span>(<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">16</span>).<span class="ident">unwrap</span>();
+<span class="comment">// Generate a tree with random scalars inside.</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ptree</span>: <span class="ident">PoseidonTree</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Blake2b</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">PoseidonTree</span>::<span class="ident">new</span>(<span class="number">17</span>);
+<span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">1024u64</span> {
+    <span class="ident">ptree</span>
+        .<span class="ident">push</span>(<span class="ident">StorageScalar</span>(<span class="ident">BlsScalar</span>::<span class="ident">from</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+        .<span class="ident">unwrap</span>();
+}
+
+<span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> [<span class="number">0u64</span>, <span class="number">567</span>, <span class="number">1023</span>].<span class="ident">iter</span>() {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gadget_tester</span> <span class="op">=</span> <span class="op">|</span><span class="ident">composer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StandardComposer</span><span class="op">|</span> {
+        <span class="comment">// We want to proof that we know the Scalar tied to the key Xusize</span>
+        <span class="comment">// and that indeed, it is inside the merkle tree.</span>
+
+        <span class="comment">// In this case, the key X corresponds to the Scalar(X).</span>
+        <span class="comment">// We&#39;re supposing that we&#39;re provided with a Kelvin::Branch to perform</span>
+        <span class="comment">// the proof.</span>
+        <span class="kw">let</span> <span class="ident">branch</span> <span class="op">=</span> <span class="ident">ptree</span>.<span class="ident">poseidon_branch</span>(<span class="kw-2">*</span><span class="ident">i</span>).<span class="ident">unwrap</span>().<span class="ident">unwrap</span>();
+
+        <span class="comment">// Get tree root.</span>
+        <span class="kw">let</span> <span class="ident">root</span> <span class="op">=</span> <span class="ident">ptree</span>.<span class="ident">root</span>().<span class="ident">unwrap</span>();
+
+        <span class="comment">// Add the proven leaf value to the Constraint System</span>
+        <span class="kw">let</span> <span class="ident">proven_leaf</span> <span class="op">=</span> <span class="ident">composer</span>.<span class="ident">add_input</span>(<span class="ident">BlsScalar</span>::<span class="ident">from</span>(<span class="kw-2">*</span><span class="ident">i</span>));
+
+        <span class="ident">merkle_opening_gadget</span>(<span class="ident">composer</span>, <span class="ident">branch</span>, <span class="ident">proven_leaf</span>, <span class="ident">root</span>);
+
+        <span class="comment">// Since we don&#39;t use all of the wires, we set some dummy constraints to avoid Committing</span>
+        <span class="comment">// to zero polynomials.</span>
+        <span class="ident">composer</span>.<span class="ident">add_dummy_constraints</span>();
+    };
+
+    <span class="comment">// Proving</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prover</span> <span class="op">=</span> <span class="ident">Prover</span>::<span class="ident">new</span>(<span class="string">b&quot;merkle_opening_tester&quot;</span>);
+    <span class="ident">gadget_tester</span>(<span class="ident">prover</span>.<span class="ident">mut_cs</span>());
+    <span class="ident">prover</span>.<span class="ident">preprocess</span>(<span class="kw-2">&amp;</span><span class="ident">ck</span>).<span class="ident">expect</span>(<span class="string">&quot;Error on preprocessing&quot;</span>);
+    <span class="kw">let</span> <span class="ident">proof</span> <span class="op">=</span> <span class="ident">prover</span>.<span class="ident">prove</span>(<span class="kw-2">&amp;</span><span class="ident">ck</span>).<span class="ident">expect</span>(<span class="string">&quot;Error on proving&quot;</span>);
+
+    <span class="comment">// Verify</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">verifier</span> <span class="op">=</span> <span class="ident">Verifier</span>::<span class="ident">new</span>(<span class="string">b&quot;merkle_opening_tester&quot;</span>);
+    <span class="ident">gadget_tester</span>(<span class="ident">verifier</span>.<span class="ident">mut_cs</span>());
+    <span class="ident">verifier</span>.<span class="ident">preprocess</span>(<span class="kw-2">&amp;</span><span class="ident">ck</span>).<span class="ident">expect</span>(<span class="string">&quot;Error on preprocessing&quot;</span>);
+    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">verifier</span>
+        .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">proof</span>, <span class="kw-2">&amp;</span><span class="ident">vk</span>, <span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">BlsScalar</span>::<span class="ident">zero</span>()])
+        .<span class="ident">is_ok</span>());
+}</pre></div>
+<h3 id="standard-merkle-opening-proof-example" class="section-header"><a href="#standard-merkle-opening-proof-example">Standard Merkle Opening Proof example:</a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">poseidon252</span>::{<span class="ident">StorageScalar</span>, <span class="ident">PoseidonAnnotation</span>};
+<span class="kw">use</span> <span class="ident">poseidon252</span>::<span class="ident">merkle_proof</span>::<span class="ident">merkle_opening_scalar_verification</span>;
+<span class="kw">use</span> <span class="ident">dusk_plonk</span>::<span class="ident">bls12_381</span>::<span class="ident">Scalar</span> <span class="kw">as</span> <span class="ident">BlsScalar</span>;
+<span class="kw">use</span> <span class="ident">kelvin</span>::{<span class="ident">Blake2b</span>, <span class="ident">Compound</span>};
+<span class="kw">use</span> <span class="ident">poseidon252</span>::<span class="ident">PoseidonTree</span>;
+
+ <span class="comment">// Generate a tree with random scalars inside.</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ptree</span>: <span class="ident">PoseidonTree</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Blake2b</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">PoseidonTree</span>::<span class="ident">new</span>(<span class="number">17</span>);
+<span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">1024u64</span> {
+    <span class="ident">ptree</span>
+        .<span class="ident">push</span>(<span class="ident">StorageScalar</span>(<span class="ident">BlsScalar</span>::<span class="ident">from</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u64</span>)))
+        .<span class="ident">unwrap</span>();
+}
+
+<span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">1024u64</span> {
+    <span class="comment">// We want to proof that we know the Scalar tied to the key Xusize</span>
+    <span class="comment">// and that indeed, it is inside the merkle tree.</span>
+
+    <span class="comment">// In this case, the key X corresponds to the Scalar(X).</span>
+    <span class="comment">// We&#39;re supposing that we&#39;re provided with a Kelvin::Branch to perform</span>
+    <span class="comment">// the proof.</span>
+    <span class="kw">let</span> <span class="ident">branch</span> <span class="op">=</span> <span class="ident">ptree</span>.<span class="ident">poseidon_branch</span>(<span class="ident">i</span>).<span class="ident">unwrap</span>().<span class="ident">unwrap</span>();
+
+    <span class="comment">// Get tree root.</span>
+    <span class="kw">let</span> <span class="ident">root</span> <span class="op">=</span> <span class="ident">ptree</span>.<span class="ident">root</span>().<span class="ident">unwrap</span>();
+
+    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">merkle_opening_scalar_verification</span>(
+        <span class="ident">branch</span>,
+        <span class="ident">root</span>,
+        <span class="ident">BlsScalar</span>::<span class="ident">from</span>(<span class="ident">i</span>),
+    ));
+}</pre></div>
+<h2 id="documentation" class="section-header"><a href="#documentation">Documentation</a></h2>
+<p>This crate contains info about all of the functions that the library provides as well as the
+documentation regarding the data structures that it exports. To check it, please feel free to go to
+the <a href="https://dusk-network.github.io/Poseidon252/poseidon252/index.html">documentation page</a></p>
+<h2 id="licensing" class="section-header"><a href="#licensing">Licensing</a></h2>
+<p>This code is licensed under Mozilla Public License Version 2.0 (MPL-2.0). Please see <a href="https://github.com/dusk-network/plonk/blob/master/LICENSE">LICENSE</a> for further info.</p>
+<h2 id="about" class="section-header"><a href="#about">About</a></h2>
+<p>Implementation designed by the <a href="https://dusk.network">dusk</a> team.</p>
+<h2 id="contributing" class="section-header"><a href="#contributing">Contributing</a></h2>
+<ul>
+<li>If you want to contribute to this repository/project please, check <a href="https://github.com/dusk-network/Poseidon252/blob/master/CONTRIBUTING.md">CONTRIBUTING.md</a></li>
+<li>If you want to report a bug or request a new feature addition, please open an issue on this repository.</li>
+</ul>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Re-exports</a></h2>
+<table><tr><td><code>pub use tree::<a class="struct" href="../poseidon252/tree/struct.PoseidonTree.html" title="struct poseidon252::tree::PoseidonTree">PoseidonTree</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr class='module-item'><td><a class="mod" href="encrypt/index.html" title='poseidon252::encrypt mod'>encrypt</a></td><td class='docblock-short'><p>Provides an encrypt and decrypt functionality</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="merkle_lvl_hash/index.html" title='poseidon252::merkle_lvl_hash mod'>merkle_lvl_hash</a></td><td class='docblock-short'><p>Reference implementation for the Poseidon Merkle hash function
+Poseidon hash implementation</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="merkle_proof/index.html" title='poseidon252::merkle_proof mod'>merkle_proof</a></td><td class='docblock-short'><p>Reference implementation for the gadget that builds a merkle opening proof</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="sponge/index.html" title='poseidon252::sponge mod'>sponge</a></td><td class='docblock-short'><p>Reference implementation for the Poseidon Sponge hash function</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="tree/index.html" title='poseidon252::tree mod'>tree</a></td><td class='docblock-short'><p>The module handling posedion-trees</p>
+</td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table><tr class='module-item'><td><a class="struct" href="struct.PoseidonAnnotation.html" title='poseidon252::PoseidonAnnotation struct'>PoseidonAnnotation</a></td><td class='docblock-short'><p>The annotation for the Notes tree is a storagescalar
+and a cardinality</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.PoseidonBranch.html" title='poseidon252::PoseidonBranch struct'>PoseidonBranch</a></td><td class='docblock-short'><p>The <code>Poseidon</code> structure will accept a number of inputs equal to the arity.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.PoseidonLevel.html" title='poseidon252::PoseidonLevel struct'>PoseidonLevel</a></td><td class='docblock-short'><p>Represents a Merkle-Tree Level inside of a <code>PoseidonBranch</code>.
+It stores the leaves as <code>BlsScalar</code> and the offset which represents
+the position on the level where the hash of the previous <code>PoseidonLevel</code>
+is stored in.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.StorageScalar.html" title='poseidon252::StorageScalar struct'>StorageScalar</a></td><td class='docblock-short'><p>This struct is a Wrapper type over the bls12-381 <code>Scalar</code> which has implemented
+inside the logic to allows <code>Kelvin</code> Merkle Trees understand how to store <code>Scalar</code>s
+inside of their leaves.</p>
+</td></tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table><tr class='module-item'><td><a class="constant" href="constant.ARITY.html" title='poseidon252::ARITY constant'>ARITY</a></td><td class='docblock-short'><p>Maximum arity supported for trees.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../";window.currentCrate = "poseidon252";</script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>

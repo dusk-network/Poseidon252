@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["EncryptedData","Encapsulates an encrypted data"]]});

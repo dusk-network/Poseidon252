@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["poseidon252"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/convert/trait.Into.html\" title=\"trait core::convert::Into\">Into</a>&lt;Scalar&gt; for <a class=\"struct\" href=\"poseidon252/struct.StorageScalar.html\" title=\"struct poseidon252::StorageScalar\">StorageScalar</a>","synthetic":false,"types":["poseidon252::hashing_utils::scalar_storage::StorageScalar"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
