@@ -7,18 +7,16 @@ authors = [
 edition = "2018"
 
 [dependencies]
-dusk-bls12_381 = "0.1"
 kelvin = "0.18"
 nstack = "0.4"
 lazy_static = "1.3.0"
-hades252 = { git = "https://github.com/dusk-network/hades252", version = "0.5.0" }
-dusk-plonk = {version = "0.1", features = ["trace-print"]}
+hades252 = { git = "https://github.com/dusk-network/hades252", version = "0.6.0" }
+dusk-plonk = {version = "0.2.0", features = ["trace-print"]}
 rand = "0.7"
 
 [dev-dependencies]
 rand_core = "0.5"
 criterion = "0.3"
-merlin = "2"
 
 [profile.dev]
 opt-level = 3

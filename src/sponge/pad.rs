@@ -1,7 +1,12 @@
 //! Padding support for sponge hash
 //!
 
-pub(crate) fn pad<T>(messages: &[T], width: usize, pad_value: T, eom_value: T) -> Vec<T>
+pub(crate) fn pad<T>(
+    messages: &[T],
+    width: usize,
+    pad_value: T,
+    eom_value: T,
+) -> Vec<T>
 where
     T: Clone,
 {
@@ -31,16 +36,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dusk_bls12_381::Scalar;
-    use dusk_plonk::constraint_system::StandardComposer;
+    use dusk_plonk::prelude::*;
 
     #[test]
     fn test_scalar_padding_width_3() {
-        let padder = Scalar::zero();
-        let eom = Scalar::one();
-        let two = Scalar::from(2u64);
-        let three = Scalar::from(3u64);
-        let four = Scalar::from(4u64);
+        let padder = BlsScalar::zero();
+        let eom = BlsScalar::one();
+        let two = BlsScalar::from(2u64);
+        let three = BlsScalar::from(3u64);
+        let four = BlsScalar::from(4u64);
 
         assert_eq!(&pad(&[two], 3, padder, eom), &[padder, two, eom]);
         assert_eq!(
@@ -55,11 +59,11 @@ mod tests {
 
     #[test]
     fn test_scalar_padding_width_4() {
-        let padder = Scalar::zero();
-        let eom = Scalar::one();
-        let two = Scalar::from(2u64);
-        let three = Scalar::from(3u64);
-        let four = Scalar::from(4u64);
+        let padder = BlsScalar::zero();
+        let eom = BlsScalar::one();
+        let two = BlsScalar::from(2u64);
+        let three = BlsScalar::from(3u64);
+        let four = BlsScalar::from(4u64);
 
         assert_eq!(&pad(&[two], 4, padder, eom), &[padder, two, eom, padder]);
         assert_eq!(
@@ -75,11 +79,11 @@ mod tests {
     #[test]
     fn test_variable_padding() {
         let mut composer = StandardComposer::new();
-        let padder = composer.add_input(Scalar::zero());
-        let eom = composer.add_input(Scalar::one());
-        let two = composer.add_input(Scalar::from(2u64));
-        let three = composer.add_input(Scalar::from(3u64));
-        let four = composer.add_input(Scalar::from(4u64));
+        let padder = composer.add_input(BlsScalar::zero());
+        let eom = composer.add_input(BlsScalar::one());
+        let two = composer.add_input(BlsScalar::from(2u64));
+        let three = composer.add_input(BlsScalar::from(3u64));
+        let four = composer.add_input(BlsScalar::from(4u64));
 
         assert_eq!(&pad(&[two], 3, padder, eom), &[padder, two, eom]);
         assert_eq!(
