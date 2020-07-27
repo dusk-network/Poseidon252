@@ -184,6 +184,29 @@ pub mod tests {
     }
 
     #[test]
+    fn poseidon_encrypt_single_bit() {
+        let (_, secret, nonce) = gen();
+        let message = Scalar::random(&mut rand::thread_rng());
+
+        let cipher = EncryptedData::encrypt(&[message], &secret, &nonce);
+        let decrypt = cipher.decrypt(&secret, &nonce).unwrap();
+
+        assert_eq!(message, decrypt[0]);
+    }
+
+    #[test]
+    fn poseidon_encrypt_overflow() {
+        let (_, secret, nonce) = gen();
+        let message =
+            [Scalar::random(&mut rand::thread_rng()); MESSAGE_BITS + 1];
+
+        let cipher = EncryptedData::encrypt(&message, &secret, &nonce);
+        let decrypt = cipher.decrypt(&secret, &nonce).unwrap();
+
+        assert_eq!(message[0..MESSAGE_BITS], decrypt);
+    }
+
+    #[test]
     fn poseidon_encrypt_fail() {
         let (message, secret, nonce) = gen();
 
