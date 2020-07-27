@@ -4,30 +4,101 @@ use hades252::{ScalarStrategy, Strategy, WIDTH};
 
 use std::io;
 
+/// Maximum number of scalars allowed per message
+pub const MESSAGE_CAPACITY: usize = 2;
+
 /// Number of scalars used in a cipher
-pub const CIPHER_SIZE: usize = 5;
+pub const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 
-/// Bytes consumed on serialization of the encrypted data
-pub const ENCRYPTED_DATA_SIZE: usize = 32 * CIPHER_SIZE;
-
-/// Maximum number of bits accepted by the encrypt function
-pub const MESSAGE_SCALARS: usize = CIPHER_SIZE - 1;
-
-const LENGTH: [u64; 4] = [2u64, 0, 0, 0];
-const DOMAIN: [u64; 4] = [0x100000000u64, 0, 0, 0];
+/// Bytes consumed on serialization of the poseidon cipher
+pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 
 /// Encapsulates an encrypted data
 ///
 /// This implementation is optimized for a message containing 2 scalars
+///
+/// # Examples
+/// ```
+/// use dusk_jubjub::{dhke, ExtendedPoint, Fr, GENERATOR};
+/// use dusk_plonk::prelude::BlsScalar;
+/// use poseidon252::cipher::{PoseidonCipher, MESSAGE_CAPACITY};
+/// use rand::RngCore;
+///
+/// use std::ops::Mul;
+///
+/// fn main() {
+///     let mut rng = rand::thread_rng();
+///
+///     // Generate a secret and a public key for Bob
+///     let mut bob_secret = [0u8; 64];
+///     rng.fill_bytes(&mut bob_secret);
+///     let bob_secret = Fr::from_bytes_wide(&bob_secret);
+///     let bob_public = GENERATOR.to_niels().mul(&bob_secret);
+///
+///     // Generate a secret and a public key for Alice
+///     let mut alice_secret = [0u8; 64];
+///     rng.fill_bytes(&mut alice_secret);
+///     let alice_secret = Fr::from_bytes_wide(&alice_secret);
+///     let alice_public = GENERATOR.to_niels().mul(&alice_secret);
+///
+///     // Generate a secret message
+///     let a = BlsScalar::random(&mut rng);
+///     let b = BlsScalar::random(&mut rng);
+///     let message = [a, b];
+///
+///     // Bob's view (sender)
+///     // The cipher and nonce are safe to be broadcasted publicly
+///     let (cipher, nonce) = sender(&bob_secret, &alice_public, &message);
+///
+///     // Alice's view (receiver)
+///     let decrypted_message =
+///         receiver(&alice_secret, &bob_public, &cipher, &nonce);
+///
+///     // Successful communication
+///     assert_eq!(decrypted_message, message);
+/// }
+///
+/// fn sender(
+///     sender_secret: &Fr,
+///     receiver_public: &ExtendedPoint,
+///     message: &[BlsScalar],
+/// ) -> (PoseidonCipher, BlsScalar) {
+///     // Use the Diffie-Hellman protocol to generate a shared secret
+///     let shared_secret = dhke(sender_secret, receiver_public);
+///
+///     // Generate a random nonce that will be public
+///     let nonce = BlsScalar::random(&mut rand::thread_rng());
+///
+///     // Encrypt the message
+///     let cipher = PoseidonCipher::encrypt(&message, &shared_secret, &nonce);
+///
+///     (cipher, nonce)
+/// }
+///
+/// fn receiver(
+///     receiver_secret: &Fr,
+///     sender_public: &ExtendedPoint,
+///     cipher: &PoseidonCipher,
+///     nonce: &BlsScalar,
+/// ) -> [BlsScalar; MESSAGE_CAPACITY] {
+///     // Use the Diffie-Hellman protocol to generate a shared secret
+///     let shared_secret = dhke(receiver_secret, sender_public);
+///
+///     // Decrypt the message
+///     cipher
+///         .decrypt(&shared_secret, &nonce)
+///         .expect("Failed to decrypt!")
+/// }
+/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub struct PoseidonCipher {
     cipher: [BlsScalar; CIPHER_SIZE],
 }
 
 impl PoseidonCipher {
-    /// Encrypt a pair m0 and m1 provided a secret pair and a nonce
+    /// Encrypt a slice of scalars into an internal cipher representation
     ///
-    /// The message size will be truncated to [`MESSAGE_SCALARS`] bits
+    /// The message size will be truncated to [`MESSAGE_CAPACITY`] bits
     pub fn encrypt(
         message: &[BlsScalar],
         secret: &AffinePoint,
@@ -37,16 +108,12 @@ impl PoseidonCipher {
         let mut strategy = ScalarStrategy::new();
         let mut rng = rand::thread_rng();
 
-        let mut state = PoseidonCipher::initial_state(
-            secret.get_x(),
-            secret.get_y(),
-            *nonce,
-        );
         let mut cipher = [zero; CIPHER_SIZE];
+        let mut state = PoseidonCipher::initial_state(secret, *nonce);
 
         strategy.perm(&mut state);
 
-        (0..MESSAGE_SCALARS).for_each(|i| {
+        (0..MESSAGE_CAPACITY).for_each(|i| {
             state[i + 1] += if i < message.len() {
                 message[i]
             } else {
@@ -57,38 +124,35 @@ impl PoseidonCipher {
         });
 
         strategy.perm(&mut state);
-        cipher[MESSAGE_SCALARS] = state[1];
+        cipher[MESSAGE_CAPACITY] = state[1];
 
         Self { cipher }
     }
 
-    /// Decrypt a previously encrypted message, provided the shared secret and nonce
-    /// used for encryption. If the decryption is not successful, `None` is returned
+    /// Perform the decrypt of a previously encrypted message.
+    ///
+    /// Will return `None` if the decryption fails.
     pub fn decrypt(
         &self,
         secret: &AffinePoint,
         nonce: &BlsScalar,
-    ) -> Option<[BlsScalar; MESSAGE_SCALARS]> {
+    ) -> Option<[BlsScalar; MESSAGE_CAPACITY]> {
         let zero = BlsScalar::zero();
         let mut strategy = ScalarStrategy::new();
 
-        let mut state = PoseidonCipher::initial_state(
-            secret.get_x(),
-            secret.get_y(),
-            *nonce,
-        );
-        let mut message = [zero; MESSAGE_SCALARS];
+        let mut message = [zero; MESSAGE_CAPACITY];
+        let mut state = PoseidonCipher::initial_state(secret, *nonce);
 
         strategy.perm(&mut state);
 
-        (0..4).for_each(|i| {
+        (0..MESSAGE_CAPACITY).for_each(|i| {
             message[i] = self.cipher[i] - state[i + 1];
             state[i + 1] = self.cipher[i];
         });
 
         strategy.perm(&mut state);
 
-        if self.cipher[4] == state[1] {
+        if self.cipher[MESSAGE_CAPACITY] == state[1] {
             Some(message)
         } else {
             None
@@ -96,15 +160,16 @@ impl PoseidonCipher {
     }
 
     fn initial_state(
-        ks0: BlsScalar,
-        ks1: BlsScalar,
+        secret: &AffinePoint,
         nonce: BlsScalar,
     ) -> [BlsScalar; WIDTH] {
         [
-            BlsScalar::from_raw(DOMAIN),
-            BlsScalar::from_raw(LENGTH),
-            ks0,
-            ks1,
+            // Domain
+            BlsScalar::from_raw([0x100000000u64, 0, 0, 0]),
+            // Length
+            BlsScalar::from_raw([2u64, 0, 0, 0]),
+            secret.get_x(),
+            secret.get_y(),
             nonce,
         ]
     }
@@ -112,7 +177,7 @@ impl PoseidonCipher {
 
 impl io::Write for PoseidonCipher {
     fn write(&mut self, buf: &[u8]) -> Result<usize, io::Error> {
-        if buf.len() < CIPHER_SIZE * 32 {
+        if buf.len() < ENCRYPTED_DATA_SIZE {
             return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
         }
 
@@ -140,7 +205,7 @@ impl io::Write for PoseidonCipher {
 
 impl io::Read for PoseidonCipher {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
-        if buf.len() < CIPHER_SIZE * 32 {
+        if buf.len() < ENCRYPTED_DATA_SIZE {
             return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
         }
 
@@ -154,22 +219,23 @@ impl io::Read for PoseidonCipher {
 
 #[cfg(test)]
 pub mod tests {
-    use super::{PoseidonCipher, ENCRYPTED_DATA_SIZE, MESSAGE_SCALARS};
+    use super::{
+        PoseidonCipher, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
+    };
     use dusk_jubjub::{AffinePoint, Fr, GENERATOR};
     use dusk_plonk::prelude::BlsScalar;
+    use hades252::WIDTH;
     use rand::RngCore;
     use std::io::{Read, Write};
     use std::ops::Mul;
 
-    fn gen() -> ([BlsScalar; MESSAGE_SCALARS], AffinePoint, BlsScalar) {
+    fn gen() -> ([BlsScalar; MESSAGE_CAPACITY], AffinePoint, BlsScalar) {
         let mut rng = rand::thread_rng();
 
-        let message = [
-            BlsScalar::random(&mut rng),
-            BlsScalar::random(&mut rng),
-            BlsScalar::random(&mut rng),
-            BlsScalar::random(&mut rng),
-        ];
+        let mut message = [BlsScalar::zero(); MESSAGE_CAPACITY];
+        message
+            .iter_mut()
+            .for_each(|m| *m = BlsScalar::random(&mut rng));
 
         let mut secret = [0u8; 64];
         rng.fill_bytes(&mut secret);
@@ -182,7 +248,16 @@ pub mod tests {
     }
 
     #[test]
-    fn poseidon_encrypt() {
+    fn sanity() {
+        // The secret is always a pair with nonce, so the message capacity should be at least 2
+        assert!(MESSAGE_CAPACITY > 1);
+
+        // The hades permutation cannot be performed if the cipher is bigger than hades width
+        assert!(WIDTH >= CIPHER_SIZE);
+    }
+
+    #[test]
+    fn encrypt() {
         let (message, secret, nonce) = gen();
 
         let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
@@ -192,7 +267,7 @@ pub mod tests {
     }
 
     #[test]
-    fn poseidon_encrypt_single_bit() {
+    fn single_bit() {
         let (_, secret, nonce) = gen();
         let message = BlsScalar::random(&mut rand::thread_rng());
 
@@ -203,19 +278,19 @@ pub mod tests {
     }
 
     #[test]
-    fn poseidon_encrypt_overflow() {
+    fn overflow() {
         let (_, secret, nonce) = gen();
         let message =
-            [BlsScalar::random(&mut rand::thread_rng()); MESSAGE_SCALARS + 1];
+            [BlsScalar::random(&mut rand::thread_rng()); MESSAGE_CAPACITY + 1];
 
         let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
         let decrypt = cipher.decrypt(&secret, &nonce).unwrap();
 
-        assert_eq!(message[0..MESSAGE_SCALARS], decrypt);
+        assert_eq!(message[0..MESSAGE_CAPACITY], decrypt);
     }
 
     #[test]
-    fn poseidon_encrypt_fail() {
+    fn wrong_key_fail() {
         let (message, secret, nonce) = gen();
         let (_, wrong_secret, _) = gen();
 
@@ -224,7 +299,7 @@ pub mod tests {
     }
 
     #[test]
-    fn poseidon_serialize_encrypt() {
+    fn serialization() {
         let (message, secret, nonce) = gen();
 
         let mut cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
