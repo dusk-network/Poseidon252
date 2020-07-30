@@ -1,5 +1,5 @@
 use dusk_plonk::jubjub::AffinePoint;
-use dusk_plonk::prelude::BlsScalar;
+use dusk_plonk::prelude::*;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
 
 use std::io;
@@ -20,7 +20,7 @@ pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 /// # Examples
 /// ```
 /// use dusk_plonk::jubjub::{dhke, ExtendedPoint, GENERATOR};
-/// use dusk_plonk::prelude::{BlsScalar, JubJubScalar};
+/// use dusk_plonk::prelude::*;
 /// use poseidon252::cipher::{PoseidonCipher, MESSAGE_CAPACITY};
 ///
 /// use std::ops::Mul;
@@ -232,7 +232,7 @@ pub mod tests {
         PoseidonCipher, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
     };
     use dusk_plonk::jubjub::{AffinePoint, Fr, GENERATOR};
-    use dusk_plonk::prelude::BlsScalar;
+    use dusk_plonk::prelude::*;
     use hades252::WIDTH;
     use rand::RngCore;
     use std::io::{Read, Write};
