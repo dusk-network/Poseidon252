@@ -1,4 +1,4 @@
-use dusk_jubjub::AffinePoint;
+use dusk_plonk::jubjub::AffinePoint;
 use dusk_plonk::prelude::BlsScalar;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
 
@@ -19,10 +19,9 @@ pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 ///
 /// # Examples
 /// ```
-/// use dusk_jubjub::{dhke, ExtendedPoint, Fr, GENERATOR};
-/// use dusk_plonk::prelude::BlsScalar;
+/// use dusk_plonk::jubjub::{dhke, ExtendedPoint, GENERATOR};
+/// use dusk_plonk::prelude::{BlsScalar, JubJubScalar};
 /// use poseidon252::cipher::{PoseidonCipher, MESSAGE_CAPACITY};
-/// use rand::RngCore;
 ///
 /// use std::ops::Mul;
 ///
@@ -30,15 +29,11 @@ pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 ///     let mut rng = rand::thread_rng();
 ///
 ///     // Generate a secret and a public key for Bob
-///     let mut bob_secret = [0u8; 64];
-///     rng.fill_bytes(&mut bob_secret);
-///     let bob_secret = Fr::from_bytes_wide(&bob_secret);
+///     let bob_secret = JubJubScalar::random(&mut rng);
 ///     let bob_public = GENERATOR.to_niels().mul(&bob_secret);
 ///
 ///     // Generate a secret and a public key for Alice
-///     let mut alice_secret = [0u8; 64];
-///     rng.fill_bytes(&mut alice_secret);
-///     let alice_secret = Fr::from_bytes_wide(&alice_secret);
+///     let alice_secret = JubJubScalar::random(&mut rng);
 ///     let alice_public = GENERATOR.to_niels().mul(&alice_secret);
 ///
 ///     // Generate a secret message
@@ -59,7 +54,7 @@ pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 /// }
 ///
 /// fn sender(
-///     sender_secret: &Fr,
+///     sender_secret: &JubJubScalar,
 ///     receiver_public: &ExtendedPoint,
 ///     message: &[BlsScalar],
 /// ) -> (PoseidonCipher, BlsScalar) {
@@ -76,7 +71,7 @@ pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 /// }
 ///
 /// fn receiver(
-///     receiver_secret: &Fr,
+///     receiver_secret: &JubJubScalar,
 ///     sender_public: &ExtendedPoint,
 ///     cipher: &PoseidonCipher,
 ///     nonce: &BlsScalar,
@@ -90,12 +85,27 @@ pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 ///         .expect("Failed to decrypt!")
 /// }
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default)]
 pub struct PoseidonCipher {
     cipher: [BlsScalar; CIPHER_SIZE],
 }
 
 impl PoseidonCipher {
+    /// [`PoseidonCipher`] constructor
+    pub fn new(cipher: [BlsScalar; CIPHER_SIZE]) -> Self {
+        Self { cipher }
+    }
+
+    /// Maximum number of scalars allowed per message
+    pub fn capacity() -> usize {
+        MESSAGE_CAPACITY
+    }
+
+    /// Bytes consumed on serialization of the poseidon cipher
+    pub fn serialized_size() -> usize {
+        ENCRYPTED_DATA_SIZE
+    }
+
     /// Encrypt a slice of scalars into an internal cipher representation
     ///
     /// The message size will be truncated to [`MESSAGE_CAPACITY`] bits
@@ -106,7 +116,6 @@ impl PoseidonCipher {
     ) -> Self {
         let zero = BlsScalar::zero();
         let mut strategy = ScalarStrategy::new();
-        let mut rng = rand::thread_rng();
 
         let mut cipher = [zero; CIPHER_SIZE];
         let mut state = PoseidonCipher::initial_state(secret, *nonce);
@@ -117,7 +126,7 @@ impl PoseidonCipher {
             state[i + 1] += if i < message.len() {
                 message[i]
             } else {
-                BlsScalar::random(&mut rng)
+                BlsScalar::random(&mut rand::thread_rng())
             };
 
             cipher[i] = state[i + 1];
@@ -126,7 +135,7 @@ impl PoseidonCipher {
         strategy.perm(&mut state);
         cipher[MESSAGE_CAPACITY] = state[1];
 
-        Self { cipher }
+        PoseidonCipher::new(cipher)
     }
 
     /// Perform the decrypt of a previously encrypted message.
@@ -209,10 +218,10 @@ impl io::Read for PoseidonCipher {
             return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
         }
 
-        self.cipher.iter_mut().try_fold(0usize, |mut n, x| {
-            n += (&mut x.to_bytes().as_ref()).read(&mut buf[n..n + 32])?;
+        self.cipher.iter_mut().try_fold(0usize, |n, x| {
+            let s = (&mut x.to_bytes().as_ref()).read(&mut buf[n..n + 32])?;
 
-            Ok(n)
+            Ok(n + s)
         })
     }
 }
@@ -222,7 +231,7 @@ pub mod tests {
     use super::{
         PoseidonCipher, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
     };
-    use dusk_jubjub::{AffinePoint, Fr, GENERATOR};
+    use dusk_plonk::jubjub::{AffinePoint, Fr, GENERATOR};
     use dusk_plonk::prelude::BlsScalar;
     use hades252::WIDTH;
     use rand::RngCore;
@@ -251,6 +260,9 @@ pub mod tests {
     fn sanity() {
         // The secret is always a pair with nonce, so the message capacity should be at least 2
         assert!(MESSAGE_CAPACITY > 1);
+
+        // The cipher size only makes sense to be `capacity + 1`
+        assert_eq!(CIPHER_SIZE, MESSAGE_CAPACITY + 1);
 
         // The hades permutation cannot be performed if the cipher is bigger than hades width
         assert!(WIDTH >= CIPHER_SIZE);
@@ -305,10 +317,13 @@ pub mod tests {
         let mut cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
 
         let mut bytes = vec![0u8; ENCRYPTED_DATA_SIZE];
-        cipher.read(bytes.as_mut_slice()).unwrap();
+
+        let n = cipher.read(bytes.as_mut_slice()).unwrap();
+        assert_eq!(n, PoseidonCipher::serialized_size());
 
         let mut deser_cipher = PoseidonCipher::default();
-        deser_cipher.write(bytes.as_slice()).unwrap();
+        let n = deser_cipher.write(bytes.as_slice()).unwrap();
+        assert_eq!(n, PoseidonCipher::serialized_size());
 
         assert_eq!(cipher, deser_cipher);
 
