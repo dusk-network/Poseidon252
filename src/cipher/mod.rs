@@ -13,6 +13,9 @@ pub const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 /// Bytes consumed on serialization of the poseidon cipher
 pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 
+/// Plonk gadget for Poseidon encryption
+pub mod gadget;
+
 /// Encapsulates an encrypted data
 ///
 /// This implementation is optimized for a message containing 2 scalars
@@ -126,7 +129,7 @@ impl PoseidonCipher {
             state[i + 1] += if i < message.len() {
                 message[i]
             } else {
-                BlsScalar::random(&mut rand::thread_rng())
+                BlsScalar::zero()
             };
 
             cipher[i] = state[i + 1];
@@ -168,7 +171,13 @@ impl PoseidonCipher {
         }
     }
 
-    fn initial_state(
+    /// Getter for the cipher
+    pub fn cipher(&self) -> &[BlsScalar; CIPHER_SIZE] {
+        &self.cipher
+    }
+
+    /// Returns the initial state of the encryption
+    pub fn initial_state(
         secret: &AffinePoint,
         nonce: BlsScalar,
     ) -> [BlsScalar; WIDTH] {
@@ -181,6 +190,22 @@ impl PoseidonCipher {
             secret.get_y(),
             nonce,
         ]
+    }
+
+    /// Returns the initial state of the encryption within a composer circuit
+    pub fn initial_state_circuit(
+        composer: &mut StandardComposer,
+        ks0: Variable,
+        ks1: Variable,
+        nonce: Variable,
+    ) -> [Variable; WIDTH] {
+        let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
+        let domain = composer.add_input(domain);
+
+        let length = BlsScalar::from_raw([2u64, 0, 0, 0]);
+        let length = composer.add_input(length);
+
+        [domain, length, ks0, ks1, nonce]
     }
 }
 
@@ -227,7 +252,7 @@ impl io::Read for PoseidonCipher {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::{
         PoseidonCipher, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
     };
