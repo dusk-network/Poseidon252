@@ -122,8 +122,9 @@
 //!     let mut verifier = Verifier::new(b"merkle_opening_tester");
 //!     gadget_tester(verifier.mut_cs());
 //!     verifier.preprocess(&ck).expect("Error on preprocessing");
+//!     let pi = verifier.mut_cs().public_inputs.clone();
 //!     assert!(verifier
-//!         .verify(&proof, &vk, &vec![BlsScalar::zero()])
+//!         .verify(&proof, &vk, &pi)
 //!         .is_ok());
 //! }
 //! ```

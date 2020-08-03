@@ -136,9 +136,6 @@ mod tests {
             BlsScalar::zero(),
             BlsScalar::zero(),
         );
-
-        composer.add_dummy_constraints();
-        composer.check_circuit_satisfied();
     }
 
     #[test]

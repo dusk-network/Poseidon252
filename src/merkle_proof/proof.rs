@@ -89,13 +89,7 @@ pub fn merkle_opening_gadget(
     // Add the last check regarding the last lvl-hash agains the tree root
     // which will be a Public Input. On this case, it is not possible to make any kind
     // of cheating on the Prover side by modifying the underlying `PoseidonBranch` data.
-    let root_var_announced = composer.add_input(proven_root);
-    composer.constrain_to_constant(
-        root_var_announced,
-        proven_root,
-        BlsScalar::zero(),
-    );
-    composer.assert_equal(root_var_announced, prev_lvl_hash);
+    composer.constrain_to_constant(prev_lvl_hash, BlsScalar::zero(), -proven_root);
 
     assert_eq!(branch.root, proven_root);
 }
@@ -244,8 +238,9 @@ mod tests {
             let mut verifier = Verifier::new(b"merkle_opening_tester");
             gadget_tester(verifier.mut_cs());
             verifier.preprocess(&ck).expect("Error on preprocessing");
+            let pi = verifier.mut_cs().public_inputs.clone();
             assert!(verifier
-                .verify(&proof, &vk, &vec![BlsScalar::zero()])
+                .verify(&proof, &vk, &pi)
                 .is_ok());
         }
 
