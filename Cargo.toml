@@ -10,7 +10,7 @@ edition = "2018"
 kelvin = "0.18"
 nstack = "0.4"
 lazy_static = "1.3.0"
-hades252 = { git = "https://github.com/dusk-network/hades252", version = "0.6.0" }
+hades252 = { git = "https://github.com/dusk-network/hades252", version = "0.6.1" }
 dusk-plonk = "0.2.6"
 
 [dev-dependencies]
