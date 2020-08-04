@@ -4,11 +4,6 @@ use dusk_plonk::prelude::*;
 use hades252::{GadgetStrategy, Strategy};
 
 /// Return a cipher provided the PoseidonCipher encryption parameters
-///
-/// ks0 and ks1 are the x and y coordinates of the shared secret
-///
-/// After the stabilization of `ecc::scalar_mul`, the gadget should receive
-/// a PointScalar instead of ks0 and ks1
 pub fn poseidon_cipher_gadget(
     composer: &mut StandardComposer,
     shared_secret: &Point,
