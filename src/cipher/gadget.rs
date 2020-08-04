@@ -1,4 +1,5 @@
 use super::{PoseidonCipher, CIPHER_SIZE, MESSAGE_CAPACITY};
+use dusk_plonk::constraint_system::ecc::Point;
 use dusk_plonk::prelude::*;
 use hades252::{GadgetStrategy, Strategy};
 
@@ -10,12 +11,14 @@ use hades252::{GadgetStrategy, Strategy};
 /// a PointScalar instead of ks0 and ks1
 pub fn poseidon_cipher_gadget(
     composer: &mut StandardComposer,
-    ks0: Variable,
-    ks1: Variable,
+    shared_secret: &Point,
     nonce: Variable,
     message: &[Variable],
 ) -> [Variable; CIPHER_SIZE] {
     let zero = composer.add_input(BlsScalar::zero());
+
+    let ks0 = *shared_secret.x();
+    let ks1 = *shared_secret.y();
 
     let mut cipher = [zero; CIPHER_SIZE];
     let mut state =
@@ -86,19 +89,12 @@ mod tests {
                        message: &[BlsScalar],
                        cipher: &[BlsScalar]| {
             let zero = composer.add_input(BlsScalar::zero());
-            let shared_secret = dhke(&secret, &public);
-
             let nonce = composer.add_input(nonce);
 
-            // ecc::scalar_mul is currently unstable.
-            //let secret = composer.add_input((secret).into());
-            //let shared_secret = dusk_plonk::constraint_system::ecc::scalar_mul(
-            //    composer, secret, public,
-            //);
-            //let ks0 = *shared_secret.point().x();
-            //let ks1 = *shared_secret.point().y();
-            let ks0 = composer.add_input(shared_secret.get_x());
-            let ks1 = composer.add_input(shared_secret.get_y());
+            let secret = composer.add_input((secret).into());
+            let shared_secret = dusk_plonk::constraint_system::ecc::scalar_mul(
+                composer, secret, public,
+            );
 
             let mut m = [zero; MESSAGE_CAPACITY];
             message.iter().zip(m.iter_mut()).for_each(|(m, v)| {
@@ -106,8 +102,12 @@ mod tests {
             });
             let message = m;
 
-            let cipher_gadget =
-                poseidon_cipher_gadget(composer, ks0, ks1, nonce, &message);
+            let cipher_gadget = poseidon_cipher_gadget(
+                composer,
+                shared_secret.point(),
+                nonce,
+                &message,
+            );
 
             cipher.iter().zip(cipher_gadget.iter()).for_each(|(c, g)| {
                 let x = composer.add_input(*c);
@@ -132,10 +132,13 @@ mod tests {
         let proof = prover.prove(&ck).expect("Error in proof generation stage");
 
         let mut verifier = Verifier::new(label);
+
+        // TODO - https://github.com/dusk-network/plonk/issues/276
+        // After this issue is fixed, should receive bob_public
         circuit(
             verifier.mut_cs(),
             JubJubScalar::zero(),
-            bob_public,
+            alice_public,
             nonce,
             &[BlsScalar::zero(); MESSAGE_CAPACITY],
             cipher.cipher(),
