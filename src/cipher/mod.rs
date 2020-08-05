@@ -14,7 +14,7 @@ pub const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 
 /// Plonk gadget for Poseidon encryption
-pub mod gadget;
+pub mod zk;
 
 /// Encapsulates an encrypted data
 ///
