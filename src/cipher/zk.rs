@@ -10,7 +10,7 @@ pub fn poseidon_cipher_gadget(
     nonce: Variable,
     message: &[Variable],
 ) -> [Variable; CIPHER_SIZE] {
-    let zero = composer.add_input(BlsScalar::zero());
+    let zero = composer.add_constant_witness(BlsScalar::zero());
 
     let ks0 = *shared_secret.x();
     let ks1 = *shared_secret.y();
@@ -83,7 +83,7 @@ mod tests {
                        nonce: BlsScalar,
                        message: &[BlsScalar],
                        cipher: &[BlsScalar]| {
-            let zero = composer.add_input(BlsScalar::zero());
+            let zero = composer.add_constant_witness(BlsScalar::zero());
             let nonce = composer.add_input(nonce);
 
             let secret = composer.add_input((secret).into());
@@ -108,8 +108,6 @@ mod tests {
                 let x = composer.add_input(*c);
                 composer.assert_equal(x, *g);
             });
-
-            composer.add_dummy_constraints();
         };
 
         let mut prover = Prover::new(label);
