@@ -182,10 +182,10 @@ impl PoseidonCipher {
         nonce: BlsScalar,
     ) -> [BlsScalar; WIDTH] {
         [
-            // Domain
+            // Domain - Maximum plaintext length of the elements of Fq, as defined in the paper
             BlsScalar::from_raw([0x100000000u64, 0, 0, 0]),
-            // Length
-            BlsScalar::from_raw([2u64, 0, 0, 0]),
+            // The size of the message is constant because any absent input is replaced by zero
+            BlsScalar::from_raw([MESSAGE_CAPACITY as u64, 0, 0, 0]),
             secret.get_x(),
             secret.get_y(),
             nonce,
@@ -200,10 +200,10 @@ impl PoseidonCipher {
         nonce: Variable,
     ) -> [Variable; WIDTH] {
         let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
-        let domain = composer.add_input(domain);
+        let domain = composer.add_constant_witness(domain);
 
-        let length = BlsScalar::from_raw([2u64, 0, 0, 0]);
-        let length = composer.add_input(length);
+        let length = BlsScalar::from_raw([MESSAGE_CAPACITY as u64, 0, 0, 0]);
+        let length = composer.add_constant_witness(length);
 
         [domain, length, ks0, ks1, nonce]
     }
