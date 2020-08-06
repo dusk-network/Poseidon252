@@ -1,6 +1,7 @@
 use super::{
     PoseidonCipher, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
 };
+use anyhow::Result;
 use dusk_plonk::jubjub::{AffinePoint, Fr, GENERATOR};
 use dusk_plonk::prelude::*;
 use hades252::WIDTH;
@@ -39,36 +40,42 @@ fn sanity() {
 }
 
 #[test]
-fn encrypt() {
+fn encrypt() -> Result<()> {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
-    let decrypt = cipher.decrypt(&secret, &nonce).unwrap();
+    let decrypt = cipher.decrypt(&secret, &nonce)?;
 
     assert_eq!(message, decrypt);
+
+    Ok(())
 }
 
 #[test]
-fn single_bit() {
+fn single_bit() -> Result<()> {
     let (_, secret, nonce) = gen();
     let message = BlsScalar::random(&mut rand::thread_rng());
 
     let cipher = PoseidonCipher::encrypt(&[message], &secret, &nonce);
-    let decrypt = cipher.decrypt(&secret, &nonce).unwrap();
+    let decrypt = cipher.decrypt(&secret, &nonce)?;
 
     assert_eq!(message, decrypt[0]);
+
+    Ok(())
 }
 
 #[test]
-fn overflow() {
+fn overflow() -> Result<()> {
     let (_, secret, nonce) = gen();
     let message =
         [BlsScalar::random(&mut rand::thread_rng()); MESSAGE_CAPACITY + 1];
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
-    let decrypt = cipher.decrypt(&secret, &nonce).unwrap();
+    let decrypt = cipher.decrypt(&secret, &nonce)?;
 
     assert_eq!(message[0..MESSAGE_CAPACITY], decrypt);
+
+    Ok(())
 }
 
 #[test]
@@ -81,23 +88,25 @@ fn wrong_key_fail() {
 }
 
 #[test]
-fn serialization() {
+fn serialization() -> Result<()> {
     let (message, secret, nonce) = gen();
 
     let mut cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
 
     let mut bytes = vec![0u8; ENCRYPTED_DATA_SIZE];
 
-    let n = cipher.read(bytes.as_mut_slice()).unwrap();
+    let n = cipher.read(bytes.as_mut_slice())?;
     assert_eq!(n, PoseidonCipher::serialized_size());
 
     let mut deser_cipher = PoseidonCipher::default();
-    let n = deser_cipher.write(bytes.as_slice()).unwrap();
+    let n = deser_cipher.write(bytes.as_slice())?;
     assert_eq!(n, PoseidonCipher::serialized_size());
 
     assert_eq!(cipher, deser_cipher);
 
-    let decrypt = deser_cipher.decrypt(&secret, &nonce).unwrap();
+    let decrypt = deser_cipher.decrypt(&secret, &nonce)?;
 
     assert_eq!(message, decrypt);
+
+    Ok(())
 }

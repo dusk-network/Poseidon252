@@ -43,12 +43,13 @@ pub fn poseidon_cipher_gadget(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::Result;
     use dusk_plonk::jubjub::{dhke, ExtendedPoint, GENERATOR};
 
     use std::ops::Mul;
 
     #[test]
-    fn gadget() {
+    fn gadget() -> Result<()> {
         let mut rng = rand::thread_rng();
 
         // Generate a secret and a public key for Bob
@@ -119,10 +120,8 @@ mod tests {
             &message,
             cipher.cipher(),
         );
-        prover
-            .preprocess(&ck)
-            .expect("Error on preprocessing stage");
-        let proof = prover.prove(&ck).expect("Error in proof generation stage");
+        prover.preprocess(&ck).unwrap();
+        let proof = prover.prove(&ck).unwrap();
 
         let mut verifier = Verifier::new(label);
 
@@ -136,12 +135,12 @@ mod tests {
             &[BlsScalar::zero(); MESSAGE_CAPACITY],
             cipher.cipher(),
         );
-        verifier
-            .preprocess(&ck)
-            .expect("Error on preprocessing stage");
+        verifier.preprocess(&ck).unwrap();
 
         assert!(verifier
             .verify(&proof, &vk, &vec![BlsScalar::zero()])
-            .is_ok())
+            .is_ok());
+
+        Ok(())
     }
 }
