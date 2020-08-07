@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
-## [0.6.0] - 06-08-20
+## [0.6.0] - 07-08-20
 
 ### Changed
 - Use `dusk-plonk v0.2.0` as dependency.
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Constrain `eom` in sponge_hash function.
 
-### Implemented
+### Added
 - Poseidon cipher encryption, decryption and plonk gadget for zk prove of encryption with a key.
 
 
