@@ -6,12 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [0.6.0] - 06-08-20
+
 ### Changed
 - Use `dusk-plonk v0.2.0` as dependency.
 - Refactor the tests related to Proof generation to work with the Prover&Verifier abstraction.
 
 ### Fixed
 - Constrain `eom` in sponge_hash function.
+
+### Implemented
+- Poseidon cipher encryption, decryption and plonk gadget for zk prove of encryption with a key.
 
 
 ## [0.5.0] - 07-07-20
