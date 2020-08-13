@@ -69,7 +69,7 @@
 //!
 //! ### Zero Knowledge Merkle Opening Proof example:
 //!
-//! ```rust
+//! ```rust,no_run
 //! use poseidon252::{StorageScalar, PoseidonAnnotation};
 //! use poseidon252::merkle_proof::merkle_opening_gadget;
 //! use dusk_plonk::prelude::*;
@@ -79,8 +79,8 @@
 //!
 //! // Generate Composer & Public Parameters
 //! let pub_params =
-//!     PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
-//! let (ck, vk) = pub_params.trim(1 << 16).unwrap();
+//!     PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
+//! let (ck, vk) = pub_params.trim(1 << 16)?;
 //! // Generate a tree with random scalars inside.
 //! let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
 //! for i in 0..1024u64 {
@@ -115,13 +115,13 @@
 //!     // Proving
 //!     let mut prover = Prover::new(b"merkle_opening_tester");
 //!     gadget_tester(prover.mut_cs());
-//!     prover.preprocess(&ck).expect("Error on preprocessing");
-//!     let proof = prover.prove(&ck).expect("Error on proving");
+//!     prover.preprocess(&ck)?;
+//!     let proof = prover.prove(&ck)?;
 //!
 //!     // Verify
 //!     let mut verifier = Verifier::new(b"merkle_opening_tester");
 //!     gadget_tester(verifier.mut_cs());
-//!     verifier.preprocess(&ck).expect("Error on preprocessing");
+//!     verifier.preprocess(&ck)?;
 //!     let pi = verifier.mut_cs().public_inputs.clone();
 //!     assert!(verifier
 //!         .verify(&proof, &vk, &pi)
@@ -131,7 +131,7 @@
 //!
 //!
 //! ### Standard Merkle Opening Proof example:
-//! ```rust
+//! ```rust,no_run
 //! use poseidon252::{StorageScalar, PoseidonAnnotation};
 //! use poseidon252::merkle_proof::merkle_opening_scalar_verification;
 //! use dusk_plonk::bls12_381::Scalar as BlsScalar;

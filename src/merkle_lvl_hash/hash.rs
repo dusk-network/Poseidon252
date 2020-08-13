@@ -108,6 +108,7 @@ pub(crate) fn merkle_level_hash_gadget_without_bitflags(
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use anyhow::Result;
 
     fn gen_random_merkle_level() -> ([Option<BlsScalar>; ARITY], BlsScalar) {
         let mut input = [Some(BlsScalar::zero()); ARITY];
@@ -151,11 +152,11 @@ pub mod tests {
     }
 
     #[test]
-    fn test_merkle_level_gadget_bitflags() {
+    fn test_merkle_level_gadget_bitflags() -> Result<()> {
         // Gen Public Params and Keys.
         let pub_params =
-            PublicParameters::setup(1 << 12, &mut rand::thread_rng()).unwrap();
-        let (ck, vk) = pub_params.trim(1 << 11).unwrap();
+            PublicParameters::setup(1 << 12, &mut rand::thread_rng())?;
+        let (ck, vk) = pub_params.trim(1 << 11)?;
 
         // Generate input merkle level
         let (level_sacalars, expected_hash) = gen_random_merkle_level();
@@ -198,20 +199,14 @@ pub mod tests {
         // Proving
         let mut prover = Prover::new(b"merkle_gadget_tester");
         composer_fill(prover.mut_cs());
-        prover
-            .preprocess(&ck)
-            .expect("Error on preprocessing stage");
-        let proof = prover.prove(&ck).expect("Error in proof generation stage");
+        prover.preprocess(&ck)?;
+        let proof = prover.prove(&ck)?;
 
         // Verification
         let mut verifier = Verifier::new(b"merkle_gadget_tester");
         composer_fill(verifier.mut_cs());
-        verifier
-            .preprocess(&ck)
-            .expect("Error on preprocessing stage");
+        verifier.preprocess(&ck)?;
 
-        assert!(verifier
-            .verify(&proof, &vk, &vec![BlsScalar::zero()])
-            .is_ok())
+        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
     }
 }
