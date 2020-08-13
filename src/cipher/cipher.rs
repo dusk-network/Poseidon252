@@ -192,10 +192,10 @@ impl PoseidonCipher {
         nonce: Variable,
     ) -> [Variable; WIDTH] {
         let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
-        let domain = composer.add_constant_witness(domain);
+        let domain = composer.add_witness_to_circuit_description(domain);
 
         let length = BlsScalar::from_raw([MESSAGE_CAPACITY as u64, 0, 0, 0]);
-        let length = composer.add_constant_witness(length);
+        let length = composer.add_witness_to_circuit_description(length);
 
         [domain, length, ks0, ks1, nonce]
     }
