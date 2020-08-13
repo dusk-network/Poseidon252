@@ -8,8 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
-## [0.6.0] - 07-08-20
+## [0.6.1] - 13-08-20
+### Changed
+- `add_constant_witness` method replacement by `add_witness_to_circuit_description`.
+- Changed `dusk-plonk` version to `v0.2.7`.
+- Changed `Hades252` version to `v0.7.0`.
 
+## [0.6.0] - 07-08-20
 ### Changed
 - Use `dusk-plonk v0.2.0` as dependency.
 - Refactor the tests related to Proof generation to work with the Prover&Verifier abstraction.

@@ -113,13 +113,13 @@ for i in [0u64, 567, 1023].iter() {
     // Proving
     let mut prover = Prover::new(b"merkle_opening_tester");
     gadget_tester(prover.mut_cs());
-    prover.preprocess(&ck).expect("Error on preprocessing");
-    let proof = prover.prove(&ck).expect("Error on proving");
+    prover.preprocess(&ck)?;
+    let proof = prover.prove(&ck)?;
 
     // Verify
     let mut verifier = Verifier::new(b"merkle_opening_tester");
     gadget_tester(verifier.mut_cs());
-    verifier.preprocess(&ck).expect("Error on preprocessing");
+    verifier.preprocess(&ck)?;
     assert!(verifier
         .verify(&proof, &vk, &vec![BlsScalar::zero()])
         .is_ok());

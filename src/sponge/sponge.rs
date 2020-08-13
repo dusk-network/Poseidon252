@@ -88,7 +88,7 @@ pub fn sponge_hash_gadget(
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use anyhow::Result;
     const CAPACITY: usize = 1 << 12;
 
     fn poseidon_sponge_params(width: usize) -> (Vec<BlsScalar>, BlsScalar) {
@@ -139,11 +139,11 @@ mod tests {
     }
 
     #[test]
-    fn sponge_gadget_width_3() {
+    fn sponge_gadget_width_3() -> Result<()> {
         // Setup OG params.
         let public_parameters =
-            PublicParameters::setup(CAPACITY, &mut rand::thread_rng()).unwrap();
-        let (ck, vk) = public_parameters.trim(CAPACITY).unwrap();
+            PublicParameters::setup(CAPACITY, &mut rand::thread_rng())?;
+        let (ck, vk) = public_parameters.trim(CAPACITY)?;
 
         // Test with width = 3
 
@@ -151,24 +151,22 @@ mod tests {
         let (i, o) = poseidon_sponge_params(3usize);
         let mut prover = Prover::new(b"sponge_tester");
         sponge_gadget_tester(3usize, i.clone(), o, prover.mut_cs());
-        prover.preprocess(&ck).expect("Error on preprocessing");
-        let proof = prover.prove(&ck).expect("Error on proof generation");
+        prover.preprocess(&ck)?;
+        let proof = prover.prove(&ck)?;
 
         // Verify
         let mut verifier = Verifier::new(b"sponge_tester");
         sponge_gadget_tester(3usize, i, o, verifier.mut_cs());
-        verifier.preprocess(&ck).expect("Error on preprocessing");
-        assert!(verifier
-            .verify(&proof, &vk, &vec![BlsScalar::zero()])
-            .is_ok());
+        verifier.preprocess(&ck)?;
+        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
     }
 
     #[test]
-    fn sponge_gadget_hades_width() {
+    fn sponge_gadget_hades_width() -> Result<()> {
         // Setup OG params.
         let public_parameters =
-            PublicParameters::setup(CAPACITY, &mut rand::thread_rng()).unwrap();
-        let (ck, vk) = public_parameters.trim(CAPACITY).unwrap();
+            PublicParameters::setup(CAPACITY, &mut rand::thread_rng())?;
+        let (ck, vk) = public_parameters.trim(CAPACITY)?;
 
         // Test with width = 5
 
@@ -176,24 +174,22 @@ mod tests {
         let (i, o) = poseidon_sponge_params(WIDTH);
         let mut prover = Prover::new(b"sponge_tester");
         sponge_gadget_tester(WIDTH, i.clone(), o, prover.mut_cs());
-        prover.preprocess(&ck).expect("Error on preprocessing");
-        let proof = prover.prove(&ck).expect("Error on proof generation");
+        prover.preprocess(&ck)?;
+        let proof = prover.prove(&ck)?;
 
         // Verify
         let mut verifier = Verifier::new(b"sponge_tester");
         sponge_gadget_tester(WIDTH, i, o, verifier.mut_cs());
-        verifier.preprocess(&ck).expect("Error on preprocessing");
-        assert!(verifier
-            .verify(&proof, &vk, &vec![BlsScalar::zero()])
-            .is_ok());
+        verifier.preprocess(&ck)?;
+        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
     }
 
     #[test]
-    fn sponge_gadget_width_15() {
+    fn sponge_gadget_width_15() -> Result<()> {
         // Setup OG params.
         let public_parameters =
-            PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
-        let (ck, vk) = public_parameters.trim(1 << 17).unwrap();
+            PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
+        let (ck, vk) = public_parameters.trim(1 << 17)?;
 
         // Test with width = 15
 
@@ -201,15 +197,13 @@ mod tests {
         let (i, o) = poseidon_sponge_params(15usize);
         let mut prover = Prover::new(b"sponge_tester");
         sponge_gadget_tester(15usize, i.clone(), o, prover.mut_cs());
-        prover.preprocess(&ck).expect("Error on preprocessing");
-        let proof = prover.prove(&ck).expect("Error on proof generation");
+        prover.preprocess(&ck)?;
+        let proof = prover.prove(&ck)?;
 
         // Verify
         let mut verifier = Verifier::new(b"sponge_tester");
         sponge_gadget_tester(15usize, i, o, verifier.mut_cs());
-        verifier.preprocess(&ck).expect("Error on preprocessing");
-        assert!(verifier
-            .verify(&proof, &vk, &vec![BlsScalar::zero()])
-            .is_ok());
+        verifier.preprocess(&ck)?;
+        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
     }
 }

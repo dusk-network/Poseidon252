@@ -160,6 +160,7 @@ mod tests {
     use super::*;
     use crate::hashing_utils::scalar_storage::StorageScalar;
     use crate::PoseidonTree;
+    use anyhow::Result;
     use kelvin::Blake2b;
 
     #[test]
@@ -193,11 +194,11 @@ mod tests {
     }
 
     #[test]
-    fn zero_knowledge_merkle_proof() {
+    fn zero_knowledge_merkle_proof() -> Result<()> {
         // Generate Composer & Public Parameters
         let pub_params =
-            PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
-        let (ck, vk) = pub_params.trim(1 << 16).unwrap();
+            PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
+        let (ck, vk) = pub_params.trim(1 << 16)?;
         // Generate a tree with random scalars inside.
         let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
         for i in 0..1024u64 {
@@ -235,19 +236,20 @@ mod tests {
             // Proving
             let mut prover = Prover::new(b"merkle_opening_tester");
             gadget_tester(prover.mut_cs());
-            prover.preprocess(&ck).expect("Error on preprocessing");
-            let proof = prover.prove(&ck).expect("Error on proving");
+            prover.preprocess(&ck)?;
+            let proof = prover.prove(&ck)?;
 
             // Verify
             let mut verifier = Verifier::new(b"merkle_opening_tester");
             gadget_tester(verifier.mut_cs());
-            verifier.preprocess(&ck).expect("Error on preprocessing");
+            verifier.preprocess(&ck)?;
             let pi = verifier.mut_cs().public_inputs.clone();
             assert!(verifier.verify(&proof, &vk, &pi).is_ok());
         }
 
         // Assert that all the proofs are of the same size
         composer_sizes.dedup();
-        assert_eq!(composer_sizes.len(), 1)
+        assert_eq!(composer_sizes.len(), 1);
+        Ok(())
     }
 }
