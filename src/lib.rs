@@ -69,69 +69,72 @@
 //!
 //! ### Zero Knowledge Merkle Opening Proof example:
 //!
-//! ```rust,no_run
+//! ```no_run
 //! use poseidon252::{StorageScalar, PoseidonAnnotation};
 //! use poseidon252::merkle_proof::merkle_opening_gadget;
 //! use dusk_plonk::prelude::*;
 //! use poseidon252::PoseidonTree;
 //! use kelvin::{Blake2b, Compound};
+//! use anyhow::Result;
 //!
+//! fn main() -> Result<()> {
+//!  // Generate Composer & Public Parameters
+//!  let pub_params =
+//!      PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
+//!  let (ck, vk) = pub_params.trim(1 << 16)?;
+//!  // Generate a tree with random scalars inside.
+//!  let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
+//!  for i in 0..1024u64 {
+//!      ptree
+//!          .push(StorageScalar(BlsScalar::from(i as u64)))
+//!          .unwrap();
+//!  }
 //!
-//! // Generate Composer & Public Parameters
-//! let pub_params =
-//!     PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
-//! let (ck, vk) = pub_params.trim(1 << 16)?;
-//! // Generate a tree with random scalars inside.
-//! let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
-//! for i in 0..1024u64 {
-//!     ptree
-//!         .push(StorageScalar(BlsScalar::from(i as u64)))
-//!         .unwrap();
-//! }
+//!  for i in [0u64, 567, 1023].iter() {
+//!      let mut gadget_tester = |composer: &mut StandardComposer| {
+//!          // We want to proof that we know the Scalar tied to the key Xusize
+//!          // and that indeed, it is inside the merkle tree.
 //!
-//! for i in [0u64, 567, 1023].iter() {
-//!     let mut gadget_tester = |composer: &mut StandardComposer| {
-//!         // We want to proof that we know the Scalar tied to the key Xusize
-//!         // and that indeed, it is inside the merkle tree.
+//!          // In this case, the key X corresponds to the Scalar(X).
+//!          // We're supposing that we're provided with a Kelvin::Branch to perform
+//!          // the proof.
+//!          let branch = ptree.poseidon_branch(*i).unwrap().unwrap();
 //!
-//!         // In this case, the key X corresponds to the Scalar(X).
-//!         // We're supposing that we're provided with a Kelvin::Branch to perform
-//!         // the proof.
-//!         let branch = ptree.poseidon_branch(*i).unwrap().unwrap();
+//!          // Get tree root.
+//!          let root = ptree.root().unwrap();
 //!
-//!         // Get tree root.
-//!         let root = ptree.root().unwrap();
+//!          // Add the proven leaf value to the Constraint System
+//!          let proven_leaf = composer.add_input(BlsScalar::from(*i));
 //!
-//!         // Add the proven leaf value to the Constraint System
-//!         let proven_leaf = composer.add_input(BlsScalar::from(*i));
+//!          merkle_opening_gadget(composer, branch, proven_leaf, root);
 //!
-//!         merkle_opening_gadget(composer, branch, proven_leaf, root);
+//!          // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
+//!          // to zero polynomials.
+//!          composer.add_dummy_constraints();
+//!      };
 //!
-//!         // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
-//!         // to zero polynomials.
-//!         composer.add_dummy_constraints();
-//!     };
+//!      // Proving
+//!      let mut prover = Prover::new(b"merkle_opening_tester");
+//!      gadget_tester(prover.mut_cs());
+//!      prover.preprocess(&ck)?;
+//!      let proof = prover.prove(&ck)?;
 //!
-//!     // Proving
-//!     let mut prover = Prover::new(b"merkle_opening_tester");
-//!     gadget_tester(prover.mut_cs());
-//!     prover.preprocess(&ck)?;
-//!     let proof = prover.prove(&ck)?;
-//!
-//!     // Verify
-//!     let mut verifier = Verifier::new(b"merkle_opening_tester");
-//!     gadget_tester(verifier.mut_cs());
-//!     verifier.preprocess(&ck)?;
-//!     let pi = verifier.mut_cs().public_inputs.clone();
-//!     assert!(verifier
-//!         .verify(&proof, &vk, &pi)
-//!         .is_ok());
+//!      // Verify
+//!      let mut verifier = Verifier::new(b"merkle_opening_tester");
+//!      gadget_tester(verifier.mut_cs());
+//!      verifier.preprocess(&ck)?;
+//!      let pi = verifier.mut_cs().public_inputs.clone();
+//!      assert!(verifier
+//!          .verify(&proof, &vk, &pi)
+//!          .is_ok());
+//!  }
+//! Ok(())
 //! }
 //! ```
 //!
 //!
 //! ### Standard Merkle Opening Proof example:
-//! ```rust,no_run
+//! ```no_run
 //! use poseidon252::{StorageScalar, PoseidonAnnotation};
 //! use poseidon252::merkle_proof::merkle_opening_scalar_verification;
 //! use dusk_plonk::bls12_381::Scalar as BlsScalar;
