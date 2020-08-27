@@ -1,3 +1,5 @@
+// Copyright (c) DUSK NETWORK. All rights reserved.
+// Licensed under the MPL 2.0 license. See LICENSE file in the project root for details.”
 //! This module defines a Wrap-up over the dusk-bls12_381 to define it's kelvin
 //! storage traits
 

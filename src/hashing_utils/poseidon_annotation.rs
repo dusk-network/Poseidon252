@@ -1,3 +1,5 @@
+// Copyright (c) DUSK NETWORK. All rights reserved.
+// Licensed under the MPL 2.0 license. See LICENSE file in the project root for details.”
 //! Helpers for kelvin hashing & storing trait implementations
 use super::scalar_storage::StorageScalar;
 use crate::merkle_lvl_hash::hash;

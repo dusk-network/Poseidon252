@@ -1,3 +1,5 @@
+// Copyright (c) DUSK NETWORK. All rights reserved.
+// Licensed under the MPL 2.0 license. See LICENSE file in the project root for details.”
 //! Definitions of the merkle tree structure seen in Poseidon.
 use crate::hashing_utils::scalar_storage::StorageScalar;
 use crate::merkle_lvl_hash::hash;
