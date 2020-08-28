@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.6.2] - 27-08-20
+### Added
+- `PoseidonCipher` zk encrypt and decrypt functions.
+
 ## [0.6.1] - 13-08-20
 ### Changed
 - `add_constant_witness` method replacement by `add_witness_to_circuit_description`.
