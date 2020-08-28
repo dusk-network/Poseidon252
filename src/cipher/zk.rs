@@ -1,3 +1,5 @@
+// Copyright (c) DUSK NETWORK. All rights reserved.
+// Licensed under the MPL 2.0 license. See LICENSE file in the project root for details.”
 use super::{PoseidonCipher, CIPHER_SIZE, MESSAGE_CAPACITY};
 use dusk_plonk::constraint_system::ecc::Point;
 use dusk_plonk::prelude::*;
