@@ -41,6 +41,7 @@ pub fn sponge_hash(messages: &[BlsScalar]) -> BlsScalar {
     words[1]
 }
 
+
 /// The `hash` function takes an arbitrary number of plonk `Variable`s and returns the
 /// hash, using the `Hades` GadgetStragegy
 pub fn sponge_hash_gadget(
@@ -86,6 +87,41 @@ pub fn sponge_hash_gadget(
 
     words[1]
 }
+
+/// Takes in one BlsScalar and outputs 2. 
+/// This function is fixed.
+pub fn sponge_two_outputs(message: BlsScalar) -> [BlsScalar; 2] {
+    let mut strategy = ScalarStrategy::new();
+
+    // The value used to pad the words is zero.
+    let padder = BlsScalar::zero();
+    // One will identify the end of messages.
+    let eom = BlsScalar::one();
+
+    let mut words = pad(&[message], WIDTH, padder, eom);
+    // If the words len is less than the Hades252 permutation `WIDTH` we directly
+    // call the permutation saving useless additions by zero.
+    if words.len() == WIDTH {
+        strategy.perm(&mut words);
+        return [words[1], words[2]];
+    }
+    // If the words len is bigger than the Hades252 permutation `WIDTH` then we
+    // need to collapse the padded limbs. See bottom of pag. 16 of
+    // https://eprint.iacr.org/2019/458.pdf
+    words.chunks(WIDTH).fold(
+        vec![BlsScalar::zero(); WIDTH],
+        |mut inputs, values| {
+            let mut values = values.iter();
+            inputs
+                .iter_mut()
+                .for_each(|input| *input += values.next().unwrap());
+            strategy.perm(&mut inputs);
+            inputs
+        },
+    );
+    [words[1], words[2]]
+} 
+
 
 #[cfg(test)]
 mod tests {
@@ -208,4 +244,19 @@ mod tests {
         verifier.preprocess(&ck)?;
         verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
     }
+
+    #[test]
+    fn sponge_hash_two_outputs() {
+
+        let m = BlsScalar::random(&mut rand::thread_rng()); 
+        
+        let h = sponge_two_outputs(m); 
+        
+        assert_eq!(h.len(), 2);
+        assert_ne!(m, BlsScalar::zero());
+        assert_ne!(h[0], BlsScalar::zero());
+        assert_ne!(h[1], BlsScalar::zero());
+
+    }
+    
 }
