@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.6.3] - 01-09-20
+### Added
+- Fixed_len hashing tools with variable input and output scalars.
+
 ## [0.6.2] - 27-08-20
 ### Added
 - `PoseidonCipher` zk encrypt and decrypt functions.
