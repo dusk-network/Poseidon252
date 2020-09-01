@@ -200,6 +200,8 @@ pub mod merkle_lvl_hash;
 pub mod merkle_proof;
 /// Reference implementation for the Poseidon Sponge hash function
 pub mod sponge;
+/// Module containing a fixed-length Poseidon hash implementation
+pub mod perm_uses;
 
 /// The module handling posedion-trees
 pub mod tree;

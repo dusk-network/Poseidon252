@@ -41,6 +41,7 @@ pub fn sponge_hash(messages: &[BlsScalar]) -> BlsScalar {
     words[1]
 }
 
+
 /// The `hash` function takes an arbitrary number of plonk `Variable`s and returns the
 /// hash, using the `Hades` GadgetStragegy
 pub fn sponge_hash_gadget(
@@ -86,6 +87,7 @@ pub fn sponge_hash_gadget(
 
     words[1]
 }
+
 
 #[cfg(test)]
 mod tests {
