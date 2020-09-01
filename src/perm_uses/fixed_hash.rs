@@ -48,7 +48,7 @@ mod tests {
     use super::*;
     
     #[test]
-    fn sponge_hash_two_outputs() {
+    fn hash_two_outputs() {
         let m = BlsScalar::random(&mut rand::thread_rng()); 
         
         let h = two_outputs(m); 
