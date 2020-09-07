@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `PoseidonCipher` from/to bytes.
 
 ## [0.6.3] - 01-09-20
 ### Added

@@ -112,3 +112,21 @@ fn serialization() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn bytes() -> Result<()> {
+    let (message, secret, nonce) = gen();
+
+    let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
+
+    let bytes = cipher.to_bytes();
+    let restored_cipher = PoseidonCipher::from_bytes(&bytes).unwrap();
+
+    assert_eq!(cipher, restored_cipher);
+
+    let decrypt = restored_cipher.decrypt(&secret, &nonce)?;
+
+    assert_eq!(message, decrypt);
+
+    Ok(())
+}

@@ -4,7 +4,9 @@ use dusk_plonk::jubjub::AffinePoint;
 use dusk_plonk::prelude::*;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
 
-use super::{CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY};
+use super::{
+    CIPHER_BYTES_SIZE, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
+};
 
 use std::io;
 
@@ -91,6 +93,44 @@ impl PoseidonCipher {
     /// [`PoseidonCipher`] constructor
     pub fn new(cipher: [BlsScalar; CIPHER_SIZE]) -> Self {
         Self { cipher }
+    }
+
+    /// Convert the instance to a bytes representation
+    pub fn to_bytes(&self) -> [u8; CIPHER_BYTES_SIZE] {
+        let mut bytes = [0u8; CIPHER_BYTES_SIZE];
+
+        self.cipher.iter().enumerate().for_each(|(i, c)| {
+            let n = i * 32;
+            bytes[n..n + 32].copy_from_slice(&c.to_bytes());
+        });
+
+        bytes
+    }
+
+    /// Create an instance from a previous `PoseidonCipher::to_bytes` function
+    pub fn from_bytes(bytes: &[u8; CIPHER_BYTES_SIZE]) -> Option<Self> {
+        let mut cipher: [Option<BlsScalar>; CIPHER_SIZE] = [None; CIPHER_SIZE];
+        let mut b = [0u8; 32];
+
+        cipher.iter_mut().enumerate().for_each(|(i, c)| {
+            let n = i * 32;
+            b.copy_from_slice(&bytes[n..n + 32]);
+
+            let s = BlsScalar::from_bytes(&b);
+            if s.is_some().into() {
+                c.replace(s.unwrap());
+            }
+        });
+
+        let mut scalars = [BlsScalar::zero(); CIPHER_SIZE];
+        for (c, s) in cipher.iter().zip(scalars.iter_mut()) {
+            match c {
+                Some(c) => *s = *c,
+                None => return None,
+            }
+        }
+
+        Some(PoseidonCipher::new(scalars))
     }
 
     /// Maximum number of scalars allowed per message
