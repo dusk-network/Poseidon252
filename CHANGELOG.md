@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 23-09-20
+### Changed
+- Removed PI constraint from `merkle_opening_gadget` to implement
+`CircuitBuilder` trait.
+- Use `nstack 0.5.0`
+
+
 ## [0.6.4] - 07-09-20
 ### Added
 - `PoseidonCipher` from/to bytes.
