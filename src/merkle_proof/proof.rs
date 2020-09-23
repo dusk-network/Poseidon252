@@ -14,17 +14,16 @@ use hades252::WIDTH;
 ///
 /// `branch_length` controls how much padding should be added to the branch to make it the correct length.
 ///
-/// NOTE: The root of the `Branch` (root of the Merkle tree) will be set as Public Input so we
-/// can re-use the circuits that rely on this gadget.
+/// NOTE: The gadget will return as a `Variable` the latest hash performed which should match the root
+/// of the tree. You SHOULD constrain it to the root right after the execution of this gadget.
 pub fn merkle_opening_gadget(
     composer: &mut StandardComposer,
     branch: PoseidonBranch,
     proven_leaf: Variable,
     proven_root: BlsScalar,
-) {
+) -> Variable {
     // Generate and constraint zero.
-    let zero = composer.add_input(BlsScalar::zero());
-    composer.constrain_to_constant(zero, BlsScalar::zero(), BlsScalar::zero());
+    let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
     // Allocate space for each level Variables that will be generated.
     let mut lvl_vars = [zero; WIDTH];
     // Allocate space for the last level computed hash as a variable to compare
@@ -87,17 +86,8 @@ pub fn merkle_opening_gadget(
         prev_lvl_hash =
             merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
     });
-
-    // Add the last check regarding the last lvl-hash agains the tree root
-    // which will be a Public Input. On this case, it is not possible to make any kind
-    // of cheating on the Prover side by modifying the underlying `PoseidonBranch` data.
-    composer.constrain_to_constant(
-        prev_lvl_hash,
-        BlsScalar::zero(),
-        -proven_root,
-    );
-
     assert_eq!(branch.root, proven_root);
+    prev_lvl_hash
 }
 
 /// Provided a `PoseidonBranch` and a Merkle Tree root, verify that
@@ -227,11 +217,20 @@ mod tests {
                 // Add the proven leaf value to the Constraint System
                 let proven_leaf = composer.add_input(BlsScalar::from(*i));
 
-                merkle_opening_gadget(composer, branch, proven_leaf, root);
+                let hashed_root =
+                    merkle_opening_gadget(composer, branch, proven_leaf, root);
+
+                // Add the last check regarding the last lvl-hash agains the tree root
+                // which will be a Public Input. On this case, it is not possible to make any kind
+                // of cheating on the Prover side by modifying the underlying `PoseidonBranch` data.
+                composer.constrain_to_constant(
+                    hashed_root,
+                    BlsScalar::zero(),
+                    -root,
+                );
 
                 // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
                 // to zero polynomials.
-                composer.add_dummy_constraints();
                 composer_sizes.push(composer.circuit_size());
             };
 
