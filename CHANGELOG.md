@@ -7,12 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.8.0] - 29-09-20
+### Changed
+- Use `dusk-plonk` `v0.2.11`
+- Use `hades252 0.8.0`
+
 ## [0.7.0] - 23-09-20
 ### Changed
 - Removed PI constraint from `merkle_opening_gadget` to implement
 `CircuitBuilder` trait.
 - Use `nstack 0.5.0`
-
 
 ## [0.6.4] - 07-09-20
 ### Added
