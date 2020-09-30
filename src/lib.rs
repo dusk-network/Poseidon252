@@ -85,7 +85,7 @@
 //!      PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
 //!  let (ck, vk) = pub_params.trim(1 << 16)?;
 //!  // Generate a tree with random scalars inside.
-//!  let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
+//!  let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> = PoseidonTree::new(17);
 //!  for i in 0..1024u64 {
 //!      ptree
 //!          .push(StorageScalar(BlsScalar::from(i as u64)))
@@ -144,7 +144,7 @@
 //! use poseidon252::PoseidonTree;
 //!
 //!  // Generate a tree with random scalars inside.
-//! let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
+//! let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> = PoseidonTree::new(17);
 //! for i in 0..1024u64 {
 //!     ptree
 //!         .push(StorageScalar(BlsScalar::from(i as u64)))
@@ -198,10 +198,10 @@ mod hashing_utils;
 pub mod merkle_lvl_hash;
 /// Reference implementation for the gadget that builds a merkle opening proof
 pub mod merkle_proof;
-/// Reference implementation for the Poseidon Sponge hash function
-pub mod sponge;
 /// Module containing a fixed-length Poseidon hash implementation
 pub mod perm_uses;
+/// Reference implementation for the Poseidon Sponge hash function
+pub mod sponge;
 
 /// The module handling posedion-trees
 pub mod tree;

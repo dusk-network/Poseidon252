@@ -1,13 +1,12 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 // Licensed under the MPL 2.0 license. See LICENSE file in the project root for details.”
+
+use std::borrow::Borrow;
 use std::io;
 
 use dusk_plonk::bls12_381::Scalar as BlsScalar;
-use kelvin::{
-    annotation,
-    annotations::{Cardinality, Count},
-    Branch, BranchMut, ByteHash, Compound, Content, Sink, Source,
-};
+use kelvin::annotations::{Cardinality, Combine, Count};
+use kelvin::{Branch, BranchMut, ByteHash, Compound, Content, Sink, Source};
 use nstack::NStack;
 
 use crate::merkle_lvl_hash::hash::*;
@@ -15,30 +14,35 @@ use crate::merkle_proof::poseidon_branch::extend_scalar;
 use crate::ARITY;
 use crate::{PoseidonBranch, PoseidonLevel, StorageScalar};
 
-annotation! {
-    /// The annotation for the PoseidonTree
-    pub struct PoseidonAnnotation {
-        scalar: StorageScalar,
-        count: Cardinality<u64>,
-    }
-}
-
 /// A zk-friendly datastructure to store elements
-pub struct PoseidonTree<T, H>
+///
+/// The annotation `AsRef<BlsScalar>` is expected to return the root of the tree
+pub struct PoseidonTree<T, A, H>
 where
     T: Content<H>,
+    T: Clone,
     for<'a> &'a T: Into<StorageScalar>,
     H: ByteHash,
+    for<'a> A: From<&'a T>,
+    A: Content<H>,
+    A: Combine<A>,
+    A: Borrow<Cardinality<u64>>,
+    A: Borrow<StorageScalar>,
 {
     branch_depth: u16,
-    inner: NStack<T, PoseidonAnnotation, H>,
+    inner: NStack<T, A, H>,
 }
 
-impl<T, H> Clone for PoseidonTree<T, H>
+impl<T, A, H> Clone for PoseidonTree<T, A, H>
 where
     T: Content<H>,
     for<'a> &'a T: Into<StorageScalar>,
     H: ByteHash,
+    for<'a> A: From<&'a T>,
+    A: Content<H>,
+    A: Combine<A>,
+    A: Borrow<Cardinality<u64>>,
+    A: Borrow<StorageScalar>,
 {
     fn clone(&self) -> Self {
         PoseidonTree {
@@ -48,11 +52,16 @@ where
     }
 }
 
-impl<T, H> Content<H> for PoseidonTree<T, H>
+impl<T, A, H> Content<H> for PoseidonTree<T, A, H>
 where
     T: Content<H>,
     for<'a> &'a T: Into<StorageScalar>,
     H: ByteHash,
+    for<'a> A: From<&'a T>,
+    A: Content<H>,
+    A: Combine<A>,
+    A: Borrow<Cardinality<u64>>,
+    A: Borrow<StorageScalar>,
 {
     fn persist(&mut self, sink: &mut Sink<H>) -> io::Result<()> {
         self.branch_depth.persist(sink)?;
@@ -67,11 +76,16 @@ where
     }
 }
 
-impl<T, H> PoseidonTree<T, H>
+impl<T, A, H> PoseidonTree<T, A, H>
 where
     T: Content<H>,
     for<'a> &'a T: Into<StorageScalar>,
     H: ByteHash,
+    for<'a> A: From<&'a T>,
+    A: Content<H>,
+    A: Combine<A>,
+    A: Borrow<Cardinality<u64>>,
+    A: Borrow<StorageScalar>,
 {
     /// Constructs a new empty PoseidonTree
     pub fn new(depth: usize) -> Self {
@@ -130,7 +144,7 @@ where
     pub fn get(
         &self,
         idx: u64,
-    ) -> io::Result<Option<Branch<NStack<T, PoseidonAnnotation, H>, H>>> {
+    ) -> io::Result<Option<Branch<NStack<T, A, H>, H>>> {
         self.inner.get(idx)
     }
 
@@ -138,8 +152,7 @@ where
     pub fn get_mut(
         &mut self,
         idx: u64,
-    ) -> io::Result<Option<BranchMut<NStack<T, PoseidonAnnotation, H>, H>>>
-    {
+    ) -> io::Result<Option<BranchMut<NStack<T, A, H>, H>>> {
         self.inner.get_mut(idx)
     }
 }
@@ -147,11 +160,12 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::PoseidonAnnotation;
     use kelvin::Blake2b;
 
     #[test]
     fn insert() {
-        let mut tree = PoseidonTree::<_, Blake2b>::new(17);
+        let mut tree = PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
 
         for i in 0..128u64 {
             let idx = tree.push(StorageScalar::from(i)).unwrap();

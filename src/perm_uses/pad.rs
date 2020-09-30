@@ -3,13 +3,9 @@
 //! Padding support for Poseidon hash
 //!
 
-// Padding function for a singular scalar input 
+// Padding function for a singular scalar input
 // to provide two outputs from a Poseidon hash
-pub fn pad_fixed_hash <T>(
-    capacity: T,
-    message: T,
-    pad_value: T,
-) -> Vec<T>
+pub fn pad_fixed_hash<T>(capacity: T, message: T, pad_value: T) -> Vec<T>
 where
     T: Clone,
 {
