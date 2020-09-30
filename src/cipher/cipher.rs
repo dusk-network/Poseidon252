@@ -16,12 +16,12 @@ use std::io;
 
 pub use super::CipherError;
 
+/// ```ignore
 /// Encapsulates an encrypted data
 ///
 /// This implementation is optimized for a message containing 2 scalars
 ///
 /// # Examples
-/// ```
 /// use dusk_plonk::jubjub::{dhke, ExtendedPoint, GENERATOR};
 /// use dusk_plonk::prelude::*;
 /// use poseidon252::cipher::{PoseidonCipher, MESSAGE_CAPACITY};
