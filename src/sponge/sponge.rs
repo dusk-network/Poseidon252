@@ -27,7 +27,7 @@ pub fn sponge_hash(messages: &[BlsScalar]) -> BlsScalar {
     // If the words len is bigger than the Hades252 permutation `WIDTH` then we
     // need to collapse the padded limbs. See bottom of pag. 16 of
     // https://eprint.iacr.org/2019/458.pdf
-    words.chunks(WIDTH).fold(
+    let words = words.chunks(WIDTH).fold(
         vec![BlsScalar::zero(); WIDTH],
         |mut inputs, values| {
             let mut values = values.iter();
@@ -38,6 +38,7 @@ pub fn sponge_hash(messages: &[BlsScalar]) -> BlsScalar {
             inputs
         },
     );
+
     words[1]
 }
 
@@ -67,22 +68,23 @@ pub fn sponge_hash_gadget(
     // If the words len is bigger than the Hades252 permutation `WIDTH` then we
     // need to collapse the padded limbs. See bottom of pag. 16 of
     // https://eprint.iacr.org/2019/458.pdf
-    words
-        .chunks(WIDTH)
-        .fold(vec![padder; WIDTH], |mut inputs, values| {
-            let mut values = values.iter();
-            inputs.iter_mut().for_each(|input| {
-                *input = composer.add(
-                    (BlsScalar::one(), *input),
-                    (BlsScalar::one(), *values.next().unwrap()),
-                    BlsScalar::zero(),
-                    BlsScalar::zero(),
-                )
+    let words =
+        words
+            .chunks(WIDTH)
+            .fold(vec![padder; WIDTH], |mut inputs, values| {
+                let mut values = values.iter();
+                inputs.iter_mut().for_each(|input| {
+                    *input = composer.add(
+                        (BlsScalar::one(), *input),
+                        (BlsScalar::one(), *values.next().unwrap()),
+                        BlsScalar::zero(),
+                        BlsScalar::zero(),
+                    )
+                });
+                let mut strategy = GadgetStrategy::new(composer);
+                strategy.perm(&mut inputs);
+                inputs
             });
-            let mut strategy = GadgetStrategy::new(composer);
-            strategy.perm(&mut inputs);
-            inputs
-        });
 
     words[1]
 }
