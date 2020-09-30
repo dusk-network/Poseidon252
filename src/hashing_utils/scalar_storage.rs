@@ -9,7 +9,7 @@ use std::borrow::Borrow;
 use std::io;
 use std::io::Read;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// This struct is a Wrapper type over the bls12-381 `Scalar` which has implemented
 /// inside the logic to allows `Kelvin` Merkle Trees understand how to store `Scalar`s
 /// inside of their leaves.
