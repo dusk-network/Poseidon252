@@ -1,5 +1,9 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
 // Copyright (c) DUSK NETWORK. All rights reserved.
-// Licensed under the MPL 2.0 license. See LICENSE file in the project root for details.”
+
 use dusk_plonk::jubjub::AffinePoint;
 use dusk_plonk::prelude::*;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
@@ -12,12 +16,12 @@ use std::io;
 
 pub use super::CipherError;
 
+/// ```ignore
 /// Encapsulates an encrypted data
 ///
 /// This implementation is optimized for a message containing 2 scalars
 ///
 /// # Examples
-/// ```
 /// use dusk_plonk::jubjub::{dhke, ExtendedPoint, GENERATOR};
 /// use dusk_plonk::prelude::*;
 /// use poseidon252::cipher::{PoseidonCipher, MESSAGE_CAPACITY};
