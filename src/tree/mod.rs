@@ -158,6 +158,16 @@ where
     ) -> io::Result<Option<BranchMut<NStack<T, A, H>, H>>> {
         self.inner.get_mut(idx)
     }
+
+    /// Reference to the NStack inner implementation
+    pub fn inner(&self) -> &NStack<T, A, H> {
+        &self.inner
+    }
+
+    /// Mutable reference to the NStack inner implementation
+    pub fn inner_mut(&mut self) -> &mut NStack<T, A, H> {
+        &mut self.inner
+    }
 }
 
 #[cfg(test)]

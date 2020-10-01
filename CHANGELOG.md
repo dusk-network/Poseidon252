@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 01-10-20
+### Changed
+- Implement `inner` and `inner_mut` methods on PoseidonTree
 
 ## [0.8.0] - 29-09-20
 ### Changed
