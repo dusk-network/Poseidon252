@@ -5,4 +5,4 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 //! Poseidon hash implementation
-pub(crate) mod hash;
+pub mod hash;

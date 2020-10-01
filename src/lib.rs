@@ -89,7 +89,7 @@
 //!      PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
 //!  let (ck, vk) = pub_params.trim(1 << 16)?;
 //!  // Generate a tree with random scalars inside.
-//!  let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
+//!  let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> = PoseidonTree::new(17);
 //!  for i in 0..1024u64 {
 //!      ptree
 //!          .push(StorageScalar(BlsScalar::from(i as u64)))
@@ -148,7 +148,7 @@
 //! use poseidon252::PoseidonTree;
 //!
 //!  // Generate a tree with random scalars inside.
-//! let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
+//! let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> = PoseidonTree::new(17);
 //! for i in 0..1024u64 {
 //!     ptree
 //!         .push(StorageScalar(BlsScalar::from(i as u64)))

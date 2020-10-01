@@ -155,14 +155,15 @@ pub fn merkle_opening_scalar_verification(
 mod tests {
     use super::*;
     use crate::hashing_utils::scalar_storage::StorageScalar;
-    use crate::PoseidonTree;
+    use crate::{PoseidonAnnotation, PoseidonTree};
     use anyhow::Result;
     use kelvin::Blake2b;
 
     #[test]
     fn scalar_merkle_proof() {
         // Generate a tree with random scalars inside.
-        let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
+        let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> =
+            PoseidonTree::new(17);
         for i in 0..1024u64 {
             ptree
                 .push(StorageScalar(BlsScalar::from(i as u64)))
@@ -196,7 +197,8 @@ mod tests {
             PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
         let (ck, vk) = pub_params.trim(1 << 16)?;
         // Generate a tree with random scalars inside.
-        let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
+        let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> =
+            PoseidonTree::new(17);
         for i in 0..1024u64 {
             ptree
                 .push(StorageScalar(BlsScalar::from(i as u64)))
