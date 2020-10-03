@@ -9,7 +9,9 @@ use std::io;
 
 use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use kelvin::annotations::{Cardinality, Combine, Count};
-use kelvin::{Branch, BranchMut, ByteHash, Compound, Content, Sink, Source};
+use kelvin::{
+    Branch, BranchMut, ByteHash, Compound, Content, Method, Sink, Source,
+};
 use nstack::NStack;
 
 use crate::merkle_lvl_hash::hash::*;
@@ -167,6 +169,84 @@ where
     /// Mutable reference to the NStack inner implementation
     pub fn inner_mut(&mut self) -> &mut NStack<T, A, H> {
         &mut self.inner
+    }
+
+    /// Perform a filtered iteration over the tree
+    pub fn iter_filtered<M: Method<NStack<T, A, H>, H>>(
+        &self,
+        filter: M,
+    ) -> io::Result<PoseidonTreeIterator<T, A, H, M>> {
+        PoseidonTreeIterator::new(&self.inner, filter)
+    }
+}
+
+/// Iterator created from a PoseidonTree with a provided `Method` to filter it
+///
+/// The returned elements are results of the leaves
+///
+/// Every iteration relies on I/O operations; this way, they can fail
+pub struct PoseidonTreeIterator<'a, T, A, H, M>
+where
+    T: Content<H>,
+    for<'b> A: From<&'b T>,
+    A: Content<H>,
+    A: Combine<A>,
+    H: ByteHash,
+    M: Method<NStack<T, A, H>, H>,
+{
+    filter: M,
+    branch: Option<Branch<'a, NStack<T, A, H>, H>>,
+}
+
+impl<'a, T, A, H, M> PoseidonTreeIterator<'a, T, A, H, M>
+where
+    T: Content<H>,
+    for<'b> A: From<&'b T>,
+    A: Content<H>,
+    A: Combine<A>,
+    H: ByteHash,
+    M: Method<NStack<T, A, H>, H>,
+{
+    /// Constructor
+    pub fn new(tree: &'a NStack<T, A, H>, mut filter: M) -> io::Result<Self> {
+        tree.search(&mut filter)
+            .map(|branch| Self { filter, branch })
+    }
+}
+
+impl<'a, T, A, H, M> Iterator for PoseidonTreeIterator<'a, T, A, H, M>
+where
+    T: Content<H>,
+    for<'b> A: From<&'b T>,
+    A: Content<H>,
+    A: Combine<A>,
+    H: ByteHash,
+    M: Method<NStack<T, A, H>, H>,
+{
+    type Item = io::Result<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let note = match &self.branch {
+            Some(branch) => (*branch).clone(),
+            None => return None,
+        };
+
+        let branch = match self.branch.take() {
+            Some(b) => b,
+            None => {
+                return Some(Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "Unexpected null!",
+                )))
+            }
+        };
+
+        self.branch = match branch.search(&mut self.filter) {
+            Ok(b) => b,
+            Err(e) => return Some(Err(e)),
+        };
+
+        Some(Ok(note))
     }
 }
 
