@@ -209,6 +209,7 @@ mod test {
             )
         })?;
         let pbranch = PoseidonBranch::from(&branch);
-        assert_eq!(tree.root()?, pbranch.root)
+        assert_eq!(tree.root()?, pbranch.root);
+        Ok(())
     }
 }
