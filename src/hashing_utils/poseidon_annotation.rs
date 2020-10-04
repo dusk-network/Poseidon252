@@ -13,6 +13,142 @@ use kelvin::{annotation, annotations::Cardinality, Combine, ErasedAnnotation};
 use std::borrow::Borrow;
 use std::io;
 
+#[macro_export]
+/// Extends `StorageScalar` for a provided type
+///
+/// Will create a new implementation of the poseidon storage scalar
+///
+/// The target type must implement `fn hash(&self) -> $scalar`
+/// `PoseidonScalar` must implement `From<$scalar>`
+///
+/// Required libs:
+/// * `kelvin`
+macro_rules! extend_storage_scalar {
+    ($id:ident, $scalar:ty, $type:ty) => {
+        #[derive(
+            Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord,
+        )]
+        pub struct $id(poseidon252::StorageScalar);
+
+        impl $id {
+            pub fn s(&self) -> &$scalar {
+                &(&self.0).0
+            }
+
+            pub fn s_mut(&mut self) -> &mut $scalar {
+                &mut (&mut self.0).0
+            }
+        }
+
+        impl<'a> From<&'a $type> for $id {
+            fn from(bid: &'a $type) -> $id {
+                bid.hash().into()
+            }
+        }
+
+        impl From<&poseidon252::StorageScalar> for $id {
+            fn from(s: &poseidon252::StorageScalar) -> Self {
+                $id(*s)
+            }
+        }
+
+        impl From<poseidon252::StorageScalar> for $id {
+            fn from(s: poseidon252::StorageScalar) -> Self {
+                $id(s)
+            }
+        }
+
+        impl<'a> From<&'a $type> for poseidon252::StorageScalar {
+            fn from(t: &'a $type) -> Self {
+                t.hash().into()
+            }
+        }
+
+        impl From<&$scalar> for $id {
+            fn from(s: &$scalar) -> Self {
+                $id::from(poseidon252::StorageScalar(*s))
+            }
+        }
+
+        impl From<$scalar> for $id {
+            fn from(s: $scalar) -> Self {
+                $id::from(poseidon252::StorageScalar(s))
+            }
+        }
+
+        impl Into<$scalar> for &$id {
+            fn into(self) -> $scalar {
+                use std::borrow::Borrow;
+
+                *self.borrow()
+            }
+        }
+
+        impl Into<$scalar> for $id {
+            fn into(self) -> $scalar {
+                use std::borrow::Borrow;
+
+                *self.borrow()
+            }
+        }
+
+        impl std::borrow::Borrow<$scalar> for $id {
+            fn borrow(&self) -> &$scalar {
+                self.0.borrow()
+            }
+        }
+
+        impl std::borrow::Borrow<poseidon252::StorageScalar> for $id {
+            fn borrow(&self) -> &poseidon252::StorageScalar {
+                &self.0
+            }
+        }
+
+        impl kelvin::Content<kelvin::Blake2b> for $id {
+            fn persist(
+                &mut self,
+                sink: &mut kelvin::Sink<kelvin::Blake2b>,
+            ) -> std::io::Result<()> {
+                self.0.persist(sink)
+            }
+
+            fn restore(
+                source: &mut kelvin::Source<kelvin::Blake2b>,
+            ) -> std::io::Result<Self> {
+                poseidon252::StorageScalar::restore(source).map(|s| s.into())
+            }
+        }
+
+        impl<A> kelvin::Combine<A> for $id {
+            fn combine<E>(elements: &[E]) -> Option<Self>
+            where
+                A: std::borrow::Borrow<Self> + Clone,
+                E: kelvin::ErasedAnnotation<A>,
+            {
+                let mut leaves: [Option<$scalar>; poseidon252::ARITY] =
+                    [None; poseidon252::ARITY];
+
+                elements.iter().zip(leaves.iter_mut()).for_each(
+                    |(element, leave)| {
+                        match element.annotation() {
+                            Some(annotation) => {
+                                let s: &$id = (*annotation).borrow();
+                                *leave = Some(s.into());
+                            }
+                            None => *leave = None,
+                        };
+                    },
+                );
+
+                let res = poseidon252::merkle_lvl_hash::hash::merkle_level_hash(
+                    &leaves,
+                );
+                Some(res.into())
+            }
+        }
+    };
+}
+
 annotation! {
     /// The annotation for the Notes tree is a storagescalar
     /// and a cardinality

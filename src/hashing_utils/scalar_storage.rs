@@ -46,6 +46,12 @@ impl From<u64> for StorageScalar {
     }
 }
 
+impl From<BlsScalar> for StorageScalar {
+    fn from(s: BlsScalar) -> Self {
+        Self(s)
+    }
+}
+
 // This is implemented since `PoseidonAnnotation` wraps up over `StorageScalar`.
 // Therefore, in rust to get the interal `Scalar` from the annotation you'll
 // need to call `annotation.0.0` and this is not valid.

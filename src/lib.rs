@@ -209,7 +209,7 @@ pub mod sponge;
 
 /// The module handling posedion-trees
 pub mod tree;
-pub use tree::PoseidonTree;
+pub use tree::{PoseidonTree, PoseidonTreeIterator};
 
 /// Maximum arity supported for trees.
 ///
