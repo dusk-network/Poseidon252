@@ -6,13 +6,11 @@
 
 //! Definitions of the merkle tree structure seen in Poseidon.
 use crate::hashing_utils::scalar_storage::StorageScalar;
-use crate::merkle_lvl_hash::hash;
 use crate::ARITY;
 use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use hades252::WIDTH;
 use kelvin::{Branch, ByteHash, Compound};
 use std::borrow::Borrow;
-use std::mem;
 
 /// The `Poseidon` structure will accept a number of inputs equal to the arity.
 ///
@@ -21,9 +19,13 @@ use std::mem;
 #[derive(Debug, Clone, PartialEq)]
 pub struct PoseidonBranch {
     /// Root of the Merkle Tree
-    pub root: BlsScalar,
+    pub(crate) root: BlsScalar,
     /// Levels of the MerkleTree with it's corresponding leaves and offset.
-    pub levels: Vec<PoseidonLevel>,
+    pub(crate) levels: Vec<PoseidonLevel>,
+    /// Padding levels used to avoid variadic proofs in ZK circuits.
+    /// This field is only relevant when we use `merkle_opening_gadget` fn
+    /// otherways, it's simply ignored to check the `Scalar` usage of openings.
+    pub(crate) padding_levels: Vec<PoseidonLevel>,
 }
 
 /// Provides a conversion between Branch and PoseidonBranch.
@@ -53,7 +55,7 @@ where
             .into();
         // Store the levels with the bitflags already computed inside
         // of our PoseidonBranch structure.
-        for level in branch.levels().iter().rev() {
+        branch.levels().iter().rev().for_each(|level| {
             // Generate a default mutable `PoseidonLevel`, add the corresponding data
             // extracted from the `Branch` and push it to our poseidon branch previously
             // generated.
@@ -106,7 +108,7 @@ where
                 pos_level.offset = level.offset() + 1;
                 pos_level
             })
-        }
+        });
         poseidon_branch
     }
 }
@@ -118,6 +120,7 @@ impl PoseidonBranch {
         PoseidonBranch {
             root: BlsScalar::zero(),
             levels: vec![],
+            padding_levels: vec![],
         }
     }
 
@@ -127,41 +130,14 @@ impl PoseidonBranch {
         PoseidonBranch {
             root: BlsScalar::zero(),
             levels: Vec::with_capacity(n),
+            padding_levels: vec![],
         }
     }
 
-    /// Extends the branch to the specified length
-    pub fn extend(&mut self, target_depth: usize) -> usize {
-        let n_extensions = target_depth - self.levels.len();
-        while self.levels.len() < target_depth {
-            let old_root = mem::take(&mut self.root);
-            let flag = BlsScalar::from(0b1000);
-            let mut leaves = [BlsScalar::zero(); ARITY + 1];
-
-            leaves[0] = flag;
-            leaves[1] = old_root;
-
-            let level = PoseidonLevel { leaves, offset: 1 };
-            self.root = hash::merkle_level_hash_without_bitflags(&level);
-            self.levels.push(level);
-        }
-        n_extensions
+    /// Get the root of the tree where the branch has been taken from.
+    pub fn root(&self) -> BlsScalar {
+        self.root
     }
-}
-
-/// Applies the extension padding n times to a scalar
-pub(crate) fn extend_scalar(mut scalar: BlsScalar, n: usize) -> BlsScalar {
-    for _ in 0..n {
-        let flag = BlsScalar::from(0b1000);
-        let mut leaves = [BlsScalar::zero(); ARITY + 1];
-
-        leaves[0] = flag;
-        leaves[1] = scalar;
-
-        let level = PoseidonLevel { leaves, offset: 1 };
-        scalar = hash::merkle_level_hash_without_bitflags(&level);
-    }
-    scalar
 }
 
 #[derive(Debug, Clone, PartialEq)]
