@@ -24,7 +24,6 @@ pub fn merkle_opening_gadget(
     composer: &mut StandardComposer,
     branch: PoseidonBranch,
     proven_leaf: Variable,
-    proven_root: BlsScalar,
 ) -> Variable {
     // Generate and constraint zero.
     let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
@@ -90,7 +89,6 @@ pub fn merkle_opening_gadget(
         prev_lvl_hash =
             merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
     });
-    assert_eq!(branch.root, proven_root);
     prev_lvl_hash
 }
 
@@ -224,7 +222,7 @@ mod tests {
                 let proven_leaf = composer.add_input(BlsScalar::from(*i));
 
                 let hashed_root =
-                    merkle_opening_gadget(composer, branch, proven_leaf, root);
+                    merkle_opening_gadget(composer, branch, proven_leaf);
 
                 // Add the last check regarding the last lvl-hash agains the tree root
                 // which will be a Public Input. On this case, it is not possible to make any kind
