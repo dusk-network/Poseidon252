@@ -99,7 +99,12 @@ where
     ///
     /// This includes padding the value to the correct branch length equivalent
     pub fn root(&self) -> io::Result<BlsScalar> {
-        let first_level: A = self.inner().annotation().unwrap();
+        let first_level: A = self.inner().annotation().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                "Kelvin shouldn't fail at reading annotations",
+            )
+        })?;
         let storage_scalar: &StorageScalar = first_level.borrow();
         Ok(storage_scalar.to_owned().into())
     }
@@ -112,13 +117,16 @@ where
         idx: u64,
     ) -> io::Result<Option<PoseidonBranch>> {
         // Try to get the PoseidonBranch from the tree.
-        let mut pbranch: PoseidonBranch =
-            self.inner.get(idx)?.map(|ref branch| branch.into()).ok_or(
+        let mut pbranch: PoseidonBranch = self
+            .inner
+            .get(idx)?
+            .map(|ref branch| branch.into())
+            .ok_or_else(|| {
                 io::Error::new(
                     io::ErrorKind::NotFound,
                     "Couldn't retrieve a branch from the tree",
-                ),
-            )?;
+                )
+            })?;
 
         // We check if the branch requires padding, in which case, we add as many padding levels as it's
         // needed in order to have the correct branch padding for the
@@ -180,23 +188,27 @@ mod test {
     use kelvin::Blake2b;
 
     #[test]
-    fn insert() {
+    fn insert() -> io::Result<()> {
         let mut tree = PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
 
         for i in 0..128u64 {
-            let idx = tree.push(StorageScalar::from(i)).unwrap();
+            let idx = tree.push(StorageScalar::from(i))?;
             assert_eq!(idx, i);
         }
-
-        assert!(true)
+        Ok(())
     }
 
     #[test]
-    fn root_consistency_branch_tree() {
+    fn root_consistency_branch_tree() -> io::Result<()> {
         let mut tree = PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
-        let idx = tree.push(StorageScalar::from(55u64)).unwrap();
-        let branch = tree.get(idx).unwrap().unwrap();
+        let idx = tree.push(StorageScalar::from(55u64))?;
+        let branch = tree.get(idx)?.ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                "Kelvin shouldn't fail at reading annotations",
+            )
+        })?;
         let pbranch = PoseidonBranch::from(&branch);
-        assert_eq!(tree.root().unwrap(), pbranch.root)
+        assert_eq!(tree.root()?, pbranch.root)
     }
 }

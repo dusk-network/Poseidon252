@@ -42,7 +42,7 @@ pub fn merkle_opening_gadget(
     // Generate and constraint zero.
     let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
     // Allocate space for each level Variables that will be generated.
-    let mut lvl_vars = unsafe { [std::mem::zeroed(); WIDTH] };
+    let mut lvl_vars = [zero; WIDTH];
     // Allocate space for the last level computed hash as a variable to compare
     // it against the root.
     let mut prev_lvl_hash: Variable;
