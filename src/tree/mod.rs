@@ -14,9 +14,6 @@ use kelvin::{
 };
 use nstack::NStack;
 
-use crate::merkle_lvl_hash::hash::*;
-use crate::merkle_proof::poseidon_branch::extend_scalar;
-use crate::ARITY;
 use crate::{PoseidonBranch, PoseidonLevel, StorageScalar};
 
 /// A zk-friendly datastructure to store elements
@@ -104,24 +101,14 @@ where
     ///
     /// This includes padding the value to the correct branch length equivalent
     pub fn root(&self) -> io::Result<BlsScalar> {
-        if let Some(ann) = self.inner.annotation() {
-            let borrow: &StorageScalar = ann.borrow();
-            let scalar: BlsScalar = borrow.clone().into();
-
-            // FIXME, depth could be inferred from the cardinality
-            if let Some(branch) = self.get(0)? {
-                let depth = branch.levels().len();
-                Ok(extend_scalar(scalar, self.branch_depth as usize - depth))
-            } else {
-                unreachable!("Annotation in empty tree")
-            }
-        } else {
-            // empty case, use an empty level for hashing
-            let leaves = [BlsScalar::zero(); ARITY + 1];
-            let level = PoseidonLevel { leaves, offset: 0 };
-            let root = merkle_level_hash_without_bitflags(&level);
-            Ok(extend_scalar(root, self.branch_depth as usize))
-        }
+        let first_level: A = self.inner().annotation().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                "Kelvin shouldn't fail at reading annotations",
+            )
+        })?;
+        let storage_scalar: &StorageScalar = first_level.borrow();
+        Ok(storage_scalar.to_owned().into())
     }
 
     /// Returns a poseidon branch pointing at the specific index
@@ -131,11 +118,35 @@ where
         &self,
         idx: u64,
     ) -> io::Result<Option<PoseidonBranch>> {
-        Ok(self.inner.get(idx)?.map(|ref branch| {
-            let mut pbranch: PoseidonBranch = branch.into();
-            pbranch.extend(self.branch_depth as usize);
-            pbranch
-        }))
+        // Try to get the PoseidonBranch from the tree.
+        let mut pbranch: PoseidonBranch = self
+            .inner
+            .get(idx)?
+            .map(|ref branch| branch.into())
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Couldn't retrieve a branch from the tree",
+                )
+            })?;
+
+        // We check if the branch requires padding, in which case, we add as many padding levels as it's
+        // needed in order to have the correct branch padding for the
+        // merkle opening proofs.
+        //
+        // The values added in the padding levels do not matter at all for Scalar merkle opening proofs since
+        // they aren't used/required. These levels are added so that the circuits that require the
+        // `merkle_opening_gadget` fn do not have variadic sizes. But the operations performed for these levels
+        // are not constrained (they can be considered dummy ops just to pad the circuits).
+        if self.branch_depth as usize > pbranch.levels.len() {
+            pbranch.padding_levels.extend(vec![
+                PoseidonLevel::default();
+                self.branch_depth as usize
+                    - pbranch.levels.len()
+            ]);
+        }
+
+        Ok(Some(pbranch))
     }
 
     /// Push a new item onto the tree
@@ -253,18 +264,32 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::PoseidonAnnotation;
+    use crate::{PoseidonAnnotation, PoseidonBranch};
     use kelvin::Blake2b;
 
     #[test]
-    fn insert() {
+    fn insert() -> io::Result<()> {
         let mut tree = PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
 
         for i in 0..128u64 {
-            let idx = tree.push(StorageScalar::from(i)).unwrap();
+            let idx = tree.push(StorageScalar::from(i))?;
             assert_eq!(idx, i);
         }
+        Ok(())
+    }
 
-        assert!(true)
+    #[test]
+    fn root_consistency_branch_tree() -> io::Result<()> {
+        let mut tree = PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
+        let idx = tree.push(StorageScalar::from(55u64))?;
+        let branch = tree.get(idx)?.ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                "Kelvin shouldn't fail at reading annotations",
+            )
+        })?;
+        let pbranch = PoseidonBranch::from(&branch);
+        assert_eq!(tree.root()?, pbranch.root);
+        Ok(())
     }
 }

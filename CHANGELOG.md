@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 04-10-20
+### Added
+- `root()` fn for `PoseidonBranch`.
+
+### Changed
+- Padding implementation for `PoseidonBranch` with opening gadgets.
+
+### Removed
+- Extension fn's from the crate.
+
 ## [0.8.1] - 01-10-20
 ### Changed
 - Implement `inner` and `inner_mut` methods on PoseidonTree
