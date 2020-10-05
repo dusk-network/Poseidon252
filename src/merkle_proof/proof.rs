@@ -24,7 +24,6 @@ pub fn merkle_opening_gadget(
     composer: &mut StandardComposer,
     branch: PoseidonBranch,
     proven_leaf: Variable,
-    proven_root: BlsScalar,
 ) -> Variable {
     // Loading the level leaves into the composer and return references to the allocated leaves
     // (Variables) inside of an array of length = WIDTH so that it can be hashed with the
@@ -97,7 +96,6 @@ pub fn merkle_opening_gadget(
         prev_lvl_hash =
             merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
     });
-
     // We've now done the whole opening and we have the resulting root stored as a `Variable`, ready
     // to be returned.
     //
@@ -128,7 +126,6 @@ pub fn merkle_opening_gadget(
             BlsScalar::zero(),
         );
     });
-    assert_eq!(branch.root, proven_root);
     prev_lvl_hash
 }
 
@@ -262,7 +259,7 @@ mod tests {
                 let proven_leaf = composer.add_input(BlsScalar::from(*i));
 
                 let hashed_root =
-                    merkle_opening_gadget(composer, branch, proven_leaf, root);
+                    merkle_opening_gadget(composer, branch, proven_leaf);
 
                 // Add the last check regarding the last lvl-hash agains the tree root
                 // which will be a Public Input. On this case, it is not possible to make any kind
