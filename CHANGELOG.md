@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 05-10-20
+### Changed
+- Bump `hades252` to `v0.9.0`
+
 ## [0.9.0] - 04-10-20
 ### Added
 - `root()` fn for `PoseidonBranch`.
