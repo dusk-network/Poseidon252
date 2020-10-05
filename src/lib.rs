@@ -112,11 +112,7 @@
 //!          // Add the proven leaf value to the Constraint System
 //!          let proven_leaf = composer.add_input(BlsScalar::from(*i));
 //!
-//!          merkle_opening_gadget(composer, branch, proven_leaf, root);
-//!
-//!          // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
-//!          // to zero polynomials.
-//!          composer.add_dummy_constraints();
+//!          merkle_opening_gadget(composer, branch, proven_leaf);
 //!      };
 //!
 //!      // Proving
