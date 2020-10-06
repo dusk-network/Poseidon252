@@ -6,127 +6,48 @@
 
 //! Merkle-tree hashing functions using Poseidon252
 //!
-use super::poseidon_branch::{PoseidonBranch, PoseidonLevel};
+use super::poseidon_branch::PoseidonBranch;
 use crate::merkle_lvl_hash::hash::*;
 
 use dusk_plonk::prelude::*;
 use hades252::WIDTH;
 
-/// Provided a `kelvin::Branch`, a `&mut StandardComposer`, a leaf value and a root, print inside of the
-/// constraint system a Merkle Tree Proof that hashes up from the searched leaf in kelvin until
-/// the root of the tree constraining each level hashed on the process.
+/// Permutate the merkle opening of the provided poseidon branch
+/// inside the circuit, and return the calculated root
 ///
-/// `branch_length` controls how much padding should be added to the branch to make it the correct length.
+/// The proven leaf parameter corresponds to the leaf that is proving
+/// the inclusion on the merkle tree.
 ///
-/// NOTE: The gadget will return as a `Variable` the latest hash performed which should match the root
-/// of the tree. You SHOULD constrain it to the root right after the execution of this gadget.
+/// The returned root should be constrained to the expected anchor.
 pub fn merkle_opening_gadget(
     composer: &mut StandardComposer,
     branch: PoseidonBranch,
     proven_leaf: Variable,
 ) -> Variable {
-    // Loading the level leaves into the composer and return references to the allocated leaves
-    // (Variables) inside of an array of length = WIDTH so that it can be hashed with the
-    // Hades252::GadgetStrategy::perm().
-    let allocate_poseidon_level =
-        |composer: &mut StandardComposer,
-         level: &PoseidonLevel,
-         lvl_vars: &mut [Variable; WIDTH]| {
-            level
-                .leaves
-                .iter()
-                .zip(lvl_vars.iter_mut())
-                .for_each(|(leaf, var)| *var = composer.add_input(*leaf));
-        };
     // Generate and constraint zero.
     let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
-    // Allocate space for each level Variables that will be generated.
-    let mut lvl_vars = [zero; WIDTH];
-    // Allocate space for the last level computed hash as a variable to compare
-    // it against the root.
-    let mut prev_lvl_hash: Variable;
+    let mut root = zero;
 
-    // Start the tree-level hashing towards the root.
-    //
-    // On each level we will check that the hash of the whole level is indeed
-    // the one that we expect.
-    //
-    // It is guaranteed that the `PoseidonBranch::PoseidonLevel` will come with `offset` field
-    // which points to the position of the level where the hash of the previous level is stored.
-    //
-    // In the case of the base of the tree, offset points to the leaf we're proving it's inclusion.
-    // For this reason, we will hash the bottom level before we start the hashing chain to check
-    // that the `Scalar` we're proving the inclusion of is indeed the one we expect and then, we
-    // will store the first `lvl_hash` value.
-    let bottom_lvl = branch
-        .levels
-        .first()
-        .expect("Branch malfunction. PoseidonBranch is empty");
-    // Set lvl_vars = bottom level leaves as variables.
-    // We're basically
-    allocate_poseidon_level(composer, bottom_lvl, &mut lvl_vars);
-    // Check that the leaf we've searched for is indeed the one specified in the bottom level offset.
-    composer.assert_equal(lvl_vars[bottom_lvl.offset], proven_leaf);
-    // Store in lvl_hash the hash of this bottom level.
-    prev_lvl_hash =
-        merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
+    // Generate a permutation container
+    let mut perm = [zero; WIDTH];
 
-    branch.levels.iter().skip(1).for_each(|level| {
-        // Generate the Variables for the corresponding level.
-        allocate_poseidon_level(composer, level, &mut lvl_vars);
-        // Check that the previous hash indeed corresponds to the leaf specified in this
-        // level as `offset`.
-        // We want to re-use the circuit so we need to set the level hashes that were
-        // pre-computed on the `PoseidonBranch` generation as secret variables instead of
-        // circuit descriptors.
-        composer.add_gate(
-            prev_lvl_hash,
-            lvl_vars[level.offset],
-            zero,
-            -BlsScalar::one(),
-            BlsScalar::one(),
-            BlsScalar::zero(),
-            BlsScalar::zero(),
-            BlsScalar::zero(),
-        );
-        // Hash the level & store it in prev_lvl_hash which should be in the upper
-        // level if the proof is consistent.
-        //
-        // This will be checked at the beggining of the next iteration.
-        prev_lvl_hash =
-            merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
+    // For every level, replace the level offset with needle,
+    // permutate the level and set the needle to the next level
+    // to the poseidon result of the permutation
+    branch.levels.iter().fold(proven_leaf, |needle, level| {
+        level.leaves.iter().enumerate().for_each(|(i, l)| {
+            if i != level.offset {
+                perm[i] = composer.add_input(*l);
+            }
+        });
+
+        root = perm[1];
+        perm[level.offset] = needle;
+
+        merkle_level_hash_gadget_without_bitflags(composer, &mut perm)
     });
-    // We've now done the whole opening and we have the resulting root stored as a `Variable`, ready
-    // to be returned.
-    //
-    // Anyway, remember that our branch might have padding.
-    // That means we need to iterate over the padding_levels of the PoseidonBranch applying the
-    // same amount of constraints that we were applying previously for each level so that the padding
-    // for the circuits is done correctly.
-    //
-    // The amount of constraints per level that we were previously applying is:
-    // - `merkle_level_hash_gadget_without_bitflags` constraints (is fixed).
-    // - 1 constraint/gate to check consistency and relation between the levels.
-    // We will hash every level but we will add a dummy constraint for the level
-    // consistency since the padding levels do not have any relation.
-    branch.padding_levels.iter().for_each(|padding_level| {
-        allocate_poseidon_level(composer, padding_level, &mut lvl_vars);
-        // Apply merkle hashing constraints.
-        let _ =
-            merkle_level_hash_gadget_without_bitflags(composer, &mut lvl_vars);
-        // Apply the dummy constraint to substitute the level consistency check.
-        composer.add_gate(
-            prev_lvl_hash,
-            prev_lvl_hash,
-            zero,
-            -BlsScalar::one(),
-            BlsScalar::one(),
-            BlsScalar::zero(),
-            BlsScalar::zero(),
-            BlsScalar::zero(),
-        );
-    });
-    prev_lvl_hash
+
+    root
 }
 
 /// Provided a `PoseidonBranch` and a Merkle Tree root, verify that
@@ -168,21 +89,26 @@ pub fn merkle_opening_scalar_verification(
     lvl_hash = merkle_level_hash_without_bitflags(&bottom_lvl);
     assert!(bottom_lvl.leaves[bottom_lvl.offset] == leaf);
 
+    let mut calculated_root = BlsScalar::zero();
+
     // Start the hashing chain towards the root skipping the first hash that we already computed.
     branch.levels.iter().skip(1).for_each(|level| {
         // Check that the hash of the downwards level is present in the level avobe (the actual one).
         if lvl_hash != level.leaves[level.offset] {
             chain_err = true;
         };
+
         // Hash the level & store it to then constrain it to be equal to the leaf at the offset position
         // of the upper level.
+        calculated_root = lvl_hash;
         lvl_hash = merkle_level_hash_without_bitflags(&level);
     });
 
     // Add the last check regarding the last lvl-hash against the tree root.
-    if (lvl_hash != branch.root) | chain_err {
+    if (calculated_root != branch.root) | chain_err {
         return false;
     };
+
     true
 }
 
@@ -229,8 +155,8 @@ mod tests {
     fn opening_gadget() -> Result<()> {
         // Generate Composer & Public Parameters
         let pub_params =
-            PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
-        let (ck, vk) = pub_params.trim(1 << 16)?;
+            PublicParameters::setup(1 << 15, &mut rand::thread_rng())?;
+        let (ck, vk) = pub_params.trim(1 << 15)?;
         // Generate a tree with random scalars inside.
         let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> =
             PoseidonTree::new(17);
