@@ -4,17 +4,16 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use dusk_plonk::jubjub::AffinePoint;
-use dusk_plonk::prelude::*;
-use hades252::{ScalarStrategy, Strategy, WIDTH};
-
+pub use super::CipherError;
 use super::{
     CIPHER_BYTES_SIZE, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
 };
-
+use canonical::Canon;
+use canonical_derive::Canon;
+use dusk_plonk::jubjub::AffinePoint;
+use dusk_plonk::prelude::*;
+use hades252::{ScalarStrategy, Strategy, WIDTH};
 use std::io;
-
-pub use super::CipherError;
 
 /// ```ignore
 /// Encapsulates an encrypted data
@@ -88,7 +87,7 @@ pub use super::CipherError;
 ///         .expect("Failed to decrypt!")
 /// }
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default, Canon)]
 pub struct PoseidonCipher {
     cipher: [BlsScalar; CIPHER_SIZE],
 }

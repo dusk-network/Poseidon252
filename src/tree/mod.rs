@@ -7,44 +7,50 @@
 use std::borrow::Borrow;
 use std::io;
 
+use crate::{PoseidonBranch, PoseidonLevel, StorageScalar};
+use canonical::Canon;
+use canonical::Store;
+use canonical_derive::Canon;
 use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use kelvin::annotations::{Cardinality, Combine, Count};
-use kelvin::{
-    Branch, BranchMut, ByteHash, Compound, Content, Method, Sink, Source,
-};
+use kelvin::{Associative, Branch, BranchMut, Compound, Method};
 use nstack::NStack;
-
-use crate::{PoseidonBranch, PoseidonLevel, StorageScalar};
 
 /// A zk-friendly datastructure to store elements
 ///
 /// The annotation `AsRef<BlsScalar>` is expected to return the root of the tree
-pub struct PoseidonTree<T, A, H>
+#[derive(Canon)]
+pub struct PoseidonTree<T, A, S>
 where
-    T: Content<H>,
-    T: Clone,
+    T: Canon<S>,
     for<'a> &'a T: Into<StorageScalar>,
-    H: ByteHash,
+    S: Store,
     for<'a> A: From<&'a T>,
-    A: Content<H>,
-    A: Combine<A>,
-    A: Borrow<Cardinality<u64>>,
-    A: Borrow<StorageScalar>,
+    A: Canon<S>
+        + Clone
+        + 'static
+        + Combine<A>
+        + Borrow<Cardinality<u64>>
+        + Borrow<StorageScalar>
+        + Associative,
 {
     branch_depth: u16,
-    inner: NStack<T, A, H>,
+    inner: NStack<T, A, S>,
 }
 
-impl<T, A, H> Clone for PoseidonTree<T, A, H>
+impl<T, A, S> Clone for PoseidonTree<T, A, S>
 where
-    T: Content<H>,
+    T: Canon<S>,
     for<'a> &'a T: Into<StorageScalar>,
-    H: ByteHash,
+    S: Store,
     for<'a> A: From<&'a T>,
-    A: Content<H>,
-    A: Combine<A>,
-    A: Borrow<Cardinality<u64>>,
-    A: Borrow<StorageScalar>,
+    A: Canon<S>
+        + Clone
+        + Combine<A>
+        + Borrow<Cardinality<u64>>
+        + Borrow<StorageScalar>
+        + 'static
+        + Associative,
 {
     fn clone(&self) -> Self {
         PoseidonTree {
@@ -54,40 +60,17 @@ where
     }
 }
 
-impl<T, A, H> Content<H> for PoseidonTree<T, A, H>
+impl<T, A, S> PoseidonTree<T, A, S>
 where
-    T: Content<H>,
+    T: Canon<S>,
     for<'a> &'a T: Into<StorageScalar>,
-    H: ByteHash,
+    S: Store,
     for<'a> A: From<&'a T>,
-    A: Content<H>,
-    A: Combine<A>,
-    A: Borrow<Cardinality<u64>>,
-    A: Borrow<StorageScalar>,
-{
-    fn persist(&mut self, sink: &mut Sink<H>) -> io::Result<()> {
-        self.branch_depth.persist(sink)?;
-        self.inner.persist(sink)
-    }
-
-    fn restore(source: &mut Source<H>) -> io::Result<Self> {
-        Ok(PoseidonTree {
-            branch_depth: u16::restore(source)?,
-            inner: NStack::restore(source)?,
-        })
-    }
-}
-
-impl<T, A, H> PoseidonTree<T, A, H>
-where
-    T: Content<H>,
-    for<'a> &'a T: Into<StorageScalar>,
-    H: ByteHash,
-    for<'a> A: From<&'a T>,
-    A: Content<H>,
-    A: Combine<A>,
-    A: Borrow<Cardinality<u64>>,
-    A: Borrow<StorageScalar>,
+    A: Canon<S>
+        + Combine<A>
+        + Borrow<Cardinality<u64>>
+        + Borrow<StorageScalar>
+        + Associative,
 {
     /// Constructs a new empty PoseidonTree
     pub fn new(depth: usize) -> Self {
@@ -121,14 +104,18 @@ where
         // Try to get the PoseidonBranch from the tree.
         let mut pbranch: PoseidonBranch = self
             .inner
-            .get(idx)?
-            .map(|ref branch| branch.into())
+            .get(idx)
+            .map_err(|e| {
+                io::Error::new(io::ErrorKind::NotFound, format!("{:?}", e))
+            })?
+            .as_ref()
             .ok_or_else(|| {
                 io::Error::new(
                     io::ErrorKind::NotFound,
-                    "Couldn't retrieve a branch from the tree",
+                    "Couldn't retrieve a Branch",
                 )
-            })?;
+            })?
+            .into();
 
         // We check if the branch requires padding, in which case, we add as many padding levels as it's
         // needed in order to have the correct branch padding for the
@@ -150,17 +137,17 @@ where
     }
 
     /// Push a new item onto the tree
-    pub fn push(&mut self, t: T) -> io::Result<u64> {
+    pub fn push(&mut self, t: T) -> Result<u64, S::Error> {
         let idx = self.inner.count();
         self.inner.push(t)?;
         Ok(idx)
     }
 
     /// Get a branch reference to the element at index `idx`, if any
-    pub fn get(
-        &self,
+    pub fn get<'a>(
+        &'a self,
         idx: u64,
-    ) -> io::Result<Option<Branch<NStack<T, A, H>, H>>> {
+    ) -> Result<Option<Branch<NStack<T, A, S>, S>>, S::Error> {
         self.inner.get(idx)
     }
 
@@ -168,25 +155,25 @@ where
     pub fn get_mut(
         &mut self,
         idx: u64,
-    ) -> io::Result<Option<BranchMut<NStack<T, A, H>, H>>> {
+    ) -> Result<Option<BranchMut<NStack<T, A, S>, S>>, S::Error> {
         self.inner.get_mut(idx)
     }
 
     /// Reference to the NStack inner implementation
-    pub fn inner(&self) -> &NStack<T, A, H> {
+    pub fn inner(&self) -> &NStack<T, A, S> {
         &self.inner
     }
 
     /// Mutable reference to the NStack inner implementation
-    pub fn inner_mut(&mut self) -> &mut NStack<T, A, H> {
+    pub fn inner_mut(&mut self) -> &mut NStack<T, A, S> {
         &mut self.inner
     }
 
     /// Perform a filtered iteration over the tree
-    pub fn iter_filtered<M: Method<NStack<T, A, H>, H>>(
+    pub fn iter_filtered<M: Method<NStack<T, A, S>, S>>(
         &self,
         filter: M,
-    ) -> io::Result<PoseidonTreeIterator<T, A, H, M>> {
+    ) -> Result<PoseidonTreeIterator<T, A, S, M>, S::Error> {
         PoseidonTreeIterator::new(&self.inner, filter)
     }
 }
@@ -196,45 +183,45 @@ where
 /// The returned elements are results of the leaves
 ///
 /// Every iteration relies on I/O operations; this way, they can fail
-pub struct PoseidonTreeIterator<'a, T, A, H, M>
+pub struct PoseidonTreeIterator<'a, T, A, S, M>
 where
-    T: Content<H>,
+    T: Canon<S>,
     for<'b> A: From<&'b T>,
-    A: Content<H>,
-    A: Combine<A>,
-    H: ByteHash,
-    M: Method<NStack<T, A, H>, H>,
+    A: Combine<A> + Canon<S> + 'static + Associative,
+    S: Store,
+    M: Method<NStack<T, A, S>, S>,
 {
     filter: M,
-    branch: Option<Branch<'a, NStack<T, A, H>, H>>,
+    branch: Option<Branch<'a, NStack<T, A, S>, S>>,
 }
 
-impl<'a, T, A, H, M> PoseidonTreeIterator<'a, T, A, H, M>
+impl<'a, T, A, S, M> PoseidonTreeIterator<'a, T, A, S, M>
 where
-    T: Content<H>,
+    T: Canon<S>,
     for<'b> A: From<&'b T>,
-    A: Content<H>,
-    A: Combine<A>,
-    H: ByteHash,
-    M: Method<NStack<T, A, H>, H>,
+    A: Combine<A> + Canon<S> + 'static + Associative,
+    S: Store,
+    M: Method<NStack<T, A, S>, S>,
 {
     /// Constructor
-    pub fn new(tree: &'a NStack<T, A, H>, mut filter: M) -> io::Result<Self> {
+    pub fn new(
+        tree: &'a NStack<T, A, S>,
+        mut filter: M,
+    ) -> Result<Self, S::Error> {
         tree.search(&mut filter)
             .map(|branch| Self { filter, branch })
     }
 }
 
-impl<'a, T, A, H, M> Iterator for PoseidonTreeIterator<'a, T, A, H, M>
+impl<'a, T, A, S, M> Iterator for PoseidonTreeIterator<'a, T, A, S, M>
 where
-    T: Content<H>,
+    T: Canon<S>,
     for<'b> A: From<&'b T>,
-    A: Content<H>,
-    A: Combine<A>,
-    H: ByteHash,
-    M: Method<NStack<T, A, H>, H>,
+    A: Combine<A> + Canon<S> + Associative,
+    S: Store,
+    M: Method<NStack<T, A, S>, S>,
 {
-    type Item = io::Result<T>;
+    type Item = Result<T, S::Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let note = match &self.branch {
@@ -244,17 +231,12 @@ where
 
         let branch = match self.branch.take() {
             Some(b) => b,
-            None => {
-                return Some(Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Unexpected null!",
-                )))
-            }
+            None => return Some(Err(canonical::InvalidEncoding.into())),
         };
 
         self.branch = match branch.search(&mut self.filter) {
             Ok(b) => b,
-            Err(e) => return Some(Err(e)),
+            Err(_e) => return Some(Err(canonical::InvalidEncoding.into())),
         };
 
         Some(Ok(note))

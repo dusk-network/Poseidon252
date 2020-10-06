@@ -7,9 +7,10 @@
 //! Definitions of the merkle tree structure seen in Poseidon.
 use crate::hashing_utils::scalar_storage::StorageScalar;
 use crate::ARITY;
+use canonical::Store;
 use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use hades252::WIDTH;
-use kelvin::{Branch, ByteHash, Compound};
+use kelvin::{Branch, Compound};
 use std::borrow::Borrow;
 
 /// The `Poseidon` structure will accept a number of inputs equal to the arity.
@@ -34,13 +35,13 @@ pub struct PoseidonBranch {
 /// inside of the `PoseidonBranch` structure with the bitflags already
 /// computed and the offsets pointing to the next levels pointing also to
 /// the correct places.
-impl<C, H> From<&Branch<'_, C, H>> for PoseidonBranch
+impl<C, S> From<&Branch<'_, C, S>> for PoseidonBranch
 where
-    C: Compound<H>,
+    C: Compound<S>,
     C::Annotation: Borrow<StorageScalar>,
-    H: ByteHash,
+    S: Store,
 {
-    fn from(branch: &Branch<C, H>) -> PoseidonBranch {
+    fn from(branch: &Branch<C, S>) -> PoseidonBranch {
         let mut poseidon_branch = PoseidonBranch::new();
 
         // Skip root and store it directly.

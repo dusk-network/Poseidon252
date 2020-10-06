@@ -11,7 +11,6 @@ use crate::ARITY;
 use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use kelvin::{annotation, annotations::Cardinality, Combine, ErasedAnnotation};
 use std::borrow::Borrow;
-use std::io;
 
 #[macro_export]
 /// Extends `StorageScalar` for a provided type
@@ -26,7 +25,7 @@ use std::io;
 macro_rules! extend_storage_scalar {
     ($id:ident, $scalar:ty, $type:ty) => {
         #[derive(
-            Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord,
+            Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Canon,
         )]
         pub struct $id(poseidon252::StorageScalar);
 
@@ -101,21 +100,6 @@ macro_rules! extend_storage_scalar {
         impl std::borrow::Borrow<poseidon252::StorageScalar> for $id {
             fn borrow(&self) -> &poseidon252::StorageScalar {
                 &self.0
-            }
-        }
-
-        impl kelvin::Content<kelvin::Blake2b> for $id {
-            fn persist(
-                &mut self,
-                sink: &mut kelvin::Sink<kelvin::Blake2b>,
-            ) -> std::io::Result<()> {
-                self.0.persist(sink)
-            }
-
-            fn restore(
-                source: &mut kelvin::Source<kelvin::Blake2b>,
-            ) -> std::io::Result<Self> {
-                poseidon252::StorageScalar::restore(source).map(|s| s.into())
             }
         }
 
