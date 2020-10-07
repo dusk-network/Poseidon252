@@ -13,7 +13,7 @@ use canonical::Store;
 use canonical_derive::Canon;
 use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use kelvin::annotations::{Cardinality, Combine, Count};
-use kelvin::{Associative, Branch, BranchMut, Compound, Method};
+use kelvin::{Branch, BranchMut, Compound, Method};
 use nstack::NStack;
 
 /// A zk-friendly datastructure to store elements
@@ -31,8 +31,7 @@ where
         + 'static
         + Combine<A>
         + Borrow<Cardinality<u64>>
-        + Borrow<StorageScalar>
-        + Associative,
+        + Borrow<StorageScalar>,
 {
     branch_depth: u16,
     inner: NStack<T, A, S>,
@@ -49,8 +48,7 @@ where
         + Combine<A>
         + Borrow<Cardinality<u64>>
         + Borrow<StorageScalar>
-        + 'static
-        + Associative,
+        + 'static,
 {
     fn clone(&self) -> Self {
         PoseidonTree {
@@ -66,11 +64,7 @@ where
     for<'a> &'a T: Into<StorageScalar>,
     S: Store,
     for<'a> A: From<&'a T>,
-    A: Canon<S>
-        + Combine<A>
-        + Borrow<Cardinality<u64>>
-        + Borrow<StorageScalar>
-        + Associative,
+    A: Canon<S> + Combine<A> + Borrow<Cardinality<u64>> + Borrow<StorageScalar>,
 {
     /// Constructs a new empty PoseidonTree
     pub fn new(depth: usize) -> Self {
@@ -187,7 +181,7 @@ pub struct PoseidonTreeIterator<'a, T, A, S, M>
 where
     T: Canon<S>,
     for<'b> A: From<&'b T>,
-    A: Combine<A> + Canon<S> + 'static + Associative,
+    A: Combine<A> + Canon<S> + 'static,
     S: Store,
     M: Method<NStack<T, A, S>, S>,
 {
@@ -199,7 +193,7 @@ impl<'a, T, A, S, M> PoseidonTreeIterator<'a, T, A, S, M>
 where
     T: Canon<S>,
     for<'b> A: From<&'b T>,
-    A: Combine<A> + Canon<S> + 'static + Associative,
+    A: Combine<A> + Canon<S> + 'static,
     S: Store,
     M: Method<NStack<T, A, S>, S>,
 {
@@ -217,7 +211,7 @@ impl<'a, T, A, S, M> Iterator for PoseidonTreeIterator<'a, T, A, S, M>
 where
     T: Canon<S>,
     for<'b> A: From<&'b T>,
-    A: Combine<A> + Canon<S> + Associative,
+    A: Combine<A> + Canon<S>,
     S: Store,
     M: Method<NStack<T, A, S>, S>,
 {
@@ -247,14 +241,17 @@ where
 mod test {
     use super::*;
     use crate::{PoseidonAnnotation, PoseidonBranch};
-    use kelvin::Blake2b;
+    use canonical_host::MemStore;
 
     #[test]
     fn insert() -> io::Result<()> {
-        let mut tree = PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
+        let mut tree =
+            PoseidonTree::<StorageScalar, PoseidonAnnotation, MemStore>::new(
+                17,
+            );
 
         for i in 0..128u64 {
-            let idx = tree.push(StorageScalar::from(i))?;
+            let idx = tree.push(StorageScalar::from(i)).unwrap();
             assert_eq!(idx, i);
         }
         Ok(())
@@ -262,14 +259,21 @@ mod test {
 
     #[test]
     fn root_consistency_branch_tree() -> io::Result<()> {
-        let mut tree = PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
-        let idx = tree.push(StorageScalar::from(55u64))?;
-        let branch = tree.get(idx)?.ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::Other,
-                "Kelvin shouldn't fail at reading annotations",
-            )
-        })?;
+        let mut tree =
+            PoseidonTree::<StorageScalar, PoseidonAnnotation, MemStore>::new(
+                17,
+            );
+        let idx = tree.push(StorageScalar::from(55u64)).unwrap();
+        let branch = tree
+            .get(idx)
+            .unwrap()
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    "Kelvin shouldn't fail at reading annotations",
+                )
+            })
+            .unwrap();
         let pbranch = PoseidonBranch::from(&branch);
         assert_eq!(tree.root()?, pbranch.root);
         Ok(())

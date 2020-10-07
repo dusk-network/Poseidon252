@@ -192,12 +192,12 @@ mod tests {
     use crate::hashing_utils::scalar_storage::StorageScalar;
     use crate::{PoseidonAnnotation, PoseidonTree};
     use anyhow::Result;
-    use kelvin::Blake2b;
+    use canonical_host::MemStore;
 
     #[test]
     fn scalar_merkle_proof() {
         // Generate a tree with random scalars inside.
-        let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> =
+        let mut ptree: PoseidonTree<_, PoseidonAnnotation, MemStore> =
             PoseidonTree::new(17);
         for i in 0..1024u64 {
             ptree
@@ -232,7 +232,7 @@ mod tests {
             PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
         let (ck, vk) = pub_params.trim(1 << 16)?;
         // Generate a tree with random scalars inside.
-        let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> =
+        let mut ptree: PoseidonTree<_, PoseidonAnnotation, MemStore> =
             PoseidonTree::new(17);
         for i in 0..1024u64 {
             ptree

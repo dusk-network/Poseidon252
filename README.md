@@ -72,7 +72,7 @@ computed and placed in the first Level position.
 use poseidon252::{StorageScalar, PoseidonAnnotation};
 use poseidon252::merkle_proof::merkle_opening_gadget;
 use dusk_plonk::prelude::*;
-use kelvin::{Blake2b, Compound};
+use canonical_host::MemStore;
 use kelvin_hamt::{HAMTSearch, NarrowHAMT};
 
 // Generate Composer & Public Parameters
@@ -80,7 +80,7 @@ let pub_params =
     PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
 let (ck, vk) = pub_params.trim(1 << 16).unwrap();
 // Generate a tree with random scalars inside.
-let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
+let mut ptree: PoseidonTree<_, MemStore> = PoseidonTree::new(17);
 for i in 0..1024u64 {
     ptree
         .push(StorageScalar(BlsScalar::from(i as u64)))
@@ -132,11 +132,11 @@ for i in [0u64, 567, 1023].iter() {
 use poseidon252::{StorageScalar, PoseidonAnnotation};
 use poseidon252::merkle_proof::merkle_opening_scalar_verification;
 use dusk_plonk::bls12_381::Scalar as BlsScalar;
-use kelvin::{Blake2b, Compound};
+use canonical_host::MemStore;
 use poseidon252::PoseidonTree;
 
  // Generate a tree with random scalars inside.
-let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
+let mut ptree: PoseidonTree<_, MemStore> = PoseidonTree::new(17);
 for i in 0..1024u64 {
     ptree
         .push(StorageScalar(BlsScalar::from(i as u64)))

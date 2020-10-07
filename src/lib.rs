@@ -80,7 +80,7 @@
 //! use poseidon252::merkle_proof::merkle_opening_gadget;
 //! use dusk_plonk::prelude::*;
 //! use poseidon252::PoseidonTree;
-//! use kelvin::{Blake2b, Compound};
+//! use canonical_host::MemStore;
 //! use anyhow::Result;
 //!
 //! fn main() -> Result<()> {
@@ -89,7 +89,7 @@
 //!      PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
 //!  let (ck, vk) = pub_params.trim(1 << 16)?;
 //!  // Generate a tree with random scalars inside.
-//!  let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> = PoseidonTree::new(17);
+//!  let mut ptree: PoseidonTree<_, PoseidonAnnotation, MemStore> = PoseidonTree::new(17);
 //!  for i in 0..1024u64 {
 //!      ptree
 //!          .push(StorageScalar(BlsScalar::from(i as u64)))
@@ -140,11 +140,12 @@
 //! use poseidon252::{StorageScalar, PoseidonAnnotation};
 //! use poseidon252::merkle_proof::merkle_opening_scalar_verification;
 //! use dusk_plonk::bls12_381::Scalar as BlsScalar;
-//! use kelvin::{Blake2b, Compound};
+//! use kelvin::Compound;
+//! use canonical_host::MemStore;
 //! use poseidon252::PoseidonTree;
 //!
 //!  // Generate a tree with random scalars inside.
-//! let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> = PoseidonTree::new(17);
+//! let mut ptree: PoseidonTree<_, PoseidonAnnotation, MemStore> = PoseidonTree::new(17);
 //! for i in 0..1024u64 {
 //!     ptree
 //!         .push(StorageScalar(BlsScalar::from(i as u64)))
