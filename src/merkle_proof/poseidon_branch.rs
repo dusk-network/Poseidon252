@@ -278,7 +278,7 @@ mod tests {
 
         assert_eq!(0, idx);
 
-        let branch = tree.poseidon_branch(idx).unwrap().unwrap();
+        let branch = tree.get(idx).unwrap().unwrap();
 
         assert_eq!(branch.root(), mock.root());
         assert_eq!(branch, mock);

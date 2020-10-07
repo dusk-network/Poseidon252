@@ -102,7 +102,7 @@ where
     /// This includes padding the value to the correct branch length equivalent
     pub fn root(&self) -> io::Result<BlsScalar> {
         let branch = self
-            .poseidon_branch(0)?
+            .get(0)?
             .unwrap_or(PoseidonBranch::mock(&[], self.branch_depth as usize));
 
         Ok(branch.root())
@@ -110,11 +110,12 @@ where
 
     /// Returns a poseidon branch pointing at the specific index
     ///
-    /// This includes padding the value to the correct branch length equivalent
-    pub fn poseidon_branch(
-        &self,
-        idx: u64,
-    ) -> io::Result<Option<PoseidonBranch>> {
+    /// This includes padding the value to the correct branch length equivalent.
+    ///
+    /// This function doesn't return the default `get` implementation from
+    /// Kelvin because for Poseidon the height is fixed, and for kelvin it
+    /// depends on the number of elements appended to the tree.
+    pub fn get(&self, idx: u64) -> io::Result<Option<PoseidonBranch>> {
         // Try to get the PoseidonBranch from the tree.
         let mut pbranch: PoseidonBranch = self
             .inner
@@ -137,14 +138,6 @@ where
         let idx = self.inner.count();
         self.inner.push(t)?;
         Ok(idx)
-    }
-
-    /// Get a branch reference to the element at index `idx`, if any
-    pub fn get(
-        &self,
-        idx: u64,
-    ) -> io::Result<Option<Branch<NStack<T, A, H>, H>>> {
-        self.inner.get(idx)
     }
 
     /// Get a mutable branch reference to the element at index `idx`, if any
@@ -269,7 +262,7 @@ mod test {
         let mut tree = PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
 
         let idx = tree.push(StorageScalar::from(55u64))?;
-        let branch = tree.get(idx)?.ok_or_else(|| {
+        let branch = tree.inner().get(idx)?.ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::Other,
                 "Kelvin shouldn't fail at reading annotations",
@@ -353,7 +346,7 @@ mod test {
 
             // Fetch the root and compare
             let branch = tree
-                .poseidon_branch(0)?
+                .get(0)?
                 .expect("The element was inserted and should be present");
 
             let tree_root = branch.root();

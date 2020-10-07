@@ -104,7 +104,7 @@
 //!          // In this case, the key X corresponds to the Scalar(X).
 //!          // We're supposing that we're provided with a Kelvin::Branch to perform
 //!          // the proof.
-//!          let branch = ptree.poseidon_branch(*i).unwrap().unwrap();
+//!          let branch = ptree.get(*i).unwrap().unwrap();
 //!
 //!          // Get tree root.
 //!          let root = ptree.root().unwrap();
@@ -158,7 +158,7 @@
 //!     // In this case, the key X corresponds to the Scalar(X).
 //!     // We're supposing that we're provided with a Kelvin::Branch to perform
 //!     // the proof.
-//!     let branch = ptree.poseidon_branch(i).unwrap().unwrap();
+//!     let branch = ptree.get(i).unwrap().unwrap();
 //!
 //!     // Get tree root.
 //!     let root = ptree.root().unwrap();
