@@ -6,9 +6,10 @@
 
 //! Definitions of the merkle tree structure seen in Poseidon.
 use crate::hashing_utils::scalar_storage::StorageScalar;
+use crate::merkle_lvl_hash::hash;
 use crate::ARITY;
 use dusk_plonk::bls12_381::Scalar as BlsScalar;
-use hades252::WIDTH;
+use hades252::{ScalarStrategy, Strategy, WIDTH};
 use kelvin::{Branch, ByteHash, Compound};
 use std::borrow::Borrow;
 
@@ -16,16 +17,12 @@ use std::borrow::Borrow;
 ///
 /// The levels are ordered so the first element of `levels` is actually the bottom
 /// level of the Kelvin tree.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PoseidonBranch {
     /// Root of the Merkle Tree
     pub(crate) root: BlsScalar,
     /// Levels of the MerkleTree with it's corresponding leaves and offset.
     pub(crate) levels: Vec<PoseidonLevel>,
-    /// Padding levels used to avoid variadic proofs in ZK circuits.
-    /// This field is only relevant when we use `merkle_opening_gadget` fn
-    /// otherways, it's simply ignored to check the `Scalar` usage of openings.
-    pub(crate) padding_levels: Vec<PoseidonLevel>,
 }
 
 /// Provides a conversion between Branch and PoseidonBranch.
@@ -120,7 +117,6 @@ impl PoseidonBranch {
         PoseidonBranch {
             root: BlsScalar::zero(),
             levels: vec![],
-            padding_levels: vec![],
         }
     }
 
@@ -130,7 +126,6 @@ impl PoseidonBranch {
         PoseidonBranch {
             root: BlsScalar::zero(),
             levels: Vec::with_capacity(n),
-            padding_levels: vec![],
         }
     }
 
@@ -138,9 +133,75 @@ impl PoseidonBranch {
     pub fn root(&self) -> BlsScalar {
         self.root
     }
+
+    /// Extends the branch to the specified length
+    pub fn extend(&mut self, target_depth: usize) -> usize {
+        if self.levels.len() >= target_depth {
+            return 0;
+        }
+
+        let n_extensions = target_depth - self.levels.len();
+
+        let mut perm = self.levels[self.levels.len() - 1].leaves;
+        ScalarStrategy::new().perm(&mut perm);
+        let mut leaves = [BlsScalar::zero(); WIDTH];
+        leaves[0] = BlsScalar::from(0b1000);
+        leaves[1] = perm[1];
+
+        self.levels.push(PoseidonLevel { offset: 1, leaves });
+        self.root = perm[1];
+
+        let mut def_leaves = [BlsScalar::zero(); WIDTH];
+        def_leaves[0] = BlsScalar::from(0b1000);
+
+        while self.levels.len() < target_depth {
+            let mut leaves = def_leaves;
+            leaves[1] = hash::merkle_level_hash(&[Some(self.root)]);
+            self.root = leaves[1];
+
+            self.levels.push(PoseidonLevel { offset: 1, leaves });
+        }
+
+        n_extensions
+    }
+
+    /// Mock a branch for a given leaf and a depth
+    pub fn mock(input: &[BlsScalar], depth: usize) -> Self {
+        let mut leaves = [BlsScalar::zero(); WIDTH];
+
+        let mut bit = 1 << WIDTH - 1;
+        let mut flag = 0;
+        let mut offset = 0;
+
+        input
+            .iter()
+            .zip(leaves.iter_mut().skip(1))
+            .for_each(|(i, l)| {
+                bit >>= 1;
+                flag |= bit;
+                *l = *i;
+                offset += 1;
+            });
+
+        leaves[0] = BlsScalar::from(flag);
+
+        let mut mock = Self {
+            root: leaves[1],
+            levels: vec![PoseidonLevel { offset, leaves }],
+        };
+
+        mock.extend(depth);
+
+        mock
+    }
+
+    /// Fetch the merkle levels of the branch
+    pub fn levels(&self) -> &[PoseidonLevel] {
+        self.levels.as_slice()
+    }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// Represents a Merkle-Tree Level inside of a `PoseidonBranch`.
 /// It stores the leaves as `BlsScalar` and the offset which represents
 /// the position on the level where the hash of the previous `PoseidonLevel`
@@ -159,5 +220,67 @@ impl Default for PoseidonLevel {
             offset: 0usize,
             leaves: [BlsScalar::zero(); WIDTH],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{PoseidonAnnotation, PoseidonBranch, PoseidonTree};
+    use dusk_plonk::prelude::*;
+    use hades252::{ScalarStrategy, Strategy, WIDTH};
+    use kelvin::Blake2b;
+    use rand::rngs::StdRng;
+    use rand::SeedableRng;
+
+    #[test]
+    fn branch_mock_scalar() {
+        let mut rng_seed = StdRng::seed_from_u64(2321u64);
+        let rng = &mut rng_seed;
+        let mut h = ScalarStrategy::new();
+
+        let leaf = BlsScalar::random(rng);
+        let depth = 17;
+        let branch = PoseidonBranch::mock(&[leaf], depth);
+        let mut root = BlsScalar::zero();
+
+        assert_eq!(depth, branch.levels.len());
+
+        let mut perm = [BlsScalar::zero(); WIDTH];
+        branch.levels.iter().fold(leaf, |acc, level| {
+            perm.copy_from_slice(&level.leaves);
+
+            let offset = level.offset;
+            assert!(offset > 0 && offset < WIDTH);
+            assert_eq!(acc, perm[offset]);
+
+            root = perm[1];
+            h.perm(&mut perm);
+
+            perm[1]
+        });
+
+        assert_eq!(branch.root, root);
+    }
+
+    #[test]
+    fn branch_mock_tree() {
+        let mut rng_seed = StdRng::seed_from_u64(2321u64);
+        let rng = &mut rng_seed;
+
+        let leaf = BlsScalar::random(rng);
+        let depth = 17;
+
+        let mock = PoseidonBranch::mock(&[leaf], depth);
+
+        let mut tree =
+            PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(depth);
+        let idx = tree.push(leaf.into()).unwrap();
+
+        assert_eq!(0, idx);
+
+        let branch = tree.get(idx).unwrap().unwrap();
+
+        assert_eq!(branch.root(), mock.root());
+        assert_eq!(branch, mock);
     }
 }

@@ -14,7 +14,7 @@ use kelvin::{
 };
 use nstack::NStack;
 
-use crate::{PoseidonBranch, PoseidonLevel, StorageScalar};
+use crate::{PoseidonBranch, StorageScalar};
 
 /// A zk-friendly datastructure to store elements
 ///
@@ -101,23 +101,21 @@ where
     ///
     /// This includes padding the value to the correct branch length equivalent
     pub fn root(&self) -> io::Result<BlsScalar> {
-        let first_level: A = self.inner().annotation().ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::Other,
-                "Kelvin shouldn't fail at reading annotations",
-            )
-        })?;
-        let storage_scalar: &StorageScalar = first_level.borrow();
-        Ok(storage_scalar.to_owned().into())
+        let branch = self
+            .get(0)?
+            .unwrap_or(PoseidonBranch::mock(&[], self.branch_depth as usize));
+
+        Ok(branch.root())
     }
 
     /// Returns a poseidon branch pointing at the specific index
     ///
-    /// This includes padding the value to the correct branch length equivalent
-    pub fn poseidon_branch(
-        &self,
-        idx: u64,
-    ) -> io::Result<Option<PoseidonBranch>> {
+    /// This includes padding the value to the correct branch length equivalent.
+    ///
+    /// This function doesn't return the default `get` implementation from
+    /// Kelvin because for Poseidon the height is fixed, and for kelvin it
+    /// depends on the number of elements appended to the tree.
+    pub fn get(&self, idx: u64) -> io::Result<Option<PoseidonBranch>> {
         // Try to get the PoseidonBranch from the tree.
         let mut pbranch: PoseidonBranch = self
             .inner
@@ -130,21 +128,7 @@ where
                 )
             })?;
 
-        // We check if the branch requires padding, in which case, we add as many padding levels as it's
-        // needed in order to have the correct branch padding for the
-        // merkle opening proofs.
-        //
-        // The values added in the padding levels do not matter at all for Scalar merkle opening proofs since
-        // they aren't used/required. These levels are added so that the circuits that require the
-        // `merkle_opening_gadget` fn do not have variadic sizes. But the operations performed for these levels
-        // are not constrained (they can be considered dummy ops just to pad the circuits).
-        if self.branch_depth as usize > pbranch.levels.len() {
-            pbranch.padding_levels.extend(vec![
-                PoseidonLevel::default();
-                self.branch_depth as usize
-                    - pbranch.levels.len()
-            ]);
-        }
+        pbranch.extend(self.branch_depth as usize);
 
         Ok(Some(pbranch))
     }
@@ -154,14 +138,6 @@ where
         let idx = self.inner.count();
         self.inner.push(t)?;
         Ok(idx)
-    }
-
-    /// Get a branch reference to the element at index `idx`, if any
-    pub fn get(
-        &self,
-        idx: u64,
-    ) -> io::Result<Option<Branch<NStack<T, A, H>, H>>> {
-        self.inner.get(idx)
     }
 
     /// Get a mutable branch reference to the element at index `idx`, if any
@@ -264,8 +240,11 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{PoseidonAnnotation, PoseidonBranch};
+    use crate::merkle_lvl_hash::hash::merkle_level_hash;
+    use crate::{PoseidonAnnotation, PoseidonBranch, ARITY};
     use kelvin::Blake2b;
+    use rand::rngs::StdRng;
+    use rand::SeedableRng;
 
     #[test]
     fn insert() -> io::Result<()> {
@@ -281,15 +260,99 @@ mod test {
     #[test]
     fn root_consistency_branch_tree() -> io::Result<()> {
         let mut tree = PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
+
         let idx = tree.push(StorageScalar::from(55u64))?;
-        let branch = tree.get(idx)?.ok_or_else(|| {
+        let branch = tree.inner().get(idx)?.ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::Other,
                 "Kelvin shouldn't fail at reading annotations",
             )
         })?;
+
         let pbranch = PoseidonBranch::from(&branch);
-        assert_eq!(tree.root()?, pbranch.root);
+        // Kelvin root currently returns a minimum number of hashed leaves
+        //
+        // For a single leaf, it should calculate a single hash, so its root
+        // must be different than the poseidon fixed height tree
+        assert_ne!(tree.root()?, pbranch.root);
+
+        Ok(())
+    }
+
+    #[test]
+    fn tree_precalculated_root() -> io::Result<()> {
+        let mut rng_seed = StdRng::seed_from_u64(3498304u64);
+        let rng = &mut rng_seed;
+
+        let mut perm = [None; ARITY];
+        let depth = 17;
+
+        for i in &[
+            1,
+            ARITY - 1,
+            ARITY,
+            ARITY + 1,
+            ARITY + 2,
+            10,
+            100,
+            1000,
+            10000,
+        ] {
+            // Create a set of random leaves
+            let leaves = (0..*i)
+                .map(|_| BlsScalar::random(rng))
+                .collect::<Vec<BlsScalar>>();
+
+            // Split in chunks of arity size and calculate their hashes
+            //
+            // Repeat the process until we find the root
+            let mut d = 1;
+            let mut levels = leaves.clone();
+            loop {
+                levels = levels
+                    .chunks(ARITY)
+                    .map(|c| {
+                        for p in perm.iter_mut() {
+                            *p = None;
+                        }
+
+                        for i in 0..c.len() {
+                            perm[i].replace(c[i]);
+                        }
+
+                        merkle_level_hash(&perm)
+                    })
+                    .collect::<Vec<BlsScalar>>();
+
+                d += 1;
+                if levels.len() == 1 {
+                    break;
+                }
+            }
+
+            // Fill the remainder levels and get the root
+            let mut root = levels[0];
+            while d < depth {
+                root = merkle_level_hash(&[Some(root)]);
+                d += 1;
+            }
+
+            // Insert the leaves on the tree
+            let mut tree =
+                PoseidonTree::<_, PoseidonAnnotation, Blake2b>::new(17);
+            for l in leaves.into_iter() {
+                tree.push(l.into())?;
+            }
+
+            // Fetch the root and compare
+            let branch = tree
+                .get(0)?
+                .expect("The element was inserted and should be present");
+
+            let tree_root = branch.root();
+            assert_eq!(root, tree_root);
+        }
+
         Ok(())
     }
 }

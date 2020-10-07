@@ -37,24 +37,28 @@ use hades252::WIDTH;
 /// leaves and applies the poseidon hash, using the `hades252::ScalarStragegy` and
 /// computing the corresponding bitflags.
 pub fn merkle_level_hash(leaves: &[Option<BlsScalar>]) -> BlsScalar {
-    let mut strategy = ScalarStrategy::new();
-    let mut accum = 0u64;
-    let mut res = [BlsScalar::zero(); WIDTH];
+    let mut h = ScalarStrategy::new();
+
+    let mut perm = [BlsScalar::zero(); WIDTH];
+    let mut bit = 1 << WIDTH - 1;
+    let mut flag = 0;
+
     leaves
         .iter()
-        .enumerate()
-        .zip(res.iter_mut().skip(1))
-        .for_each(|((idx, l), r)| match l {
-            Some(scalar) => {
-                *r = *scalar;
-                accum += 1u64 << ((ARITY - 1) - idx);
+        .zip(perm.iter_mut().skip(1))
+        .for_each(|(l, p)| {
+            bit >>= 1;
+
+            if let Some(l) = l {
+                flag |= bit;
+                *p = *l;
             }
-            None => *r = BlsScalar::zero(),
         });
-    // Set bitflags as first element.
-    res[0] = BlsScalar::from(accum);
-    strategy.perm(&mut res);
-    res[1]
+
+    perm[0] = BlsScalar::from(flag);
+    h.perm(&mut perm);
+
+    perm[1]
 }
 
 /// The `poseidon_hash` function takes a `PoseidonLevel` which has already computed

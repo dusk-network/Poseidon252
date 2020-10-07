@@ -169,18 +169,14 @@ impl<A> Combine<A> for StorageScalar {
         E: ErasedAnnotation<A>,
     {
         let mut leaves: [Option<BlsScalar>; ARITY] = [None; ARITY];
-        elements
-            .iter()
-            .zip(leaves.iter_mut())
-            .for_each(|(element, leave)| {
-                match element.annotation() {
-                    Some(annotation) => {
-                        let s: &StorageScalar = (*annotation).borrow();
-                        *leave = Some(s.0);
-                    }
-                    None => *leave = None,
-                };
-            });
+
+        elements.iter().zip(leaves.iter_mut()).for_each(|(e, l)| {
+            if let Some(a) = e.annotation() {
+                let s: &StorageScalar = (*a).borrow();
+                l.replace(s.0);
+            }
+        });
+
         let res = hash::merkle_level_hash(&leaves);
         Some(StorageScalar(res))
     }
