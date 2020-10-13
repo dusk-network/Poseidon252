@@ -12,6 +12,7 @@ use dusk_plonk::bls12_381::Scalar as BlsScalar;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
 use kelvin::{Branch, ByteHash, Compound};
 use std::borrow::Borrow;
+use std::ops::Deref;
 
 /// The `Poseidon` structure will accept a number of inputs equal to the arity.
 ///
@@ -23,6 +24,16 @@ pub struct PoseidonBranch {
     pub(crate) root: BlsScalar,
     /// Levels of the MerkleTree with it's corresponding leaves and offset.
     pub(crate) levels: Vec<PoseidonLevel>,
+}
+
+impl Deref for PoseidonBranch {
+    type Target = BlsScalar;
+
+    /// Follows the same approach as Kelvin and Deref as BlsScalar
+    /// of the offset of the first level
+    fn deref(&self) -> &Self::Target {
+        self.levels[0].deref()
+    }
 }
 
 /// Provides a conversion between Branch and PoseidonBranch.
@@ -201,7 +212,7 @@ impl PoseidonBranch {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Represents a Merkle-Tree Level inside of a `PoseidonBranch`.
 /// It stores the leaves as `BlsScalar` and the offset which represents
 /// the position on the level where the hash of the previous `PoseidonLevel`
@@ -220,6 +231,16 @@ impl Default for PoseidonLevel {
             offset: 0usize,
             leaves: [BlsScalar::zero(); WIDTH],
         }
+    }
+}
+
+impl Deref for PoseidonLevel {
+    type Target = BlsScalar;
+
+    /// Follows the same approach as Kelvin and Deref as BlsScalar
+    /// of the offset of the level
+    fn deref(&self) -> &Self::Target {
+        &self.leaves[self.offset]
     }
 }
 

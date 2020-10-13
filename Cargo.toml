@@ -14,11 +14,15 @@ hades252 = { git = "https://github.com/dusk-network/hades252", tag = "v0.10.0" }
 dusk-plonk = {version = "0.3.1", features = ["trace-print"]}
 anyhow = "1.0"
 thiserror = "1.0"
+rand = "0.7"
 
 [dev-dependencies]
-rand = "0.7"
 rand_core = "0.5"
 criterion = "0.3"
+
+[[bench]]
+name = "poseidon252"
+harness = false
 
 [profile.dev]
 opt-level = 3
@@ -30,7 +34,6 @@ codegen-units = 16
 panic = 'unwind'
 incremental = false
 overflow-checks = false
-
 
 [profile.release]
 debug = false
