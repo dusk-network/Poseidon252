@@ -15,8 +15,6 @@
 //!
 //! [Starkad and Poseidon: New Hash Functions for Zero Knowledge Proof Systems](https://eprint.iacr.org/2019/458.pdf)
 //!
-//!
-//!
 //! This repository has been created so there's a unique library that holds the tools & functions
 //! required to perform Poseidon Hashes.
 //!
@@ -76,98 +74,72 @@
 //! ### Zero Knowledge Merkle Opening Proof example:
 //!
 //! ```no_run
-//! use poseidon252::{StorageScalar, PoseidonAnnotation};
-//! use poseidon252::merkle_proof::merkle_opening_gadget;
-//! use dusk_plonk::prelude::*;
-//! use poseidon252::PoseidonTree;
-//! use kelvin::{Blake2b, Compound};
 //! use anyhow::Result;
+//! use canonical::Canon;
+//! use canonical_derive::Canon;
+//! use canonical_host::MemStore;
+//! use dusk_plonk::prelude::*;
+//! use poseidon252::tree::zk::merkle_opening;
+//! use poseidon252::tree::{PoseidonAnnotation, PoseidonTree};
+//!
+//! const DEPTH: usize = 17;
+//!
+//! #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+//! struct MockLeaf(pub BlsScalar);
+//!
+//! impl From<u64> for MockLeaf {
+//!     fn from(n: u64) -> MockLeaf {
+//!         MockLeaf(BlsScalar::from(n))
+//!     }
+//! }
+//!
+//! impl Into<BlsScalar> for &MockLeaf {
+//!     fn into(self) -> BlsScalar {
+//!         self.0
+//!     }
+//! }
 //!
 //! fn main() -> Result<()> {
-//!  // Generate Composer & Public Parameters
-//!  let pub_params =
-//!      PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
-//!  let (ck, vk) = pub_params.trim(1 << 16)?;
-//!  // Generate a tree with random scalars inside.
-//!  let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> = PoseidonTree::new(17);
-//!  for i in 0..1024u64 {
-//!      ptree
-//!          .push(StorageScalar(BlsScalar::from(i as u64)))
-//!          .unwrap();
-//!  }
+//!     let pub_params = PublicParameters::setup(1 << 15, &mut rand::thread_rng())?;
+//!     let (ck, ok) = pub_params.trim(1 << 15)?;
 //!
-//!  for i in [0u64, 567, 1023].iter() {
-//!      let mut gadget_tester = |composer: &mut StandardComposer| {
-//!          // We want to proof that we know the Scalar tied to the key Xusize
-//!          // and that indeed, it is inside the merkle tree.
+//!     let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, DEPTH> =
+//!         PoseidonTree::new();
 //!
-//!          // In this case, the key X corresponds to the Scalar(X).
-//!          // We're supposing that we're provided with a Kelvin::Branch to perform
-//!          // the proof.
-//!          let branch = ptree.get(*i).unwrap().unwrap();
+//!     for i in 0..1024 {
+//!         let l = MockLeaf::from(i as u64);
+//!         tree.push(l)?;
+//!     }
 //!
-//!          // Get tree root.
-//!          let root = ptree.root().unwrap();
+//!     let gadget_tester =
+//!         |composer: &mut StandardComposer,
+//!          tree: &PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, DEPTH>,
+//!          n: usize| {
+//!             let branch = tree.branch(n).unwrap().unwrap();
+//!             let root = tree.root().unwrap();
 //!
-//!          // Add the proven leaf value to the Constraint System
-//!          let proven_leaf = composer.add_input(BlsScalar::from(*i));
+//!             let leaf = BlsScalar::from(n as u64);
+//!             let leaf = composer.add_input(leaf);
 //!
-//!          merkle_opening_gadget(composer, branch, proven_leaf);
-//!      };
+//!             let root_p = merkle_opening::<DEPTH>(composer, &branch, leaf);
+//!             composer.constrain_to_constant(root_p, BlsScalar::zero(), -root);
+//!         };
 //!
-//!      // Proving
-//!      let mut prover = Prover::new(b"merkle_opening_tester");
-//!      gadget_tester(prover.mut_cs());
-//!      prover.preprocess(&ck)?;
-//!      let proof = prover.prove(&ck)?;
+//!     let label = b"opening_gadget";
+//!     let idx = 0;
 //!
-//!      // Verify
-//!      let mut verifier = Verifier::new(b"merkle_opening_tester");
-//!      gadget_tester(verifier.mut_cs());
-//!      verifier.preprocess(&ck)?;
-//!      let pi = verifier.mut_cs().public_inputs.clone();
-//!      assert!(verifier
-//!          .verify(&proof, &vk, &pi)
-//!          .is_ok());
-//!  }
-//! Ok(())
-//! }
-//! ```
+//!     let mut prover = Prover::new(label);
+//!     gadget_tester(prover.mut_cs(), &tree, idx);
+//!     prover.preprocess(&ck)?;
+//!     let proof = prover.prove(&ck)?;
 //!
+//!     let mut verifier = Verifier::new(label);
+//!     gadget_tester(verifier.mut_cs(), &tree, idx);
+//!     verifier.preprocess(&ck)?;
+//!     let pi = verifier.mut_cs().public_inputs.clone();
+//!     verifier.verify(&proof, &ok, &pi).unwrap();
 //!
-//! ### Standard Merkle Opening Proof example:
-//! ```no_run
-//! use poseidon252::{StorageScalar, PoseidonAnnotation};
-//! use poseidon252::merkle_proof::merkle_opening_scalar_verification;
-//! use dusk_plonk::bls12_381::Scalar as BlsScalar;
-//! use kelvin::{Blake2b, Compound};
-//! use poseidon252::PoseidonTree;
-//!
-//!  // Generate a tree with random scalars inside.
-//! let mut ptree: PoseidonTree<_, PoseidonAnnotation, Blake2b> = PoseidonTree::new(17);
-//! for i in 0..1024u64 {
-//!     ptree
-//!         .push(StorageScalar(BlsScalar::from(i as u64)))
-//!         .unwrap();
-//! }
-//!
-//! for i in 0..1024u64 {
-//!     // We want to proof that we know the Scalar tied to the key Xusize
-//!     // and that indeed, it is inside the merkle tree.
-//!
-//!     // In this case, the key X corresponds to the Scalar(X).
-//!     // We're supposing that we're provided with a Kelvin::Branch to perform
-//!     // the proof.
-//!     let branch = ptree.get(i).unwrap().unwrap();
-//!
-//!     // Get tree root.
-//!     let root = ptree.root().unwrap();
-//!
-//!     assert!(merkle_opening_scalar_verification(
-//!         branch,
-//!         root,
-//!         BlsScalar::from(i),
-//!     ));
+//!     Ok(())
 //! }
 //! ```
 //!
@@ -189,47 +161,13 @@
 //! - If you want to report a bug or request a new feature addition, please open an issue on this repository.
 
 #![deny(missing_docs)]
+#![feature(min_const_generics)]
 
 /// Encryption and decryption implementation over a Poseidon cipher
 pub mod cipher;
-/// Helpers for kelvin hashing & storing trait implementations
-mod hashing_utils;
-/// Reference implementation for the Poseidon Merkle hash function
-pub mod merkle_lvl_hash;
-/// Reference implementation for the gadget that builds a merkle opening proof
-pub mod merkle_proof;
 /// Module containing a fixed-length Poseidon hash implementation
 pub mod perm_uses;
 /// Reference implementation for the Poseidon Sponge hash function
 pub mod sponge;
-
 /// The module handling posedion-trees
 pub mod tree;
-pub use tree::{PoseidonTree, PoseidonTreeIterator};
-
-/// Maximum arity supported for trees.
-///
-/// This is due to the fact that actually we rely in Hades252 crate
-/// which `WIDTH` parameter is 5.
-pub const ARITY: usize = hades252::WIDTH - 1;
-
-/// Wrapping struct that defines used to implement over it
-/// the hashing logic that Kelvin needs in order to provide
-/// Merkle Paths as `Branch` using Poseidon as the main Hasing
-/// algorithm.
-///
-pub use hashing_utils::poseidon_annotation::PoseidonAnnotation;
-
-/// This struct is a Wrapper type over the bls12-381 `Scalar` which has implemented
-/// inside the logic to allows `Kelvin` Merkle Trees understand how to store `Scalar`s
-/// inside of them leaves.
-///
-/// This Struct is the one that we will use inside of our SmartContract storage logic to
-/// encode/compress all of our Data Structures data into a single `Scalar`.
-pub use hashing_utils::scalar_storage::StorageScalar;
-
-/// This structures should only be used if you want to elaborate custom Merkle-Tree proofs.
-///
-/// If that's not the case, you should just call the `merkle_proof` with the required fields
-/// and forget about this structures since they're properly handled internally.
-pub use merkle_proof::{PoseidonBranch, PoseidonLevel};
