@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 30-10-20
 ### Changed
 - Bump `hades252` to `v0.10.0`
-- Major refactor on PoseidonTree root calculation and merkle opening
+- Major refactor on the poseidon tree to comply with the simplifications provided by microkelvin
 
 ## [0.10.0] - 05-10-20
 ### Changed
