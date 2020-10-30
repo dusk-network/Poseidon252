@@ -124,7 +124,7 @@ where
             return branch;
         }
 
-        let flag = BlsScalar::from(0b1000);
+        let flag = BlsScalar::one();
         let level = branch.0[depth - 1].level;
         let mut perm = [BlsScalar::zero(); hades252::WIDTH];
 
