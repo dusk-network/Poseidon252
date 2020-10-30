@@ -1,7 +1,7 @@
 use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
-use dusk_plonk::prelude::BlsScalar;
+use dusk_plonk::prelude::*;
 use hades252::{ScalarStrategy, Strategy};
 use microkelvin::{Annotation, Cardinality};
 use nstack::NStack;
