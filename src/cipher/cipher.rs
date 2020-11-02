@@ -4,6 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use canonical::Canon;
+use canonical_derive::Canon;
 use dusk_plonk::jubjub::AffinePoint;
 use dusk_plonk::prelude::*;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
@@ -88,7 +90,7 @@ pub use super::CipherError;
 ///         .expect("Failed to decrypt!")
 /// }
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default, Canon)]
 pub struct PoseidonCipher {
     cipher: [BlsScalar; CIPHER_SIZE],
 }
