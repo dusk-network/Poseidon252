@@ -17,8 +17,7 @@ canonical_derive = "0.4"
 microkelvin = "0.5"
 nstack = "0.6"
 
-##### REMOVE
-#[dev-dependencies]
+[dev-dependencies]
 canonical_host = "0.4"
 rand = "0.7"
 rand_core = "0.5"
