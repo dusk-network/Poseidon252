@@ -1,3 +1,9 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) DUSK NETWORK. All rights reserved.
+
 use super::{
     PoseidonAnnotation, PoseidonTreeAnnotation, PoseidonWalkableAnnotation,
 };
@@ -9,6 +15,10 @@ use dusk_plonk::prelude::*;
 use microkelvin::{Annotation, Cardinality, Compound, Max, Step, Walk};
 use nstack::NStack;
 
+/// Extends the standard [`PoseidonAnnotation`] with an annotation that holds an agnostic maximum
+/// value
+///
+/// This maximum value is representes as `u64`, and the tree is iterable over it
 #[derive(Debug, Clone, Canon)]
 pub struct PoseidonMaxAnnotation {
     poseidon: PoseidonAnnotation,

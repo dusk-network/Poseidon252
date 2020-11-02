@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- `PoseidonAnnotation` as generic to support walkable implementations
+
 ## [0.11.0] - 30-10-20
 ### Changed
 - Bump `hades252` to `v0.10.0`

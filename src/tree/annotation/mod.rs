@@ -35,11 +35,26 @@ where
 pub trait PoseidonWalkableAnnotation<C, D, L, S>:
     PoseidonTreeAnnotation<L, S>
 where
-    C: Compound<S>,
+    C: Compound<S, Leaf = L>,
     C: Clone,
     D: Clone,
     L: PoseidonLeaf<S>,
     S: Store,
 {
+    /// Traversal logic of the walkable annotation
+    ///
+    /// This will define the traversal path over the tree provided the generic data.
+    ///
+    /// The purpose of the data is to act as a filter over annotations, and this will be equally
+    /// passed to leaves and nodes.
     fn poseidon_walk(walk: Walk<'_, C, S>, data: D) -> Step<'_, C, S>;
+
+    /// Uses the internal implementation of `poseidon_walk` to check if a leaf is compatible with
+    /// a provided data.
+    fn poseidon_leaf_found(leaf: &L, data: D) -> bool {
+        match Self::poseidon_walk(Walk::Leaf(leaf), data) {
+            Step::Found(_) => true,
+            _ => false,
+        }
+    }
 }

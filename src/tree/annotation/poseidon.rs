@@ -26,6 +26,7 @@ pub struct PoseidonAnnotation {
 }
 
 impl PoseidonAnnotation {
+    /// Create a new poseidon annotation from a generic node implementation
     pub fn from_generic_node<L, A, S>(node: &NStack<L, A, S>) -> Self
     where
         L: PoseidonLeaf<S>,
