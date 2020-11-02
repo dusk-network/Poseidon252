@@ -160,7 +160,7 @@
 //! - If you want to contribute to this repository/project please, check [CONTRIBUTING.md](https://github.com/dusk-network/Poseidon252/blob/master/CONTRIBUTING.md)
 //! - If you want to report a bug or request a new feature addition, please open an issue on this repository.
 
-#![deny(missing_docs)]
+//#![deny(missing_docs)]
 #![feature(min_const_generics)]
 
 /// Encryption and decryption implementation over a Poseidon cipher

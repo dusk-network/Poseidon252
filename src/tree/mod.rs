@@ -6,12 +6,15 @@
 
 use anyhow::{anyhow, Result};
 use canonical::{Canon, Store};
-use core::borrow::Borrow;
+use core::marker::PhantomData;
 use dusk_plonk::prelude::BlsScalar;
-use microkelvin::{Annotation, Cardinality, Nth};
+use microkelvin::{Branch, Cardinality, Nth};
 use nstack::NStack;
 
-pub use annotation::PoseidonAnnotation;
+pub use annotation::{
+    PoseidonAnnotation, PoseidonMaxAnnotation, PoseidonTreeAnnotation,
+    PoseidonWalkableAnnotation,
+};
 pub use branch::{PoseidonBranch, PoseidonLevel};
 
 mod annotation;
@@ -23,6 +26,14 @@ pub mod zk;
 #[cfg(test)]
 mod tests;
 
+/// A struct that will be used as a poseidon tree leaf must implement this trait
+pub trait PoseidonLeaf<S>: Canon<S> + Clone
+where
+    S: Store,
+{
+    fn poseidon_hash(&self) -> BlsScalar;
+}
+
 /// Represents a Merkle Tree with a given depth that will be calculated using poseidon hash
 ///
 /// The `BlsScalar` borrow of the annotation must represent the root poseidon merkle opening
@@ -30,13 +41,8 @@ mod tests;
 #[derive(Debug, Clone)]
 pub struct PoseidonTree<L, A, S, const DEPTH: usize>
 where
-    L: Canon<S>,
-    L: Clone,
-    for<'a> &'a L: Into<BlsScalar>,
-    A: Canon<S>,
-    A: Annotation<NStack<L, A, S>, S>,
-    A: Borrow<Cardinality>,
-    A: Borrow<BlsScalar>,
+    L: PoseidonLeaf<S>,
+    A: PoseidonTreeAnnotation<L, S>,
     S: Store,
 {
     inner: NStack<L, A, S>,
@@ -45,13 +51,8 @@ where
 impl<L, A, S, const DEPTH: usize> AsRef<NStack<L, A, S>>
     for PoseidonTree<L, A, S, DEPTH>
 where
-    L: Canon<S>,
-    L: Clone,
-    for<'a> &'a L: Into<BlsScalar>,
-    A: Canon<S>,
-    A: Annotation<NStack<L, A, S>, S>,
-    A: Borrow<Cardinality>,
-    A: Borrow<BlsScalar>,
+    L: PoseidonLeaf<S>,
+    A: PoseidonTreeAnnotation<L, S>,
     S: Store,
 {
     fn as_ref(&self) -> &NStack<L, A, S> {
@@ -62,13 +63,8 @@ where
 impl<L, A, S, const DEPTH: usize> AsMut<NStack<L, A, S>>
     for PoseidonTree<L, A, S, DEPTH>
 where
-    L: Canon<S>,
-    L: Clone,
-    for<'a> &'a L: Into<BlsScalar>,
-    A: Canon<S>,
-    A: Annotation<NStack<L, A, S>, S>,
-    A: Borrow<Cardinality>,
-    A: Borrow<BlsScalar>,
+    L: PoseidonLeaf<S>,
+    A: PoseidonTreeAnnotation<L, S>,
     S: Store,
 {
     fn as_mut(&mut self) -> &mut NStack<L, A, S> {
@@ -78,13 +74,8 @@ where
 
 impl<L, A, S, const DEPTH: usize> PoseidonTree<L, A, S, DEPTH>
 where
-    L: Canon<S>,
-    L: Clone,
-    for<'a> &'a L: Into<BlsScalar>,
-    A: Canon<S>,
-    A: Annotation<NStack<L, A, S>, S>,
-    A: Borrow<Cardinality>,
-    A: Borrow<BlsScalar>,
+    L: PoseidonLeaf<S>,
+    A: PoseidonTreeAnnotation<L, S>,
     S: Store,
 {
     /// Creates a new poseidon tree
@@ -146,5 +137,86 @@ where
     /// Return the current root/state of the tree.
     pub fn root(&self) -> Result<BlsScalar> {
         self.branch(0).map(|b| b.unwrap_or_default().root())
+    }
+
+    pub fn iter_walk<D: Clone>(
+        &self,
+        data: D,
+    ) -> Result<PoseidonTreeIterator<'_, L, A, S, A, D, DEPTH>>
+    where
+        A: PoseidonWalkableAnnotation<NStack<L, A, S>, D, L, S>,
+    {
+        PoseidonTreeIterator::new(&self.inner, data)
+    }
+}
+
+pub struct PoseidonTreeIterator<'a, L, A, S, W, D, const DEPTH: usize>
+where
+    L: PoseidonLeaf<S>,
+    A: PoseidonTreeAnnotation<L, S>,
+    S: Store,
+    W: PoseidonWalkableAnnotation<NStack<L, A, S>, D, L, S>,
+    D: Clone,
+{
+    tree: &'a NStack<L, A, S>,
+    data: D,
+    walk: PhantomData<W>,
+    branch: Option<Branch<'a, NStack<L, A, S>, S, DEPTH>>,
+}
+
+impl<'a, L, A, S, W, D, const DEPTH: usize>
+    PoseidonTreeIterator<'a, L, A, S, W, D, DEPTH>
+where
+    L: PoseidonLeaf<S>,
+    A: PoseidonTreeAnnotation<L, S>,
+    S: Store,
+    W: PoseidonWalkableAnnotation<NStack<L, A, S>, D, L, S>,
+    D: Clone,
+{
+    pub fn new(tree: &'a NStack<L, A, S>, data: D) -> Result<Self> {
+        let branch = <Branch<NStack<L, A, S>, S, DEPTH>>::walk(tree, |w| {
+            W::poseidon_walk(w, data.clone())
+        })
+        .map_err(|e| anyhow!("Error fetching the branch: {:?}", e))?;
+
+        Ok(Self {
+            tree,
+            data,
+            walk: PhantomData,
+            branch,
+        })
+    }
+}
+
+impl<'a, L, A, S, W, D, const DEPTH: usize> Iterator
+    for PoseidonTreeIterator<'a, L, A, S, W, D, DEPTH>
+where
+    L: PoseidonLeaf<S>,
+    A: PoseidonTreeAnnotation<L, S>,
+    S: Store,
+    W: PoseidonWalkableAnnotation<NStack<L, A, S>, D, L, S>,
+    D: Clone,
+{
+    type Item = Result<L>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = match &self.branch {
+            Some(b) => (*b).clone(),
+            None => return None,
+        };
+
+        // We are only iterating over the same base compound, so we have an infinite loop here
+        // Check issue #86
+        // https://github.com/dusk-network/dusk-blindbid/issues/86#issuecomment-720664968
+        self.branch = match Branch::walk(self.tree, |w| {
+            W::poseidon_walk(w, self.data.clone())
+        })
+        .map_err(|e| anyhow!("Error fetching the branch: {:?}", e))
+        {
+            Ok(b) => b,
+            Err(e) => return Some(Err(e)),
+        };
+
+        Some(Ok(next))
     }
 }
