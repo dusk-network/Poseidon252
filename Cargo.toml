@@ -14,8 +14,8 @@ anyhow = "1.0"
 thiserror = "1.0"
 canonical = {version = "0.4", optional = true}
 canonical_derive = {version = "0.4", optional = true}
-microkelvin = "0.5"
-nstack = "0.6"
+microkelvin = {version = "0.5", optional = true}
+nstack = {version = "0.6", optional = true}
 
 [dev-dependencies]
 canonical_host = "0.4"
@@ -24,7 +24,7 @@ rand_core = "0.5"
 criterion = "0.3"
 
 [features]
-canon = ["canonical", "canonical_derive", "dusk-plonk/canon"]
+canon = ["canonical", "canonical_derive", "nstack", "microkelvin", "dusk-plonk/canon"]
 
 [profile.dev]
 opt-level = 3
