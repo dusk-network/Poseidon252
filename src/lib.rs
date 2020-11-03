@@ -73,7 +73,7 @@
 //!
 //! ### Zero Knowledge Merkle Opening Proof example:
 //!
-//! ```no_run
+//! ```ignore
 //! use anyhow::Result;
 //! use canonical::Canon;
 //! use canonical_derive::Canon;

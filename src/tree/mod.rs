@@ -7,7 +7,7 @@
 use anyhow::{anyhow, Result};
 
 #[cfg(feature = "canon")]
-use canonical::{Canon,Store};
+use canonical::{Canon, Store};
 use core::borrow::Borrow;
 use dusk_plonk::prelude::BlsScalar;
 use microkelvin::{Annotation, Cardinality, Nth};
@@ -32,7 +32,6 @@ mod tests;
 #[derive(Debug, Clone)]
 pub struct PoseidonTree<L, A, S, const DEPTH: usize>
 where
-
     L: Canon<S>,
     L: Clone,
     for<'a> &'a L: Into<BlsScalar>,
