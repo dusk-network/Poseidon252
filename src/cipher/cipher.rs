@@ -4,7 +4,9 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#[cfg(feature = "canon")]
 use canonical::Canon;
+#[cfg(feature = "canon")]
 use canonical_derive::Canon;
 use dusk_plonk::jubjub::AffinePoint;
 use dusk_plonk::prelude::*;
@@ -90,7 +92,8 @@ pub use super::CipherError;
 ///         .expect("Failed to decrypt!")
 /// }
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default, Canon)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default)]
+#[cfg_attr(feature = "canon", derive(Canon))]
 pub struct PoseidonCipher {
     cipher: [BlsScalar; CIPHER_SIZE],
 }

@@ -73,7 +73,7 @@
 //!
 //! ### Zero Knowledge Merkle Opening Proof example:
 //!
-//! ```no_run
+//! ```ignore
 //! use anyhow::Result;
 //! use canonical::Canon;
 //! use canonical_derive::Canon;
@@ -169,5 +169,6 @@ pub mod cipher;
 pub mod perm_uses;
 /// Reference implementation for the Poseidon Sponge hash function
 pub mod sponge;
-/// The module handling posedion-trees
+/// The module handling posedion-trees.
+#[cfg(feature = "canon")]
 pub mod tree;
