@@ -27,7 +27,7 @@ mod tests;
 
 /// A struct that will be used as a poseidon tree leaf must implement this trait
 ///
-/// After [`PoseidonTree::push`], `tree_idx_mut` will be called to set the
+/// After [`PoseidonTree::push`], `tree_pos_mut` will be called to set the
 /// index of the leaf on the tree
 pub trait PoseidonLeaf<S>: Canon<S> + Clone
 where
@@ -39,13 +39,13 @@ where
     fn poseidon_hash(&self) -> BlsScalar;
 
     /// Index of the leaf structure on the merkle tree.
-    fn tree_idx(&self) -> u64;
+    fn tree_pos(&self) -> u64;
 
     /// Index of the leaf structure on the merkle tree.
     ///
     /// This method is internally used to set the index after the data has been inserted in the
     /// merkle tree.
-    fn tree_idx_mut(&mut self) -> &mut u64;
+    fn tree_pos_mut(&mut self) -> &mut u64;
 }
 
 /// Represents a Merkle Tree with a given depth that will be calculated using poseidon hash
@@ -101,7 +101,7 @@ where
 
     /// Append a leaf to the tree. Return the index of the appended leaf.
     ///
-    /// Will call the `tree_idx_mut` implementation of the leaf to
+    /// Will call the `tree_pos_mut` implementation of the leaf to
     /// set its index
     pub fn push(&mut self, mut leaf: L) -> Result<usize> {
         let size = match &self.inner {
@@ -115,7 +115,7 @@ where
                 .sum(),
         };
 
-        *leaf.tree_idx_mut() = size as u64;
+        *leaf.tree_pos_mut() = size as u64;
         self.inner
             .push(leaf)
             .map_err(|e| anyhow!("Error pushing to the tree: {:?}", e))?;
@@ -186,7 +186,7 @@ where
     D: Clone,
 {
     tree: PoseidonTree<L, A, S, DEPTH>,
-    idx: usize,
+    pos: usize,
     data: D,
 }
 
@@ -204,14 +204,14 @@ where
 
         // TODO - Naive implementation until iterable branch is implemented
         // https://github.com/dusk-network/microkelvin/issues/23
-        let idx = <Branch<NStack<L, A, S>, S, DEPTH>>::walk(&tree.inner, |w| {
+        let pos = <Branch<NStack<L, A, S>, S, DEPTH>>::walk(&tree.inner, |w| {
             A::poseidon_walk(w, data.clone())
         })
         .map_err(|e| anyhow!("Error fetching the branch: {:?}", e))?
-        .map(|l| l.tree_idx())
+        .map(|l| l.tree_pos())
         .unwrap_or(u64::max_value()) as usize;
 
-        Ok(Self { tree, idx, data })
+        Ok(Self { tree, pos, data })
     }
 }
 
@@ -227,14 +227,14 @@ where
     type Item = Result<L>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let idx = self.idx;
-        let (idx_p, overflow) = self.idx.overflowing_add(1);
+        let pos = self.pos;
+        let (pos_p, overflow) = self.pos.overflowing_add(1);
         if overflow {
             return None;
         }
-        self.idx = idx_p;
+        self.pos = pos_p;
 
-        match self.tree.get(idx) {
+        match self.tree.get(pos) {
             // Hack until iterable branch is available
             // This will prevent the iteration over non-filtered data
             // https://github.com/dusk-network/microkelvin/issues/23

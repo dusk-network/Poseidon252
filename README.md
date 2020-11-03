@@ -83,7 +83,7 @@ const DEPTH: usize = 17;
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
 struct DataLeaf {
     data: BlsScalar,
-    idx: u64,
+    pos: u64,
 }
 
 // Example helper
@@ -91,7 +91,7 @@ impl From<u64> for DataLeaf {
     fn from(n: u64) -> DataLeaf {
         DataLeaf {
             data: BlsScalar::from(n),
-            idx: n,
+            pos: n,
         }
     }
 }
@@ -104,13 +104,13 @@ impl PoseidonLeaf<MemStore> for DataLeaf {
     }
 
     // Position on the tree
-    fn tree_idx(&self) -> u64 {
-        self.idx
+    fn tree_pos(&self) -> u64 {
+        self.pos
     }
 
     // Method used to set the position on the tree after the `PoseidonTree::push` call
-    fn tree_idx_mut(&mut self) -> &mut u64 {
-        &mut self.idx
+    fn tree_pos_mut(&mut self) -> &mut u64 {
+        &mut self.pos
     }
 }
 
@@ -146,17 +146,17 @@ fn main() -> Result<()> {
 
     // Define the transcript initializer for the ZK backend
     let label = b"opening_gadget";
-    let idx = 0;
+    let pos = 0;
 
     // Create a merkle opening ZK proof
     let mut prover = Prover::new(label);
-    gadget_tester(prover.mut_cs(), &tree, idx);
+    gadget_tester(prover.mut_cs(), &tree, pos);
     prover.preprocess(&ck)?;
     let proof = prover.prove(&ck)?;
 
     // Verify the merkle opening proof
     let mut verifier = Verifier::new(label);
-    gadget_tester(verifier.mut_cs(), &tree, idx);
+    gadget_tester(verifier.mut_cs(), &tree, pos);
     verifier.preprocess(&ck)?;
     let pi = verifier.mut_cs().public_inputs.clone();
     verifier.verify(&proof, &ok, &pi).unwrap();

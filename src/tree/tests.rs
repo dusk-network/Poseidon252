@@ -19,7 +19,7 @@ use hades252::{ScalarStrategy, Strategy};
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
 struct MockLeaf {
     s: BlsScalar,
-    pub idx: u64,
+    pub pos: u64,
     pub expiration: u64,
 }
 
@@ -27,7 +27,7 @@ impl From<u64> for MockLeaf {
     fn from(n: u64) -> MockLeaf {
         MockLeaf {
             s: BlsScalar::from(n),
-            idx: 0,
+            pos: 0,
             expiration: n / 3,
         }
     }
@@ -38,12 +38,12 @@ impl PoseidonLeaf<MemStore> for MockLeaf {
         self.s
     }
 
-    fn tree_idx(&self) -> u64 {
-        self.idx
+    fn tree_pos(&self) -> u64 {
+        self.pos
     }
 
-    fn tree_idx_mut(&mut self) -> &mut u64 {
-        &mut self.idx
+    fn tree_pos_mut(&mut self) -> &mut u64 {
+        &mut self.pos
     }
 }
 
@@ -64,7 +64,7 @@ fn tree_append_fetch() {
         let mut s = MockLeaf::from(i as u64);
         let pos = tree.push(s).unwrap();
         assert_eq!(i, pos);
-        s.idx = i as u64;
+        s.pos = i as u64;
         v.push(s);
     }
 
@@ -90,18 +90,18 @@ fn tree_max_walk() {
         let mut s = MockLeaf::from(i as u64);
         let pos = tree.push(s).unwrap();
         assert_eq!(i, pos);
-        s.idx = i as u64;
+        s.pos = i as u64;
         v.push(s);
     }
 
     let w = 170;
-    let idx = w * 3;
+    let pos = w * 3;
     tree.iter_walk(w)
         .unwrap()
         .map(|l| l.unwrap())
         .enumerate()
         .for_each(|(i, leaf)| {
-            assert_eq!(idx + i as u64, leaf.tree_idx());
+            assert_eq!(pos + i as u64, leaf.tree_pos());
         });
 
     assert!(tree.iter_walk((max + 1) as u64).unwrap().next().is_none());
@@ -123,21 +123,21 @@ fn tree_max_walk_non_continuous() {
 
         let pos = tree.push(s).unwrap();
         assert_eq!(i, pos);
-        s.idx = i as u64;
+        s.pos = i as u64;
         v.push(s);
     }
 
     let w = 170;
-    let mut idx = w * 3;
+    let mut pos = w * 3;
     tree.iter_walk(w)
         .unwrap()
         .map(|l| l.unwrap())
         .for_each(|leaf| {
-            if idx % 4 == 0 {
-                idx += 1;
+            if pos % 4 == 0 {
+                pos += 1;
             }
-            assert_eq!(idx, leaf.tree_idx());
-            idx += 1;
+            assert_eq!(pos, leaf.tree_pos());
+            pos += 1;
         });
 
     assert!(tree.iter_walk((max + 1) as u64).unwrap().next().is_none());
