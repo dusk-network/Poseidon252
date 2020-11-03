@@ -170,4 +170,5 @@ pub mod perm_uses;
 /// Reference implementation for the Poseidon Sponge hash function
 pub mod sponge;
 /// The module handling posedion-trees
+#[cfg(feature = "canon")]
 pub mod tree;
