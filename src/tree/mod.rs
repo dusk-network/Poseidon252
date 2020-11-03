@@ -6,7 +6,7 @@
 
 use anyhow::{anyhow, Result};
 
-
+#[cfg(feature = "canon")]
 use canonical::{Canon,Store};
 use core::borrow::Borrow;
 use dusk_plonk::prelude::BlsScalar;
