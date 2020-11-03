@@ -1,21 +1,19 @@
 [![Build Status](https://travis-ci.com/dusk-network/Poseidon252.svg?branch=master)](https://travis-ci.com/dusk-network/Poseidon252)
-[![Repository](https://dusk-network.github.io/Poseidon252/repo-badge.svg)](https://github.com/dusk-network/Poseidon252)
-[![Documentation](https://dusk-network.github.io/Poseidon252/badge.svg)](https://dusk-network.github.io/Poseidon252/index.html)
+[![Repository](https://img.shields.io/badge/github-poseidon252-blueviolet)](https://github.com/dusk-network/Poseidon252)
+[![Documentation](https://img.shields.io/badge/docs-poseidon252-blue)](https://dusk-network.github.io/Poseidon252/index.html)
 
-# Poseidon252 
+# Poseidon252
 Reference implementation for the Poseidon Hashing algorithm.
 
 #### Reference
 
 [Starkad and Poseidon: New Hash Functions for Zero Knowledge Proof Systems](https://eprint.iacr.org/2019/458.pdf)
 
-
-
 This repository has been created so there's a unique library that holds the tools & functions
 required to perform Poseidon Hashes.
 
-This hashes heavily rely on the Hades permutation, which is one of the key parts that Poseidon needs in order 
-to work. 
+This hashes heavily rely on the Hades permutation, which is one of the key parts that Poseidon needs in order
+to work.
 This library uses the reference implementation of [Hades252](https://github.com/dusk-network/hades252) which has been
 designed & build by the [Dusk-Network team](https://dusk.network/).
 
@@ -68,103 +66,112 @@ computed and placed in the first Level position.
 
 
 ### Zero Knowledge Merkle Opening Proof example:
-```rust
-use poseidon252::{StorageScalar, PoseidonAnnotation};
-use poseidon252::merkle_proof::merkle_opening_gadget;
-use dusk_plonk::prelude::*;
-use kelvin::{Blake2b, Compound};
-use kelvin_hamt::{HAMTSearch, NarrowHAMT};
 
-// Generate Composer & Public Parameters
-let pub_params =
-    PublicParameters::setup(1 << 17, &mut rand::thread_rng()).unwrap();
-let (ck, vk) = pub_params.trim(1 << 16).unwrap();
-// Generate a tree with random scalars inside.
-let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
-for i in 0..1024u64 {
-    ptree
-        .push(StorageScalar(BlsScalar::from(i as u64)))
-        .unwrap();
+```no_run
+#[cfg(feature = "canon")]
+{
+
+use anyhow::Result;
+use canonical::Canon;
+use canonical_derive::Canon;
+use canonical_host::MemStore;
+use dusk_plonk::prelude::*;
+use poseidon252::tree::zk::merkle_opening;
+use poseidon252::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree};
+
+// Constant depth of the merkle tree
+const DEPTH: usize = 17;
+
+// Leaf representation
+#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+struct DataLeaf {
+    data: BlsScalar,
+    pos: u64,
 }
 
-for i in [0u64, 567, 1023].iter() {
-    let mut gadget_tester = |composer: &mut StandardComposer| {
-        // We want to proof that we know the Scalar tied to the key Xusize
-        // and that indeed, it is inside the merkle tree.
+// Example helper
+impl From<u64> for DataLeaf {
+    fn from(n: u64) -> DataLeaf {
+        DataLeaf {
+            data: BlsScalar::from(n),
+            pos: n,
+        }
+    }
+}
 
-        // In this case, the key X corresponds to the Scalar(X).
-        // We're supposing that we're provided with a Kelvin::Branch to perform
-        // the proof.
-        let branch = ptree.poseidon_branch(*i).unwrap().unwrap();
+// Any leaf of the poseidon tree must implement `PoseidonLeaf`
+impl PoseidonLeaf<MemStore> for DataLeaf {
+    // Cryptographic hash of the data leaf
+    fn poseidon_hash(&self) -> BlsScalar {
+        self.data
+    }
 
-        // Get tree root.
-        let root = ptree.root().unwrap();
+    // Position on the tree
+    fn tree_pos(&self) -> u64 {
+        self.pos
+    }
 
-        // Add the proven leaf value to the Constraint System
-        let proven_leaf = composer.add_input(BlsScalar::from(*i));
+    // Method used to set the position on the tree after the `PoseidonTree::push` call
+    fn tree_pos_mut(&mut self) -> &mut u64 {
+        &mut self.pos
+    }
+}
 
-        merkle_opening_gadget(composer, branch, proven_leaf, root);
+fn main() -> Result<()> {
+    // Create the ZK keys
+    let pub_params = PublicParameters::setup(1 << 15, &mut rand::thread_rng())?;
+    let (ck, ok) = pub_params.trim(1 << 15)?;
 
-        // Since we don't use all of the wires, we set some dummy constraints to avoid Committing
-        // to zero polynomials.
-        composer.add_dummy_constraints();
-    };
+    // Instantiate a new tree with the MemStore implementation
+    let mut tree: PoseidonTree<DataLeaf, PoseidonAnnotation, MemStore, DEPTH> =
+        PoseidonTree::new();
 
-    // Proving
-    let mut prover = Prover::new(b"merkle_opening_tester");
-    gadget_tester(prover.mut_cs());
+    // Append 1024 elements to the tree
+    for i in 0..1024 {
+        let l = DataLeaf::from(i as u64);
+        tree.push(l)?;
+    }
+
+    // Create a merkle opening tester gadget
+    let gadget_tester =
+        |composer: &mut StandardComposer,
+         tree: &PoseidonTree<DataLeaf, PoseidonAnnotation, MemStore, DEPTH>,
+         n: usize| {
+            let branch = tree.branch(n).unwrap().unwrap();
+            let root = tree.root().unwrap();
+
+            let leaf = BlsScalar::from(n as u64);
+            let leaf = composer.add_input(leaf);
+
+            let root_p = merkle_opening::<DEPTH>(composer, &branch, leaf);
+            composer.constrain_to_constant(root_p, BlsScalar::zero(), -root);
+        };
+
+    // Define the transcript initializer for the ZK backend
+    let label = b"opening_gadget";
+    let pos = 0;
+
+    // Create a merkle opening ZK proof
+    let mut prover = Prover::new(label);
+    gadget_tester(prover.mut_cs(), &tree, pos);
     prover.preprocess(&ck)?;
     let proof = prover.prove(&ck)?;
 
-    // Verify
-    let mut verifier = Verifier::new(b"merkle_opening_tester");
-    gadget_tester(verifier.mut_cs());
+    // Verify the merkle opening proof
+    let mut verifier = Verifier::new(label);
+    gadget_tester(verifier.mut_cs(), &tree, pos);
     verifier.preprocess(&ck)?;
-    assert!(verifier
-        .verify(&proof, &vk, &vec![BlsScalar::zero()])
-        .is_ok());
-}
-```
+    let pi = verifier.mut_cs().public_inputs.clone();
+    verifier.verify(&proof, &ok, &pi).unwrap();
 
-
-### Standard Merkle Opening Proof example:
-```rust
-use poseidon252::{StorageScalar, PoseidonAnnotation};
-use poseidon252::merkle_proof::merkle_opening_scalar_verification;
-use dusk_plonk::bls12_381::Scalar as BlsScalar;
-use kelvin::{Blake2b, Compound};
-use poseidon252::PoseidonTree;
-
- // Generate a tree with random scalars inside.
-let mut ptree: PoseidonTree<_, Blake2b> = PoseidonTree::new(17);
-for i in 0..1024u64 {
-    ptree
-        .push(StorageScalar(BlsScalar::from(i as u64)))
-        .unwrap();
+    Ok(())
 }
 
-for i in 0..1024u64 {
-    // We want to proof that we know the Scalar tied to the key Xusize
-    // and that indeed, it is inside the merkle tree.
-
-    // In this case, the key X corresponds to the Scalar(X).
-    // We're supposing that we're provided with a Kelvin::Branch to perform
-    // the proof.
-    let branch = ptree.poseidon_branch(i).unwrap().unwrap();
-
-    // Get tree root.
-    let root = ptree.root().unwrap();
-
-    assert!(merkle_opening_scalar_verification(
-        branch,
-        root,
-        BlsScalar::from(i),
-    ));
 }
 ```
 
 ## Documentation
-This crate contains info about all of the functions that the library provides as well as the 
+This crate contains info about all of the functions that the library provides as well as the
 documentation regarding the data structures that it exports. To check it, please feel free to go to
 the [documentation page](https://dusk-network.github.io/Poseidon252/poseidon252/index.html)
 

@@ -4,12 +4,12 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use canonical::{Canon, Store};
-use core::borrow::Borrow;
+use super::{PoseidonLeaf, PoseidonTreeAnnotation};
+use canonical::Store;
 use core::ops::Deref;
 use dusk_plonk::prelude::BlsScalar;
 use hades252::{ScalarStrategy, Strategy};
-use microkelvin::{Annotation, Branch};
+use microkelvin::Branch;
 use nstack::NStack;
 
 /// Represents a level of a branch on a given depth
@@ -75,12 +75,8 @@ impl<const DEPTH: usize> AsRef<[PoseidonLevel]> for PoseidonBranch<DEPTH> {
 impl<L, A, S, const DEPTH: usize> From<&Branch<'_, NStack<L, A, S>, S, DEPTH>>
     for PoseidonBranch<DEPTH>
 where
-    L: Canon<S>,
-    L: Clone,
-    for<'a> &'a L: Into<BlsScalar>,
-    A: Canon<S>,
-    A: Annotation<NStack<L, A, S>, S>,
-    A: Borrow<BlsScalar>,
+    L: PoseidonLeaf<S>,
+    A: PoseidonTreeAnnotation<L, S>,
     S: Store,
 {
     fn from(b: &Branch<'_, NStack<L, A, S>, S, DEPTH>) -> Self {
@@ -105,7 +101,7 @@ where
                         .for_each(|(leaf, l)| {
                             if let Some(leaf) = leaf {
                                 mask |= flag;
-                                *l = leaf.into();
+                                *l = leaf.poseidon_hash();
                             }
 
                             flag <<= 1;
