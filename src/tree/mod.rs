@@ -5,6 +5,8 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use anyhow::{anyhow, Result};
+
+#[cfg(feature = "canon")]
 use canonical::{Canon, Store};
 use dusk_plonk::prelude::BlsScalar;
 use microkelvin::{Branch, Cardinality, Nth};

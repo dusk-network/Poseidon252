@@ -68,6 +68,9 @@ computed and placed in the first Level position.
 ### Zero Knowledge Merkle Opening Proof example:
 
 ```no_run
+#[cfg(feature = "canon")]
+{
+
 use anyhow::Result;
 use canonical::Canon;
 use canonical_derive::Canon;
@@ -162,6 +165,8 @@ fn main() -> Result<()> {
     verifier.verify(&proof, &ok, &pi).unwrap();
 
     Ok(())
+}
+
 }
 ```
 
