@@ -12,11 +12,7 @@ use dusk_plonk::jubjub::AffinePoint;
 use dusk_plonk::prelude::*;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
 
-use super::{
-    CIPHER_BYTES_SIZE, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
-};
-
-use std::io;
+use super::{CIPHER_BYTES_SIZE, CIPHER_SIZE, MESSAGE_CAPACITY};
 
 pub use super::CipherError;
 
@@ -147,11 +143,6 @@ impl PoseidonCipher {
         MESSAGE_CAPACITY
     }
 
-    /// Bytes consumed on serialization of the poseidon cipher
-    pub fn serialized_size() -> usize {
-        ENCRYPTED_DATA_SIZE
-    }
-
     /// Encrypt a slice of scalars into an internal cipher representation
     ///
     /// The message size will be truncated to [`MESSAGE_CAPACITY`] bits
@@ -249,47 +240,5 @@ impl PoseidonCipher {
         let length = composer.add_witness_to_circuit_description(length);
 
         [domain, length, ks0, ks1, nonce]
-    }
-}
-
-impl io::Write for PoseidonCipher {
-    fn write(&mut self, buf: &[u8]) -> Result<usize, io::Error> {
-        if buf.len() < ENCRYPTED_DATA_SIZE {
-            return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
-        }
-
-        let mut bytes = [0u8; 32];
-        self.cipher.iter_mut().try_fold(0usize, |mut n, x| {
-            n += bytes.as_mut().write(&buf[n..n + 32])?;
-
-            // Constant time option is REALLY inflexible, so this is required
-            let scalar = BlsScalar::from_bytes(&bytes);
-
-            if scalar.is_none().into() {
-                return Err(io::Error::from(io::ErrorKind::InvalidData));
-            }
-
-            *x = scalar.unwrap();
-
-            Ok(n)
-        })
-    }
-
-    fn flush(&mut self) -> Result<(), io::Error> {
-        Ok(())
-    }
-}
-
-impl io::Read for PoseidonCipher {
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
-        if buf.len() < ENCRYPTED_DATA_SIZE {
-            return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
-        }
-
-        self.cipher.iter_mut().try_fold(0usize, |n, x| {
-            let s = (&mut x.to_bytes().as_ref()).read(&mut buf[n..n + 32])?;
-
-            Ok(n + s)
-        })
     }
 }

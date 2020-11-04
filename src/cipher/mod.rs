@@ -16,9 +16,6 @@ pub const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 /// Number of bytes used by from/to bytes `PoseidonCipher` function
 pub const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * 32;
 
-/// Bytes consumed on serialization of the poseidon cipher
-pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
-
 /// [`PoseidonCipher`] definition
 pub mod cipher;
 
