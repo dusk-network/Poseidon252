@@ -112,8 +112,8 @@ impl PoseidonLeaf<MemStore> for DataLeaf {
     }
 
     // Method used to set the position on the tree after the `PoseidonTree::push` call
-    fn tree_pos_mut(&mut self) -> &mut u64 {
-        &mut self.pos
+    fn tree_pos_set(&mut self, pos: u64) {
+        self.pos = pos;
     }
 }
 
