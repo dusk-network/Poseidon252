@@ -12,7 +12,9 @@ use dusk_plonk::jubjub::AffinePoint;
 use dusk_plonk::prelude::*;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
 
-use super::{CIPHER_BYTES_SIZE, CIPHER_SIZE, MESSAGE_CAPACITY};
+use super::{
+    CIPHER_BYTES_SIZE, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
+};
 
 pub use super::CipherError;
 
@@ -141,6 +143,11 @@ impl PoseidonCipher {
     /// Maximum number of scalars allowed per message
     pub fn capacity() -> usize {
         MESSAGE_CAPACITY
+    }
+
+    /// Bytes consumed on serialization of the poseidon cipher
+    pub const fn serialized_size() -> usize {
+        ENCRYPTED_DATA_SIZE
     }
 
     /// Encrypt a slice of scalars into an internal cipher representation
