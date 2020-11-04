@@ -17,6 +17,9 @@ pub const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 pub const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * 32;
 
 /// Bytes consumed on serialization of the poseidon cipher
+///
+/// This is kept for backwards compatibility since the constant definition is
+/// redundant to [`CIPHER_BYTES_SIZE`]
 pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
 
 /// [`PoseidonCipher`] definition

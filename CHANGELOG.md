@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 04-11-20
+### Changed
+- PoseidonLeaf pos setter for API consistency with Phoenix
+
+### Removed
+- PoseidonCipher std::io implementations
+
 ## [0.12.0] - 03-11-20
 ### Added
 - Gate-featured `canonical` impl.

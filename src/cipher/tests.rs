@@ -4,15 +4,12 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use super::{
-    PoseidonCipher, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
-};
+use super::{PoseidonCipher, CIPHER_SIZE, MESSAGE_CAPACITY};
 use anyhow::Result;
 use dusk_plonk::jubjub::{AffinePoint, Fr, GENERATOR};
 use dusk_plonk::prelude::*;
 use hades252::WIDTH;
 use rand::RngCore;
-use std::io::{Read, Write};
 use std::ops::Mul;
 
 fn gen() -> ([BlsScalar; MESSAGE_CAPACITY], AffinePoint, BlsScalar) {
@@ -91,30 +88,6 @@ fn wrong_key_fail() {
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
     assert!(cipher.decrypt(&wrong_secret, &nonce).is_err());
-}
-
-#[test]
-fn serialization() -> Result<()> {
-    let (message, secret, nonce) = gen();
-
-    let mut cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
-
-    let mut bytes = vec![0u8; ENCRYPTED_DATA_SIZE];
-
-    let n = cipher.read(bytes.as_mut_slice())?;
-    assert_eq!(n, PoseidonCipher::serialized_size());
-
-    let mut deser_cipher = PoseidonCipher::default();
-    let n = deser_cipher.write(bytes.as_slice())?;
-    assert_eq!(n, PoseidonCipher::serialized_size());
-
-    assert_eq!(cipher, deser_cipher);
-
-    let decrypt = deser_cipher.decrypt(&secret, &nonce)?;
-
-    assert_eq!(message, decrypt);
-
-    Ok(())
 }
 
 #[test]

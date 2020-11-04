@@ -41,13 +41,13 @@ where
     fn poseidon_hash(&self) -> BlsScalar;
 
     /// Index of the leaf structure on the merkle tree.
-    fn tree_pos(&self) -> u64;
+    fn pos(&self) -> u64;
 
     /// Index of the leaf structure on the merkle tree.
     ///
     /// This method is internally used to set the index after the data has been inserted in the
     /// merkle tree.
-    fn tree_pos_mut(&mut self) -> &mut u64;
+    fn set_pos(&mut self, pos: u64);
 }
 
 /// Represents a Merkle Tree with a given depth that will be calculated using poseidon hash
@@ -117,7 +117,7 @@ where
                 .sum(),
         };
 
-        *leaf.tree_pos_mut() = size as u64;
+        leaf.set_pos(size as u64);
         self.inner
             .push(leaf)
             .map_err(|e| anyhow!("Error pushing to the tree: {:?}", e))?;
@@ -210,7 +210,7 @@ where
             A::poseidon_walk(w, data.clone())
         })
         .map_err(|e| anyhow!("Error fetching the branch: {:?}", e))?
-        .map(|l| l.tree_pos())
+        .map(|l| l.pos())
         .unwrap_or(u64::max_value()) as usize;
 
         Ok(Self { tree, pos, data })

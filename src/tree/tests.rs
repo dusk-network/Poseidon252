@@ -39,12 +39,12 @@ impl PoseidonLeaf<MemStore> for MockLeaf {
         self.s
     }
 
-    fn tree_pos(&self) -> u64 {
+    fn pos(&self) -> u64 {
         self.pos
     }
 
-    fn tree_pos_mut(&mut self) -> &mut u64 {
-        &mut self.pos
+    fn set_pos(&mut self, pos: u64) {
+        self.pos = pos;
     }
 }
 
@@ -102,7 +102,7 @@ fn tree_max_walk() {
         .map(|l| l.unwrap())
         .enumerate()
         .for_each(|(i, leaf)| {
-            assert_eq!(pos + i as u64, leaf.tree_pos());
+            assert_eq!(pos + i as u64, leaf.pos());
         });
 
     assert!(tree.iter_walk((max + 1) as u64).unwrap().next().is_none());
@@ -137,7 +137,7 @@ fn tree_max_walk_non_continuous() {
             if pos % 4 == 0 {
                 pos += 1;
             }
-            assert_eq!(pos, leaf.tree_pos());
+            assert_eq!(pos, leaf.pos());
             pos += 1;
         });
 
