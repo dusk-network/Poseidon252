@@ -5,11 +5,12 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use anyhow::{anyhow, Result};
-
-#[cfg(feature = "canon")]
 use canonical::{Canon, Store};
+use canonical_derive::Canon;
 use dusk_plonk::prelude::BlsScalar;
-use microkelvin::{Branch, Cardinality, Nth};
+use microkelvin::{
+    Annotated, Branch, Cardinality, Child, ChildMut, Compound, Nth,
+};
 use nstack::NStack;
 
 pub use annotation::{
@@ -54,7 +55,7 @@ where
 ///
 /// The `BlsScalar` borrow of the annotation must represent the root poseidon merkle opening
 /// for the annotated subtree
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Canon)]
 pub struct PoseidonTree<L, A, S, const DEPTH: usize>
 where
     L: PoseidonLeaf<S>,
@@ -62,6 +63,46 @@ where
     S: Store,
 {
     inner: NStack<L, A, S>,
+}
+
+impl<L, A, S, const DEPTH: usize> Compound<S> for PoseidonTree<L, A, S, DEPTH>
+where
+    L: PoseidonLeaf<S>,
+    A: PoseidonTreeAnnotation<L, S>,
+    S: Store,
+{
+    type Leaf = L;
+    type Annotation = A;
+
+    fn child(&self, ofs: usize) -> Child<Self, S> {
+        match self.inner.child(ofs) {
+            Child::Leaf(l) => Child::Leaf(l),
+            // Unsafe pointer conversion due to the inability to convert between annotated
+            // representations
+            //
+            // Check https://github.com/dusk-network/microkelvin/issues/24
+            Child::Node(n) => Child::Node(unsafe {
+                &*(n as *const Annotated<NStack<L, A, S>, S>
+                    as *const Annotated<PoseidonTree<L, A, S, DEPTH>, S>)
+            }),
+            Child::EndOfNode => Child::EndOfNode,
+        }
+    }
+
+    fn child_mut(&mut self, ofs: usize) -> ChildMut<Self, S> {
+        match self.inner.child_mut(ofs) {
+            ChildMut::Leaf(l) => ChildMut::Leaf(l),
+            // Unsafe pointer conversion due to the inability to convert between annotated
+            // representations
+            //
+            // Check https://github.com/dusk-network/microkelvin/issues/24
+            ChildMut::Node(n) => ChildMut::Node(unsafe {
+                &mut *(n as *mut Annotated<NStack<L, A, S>, S>
+                    as *mut Annotated<PoseidonTree<L, A, S, DEPTH>, S>)
+            }),
+            ChildMut::EndOfNode => ChildMut::EndOfNode,
+        }
+    }
 }
 
 impl<L, A, S, const DEPTH: usize> AsRef<NStack<L, A, S>>
