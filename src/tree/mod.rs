@@ -4,13 +4,15 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use anyhow::{anyhow, Result};
+#[cfg(feature = "canon_host")]
+use anyhow::anyhow;
+use anyhow::Result;
 use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use dusk_plonk::prelude::BlsScalar;
-use microkelvin::{
-    Annotated, Branch, Cardinality, Child, ChildMut, Compound, Nth,
-};
+use microkelvin::{Annotated, Child, ChildMut, Compound};
+#[cfg(feature = "canon_host")]
+use microkelvin::{Branch, Cardinality, Nth};
 use nstack::NStack;
 
 pub use annotation::{
@@ -26,6 +28,7 @@ mod branch;
 pub mod zk;
 
 #[cfg(test)]
+#[cfg(feature = "canon_host")]
 mod tests;
 
 /// A struct that will be used as a poseidon tree leaf must implement this trait
@@ -146,6 +149,7 @@ where
     ///
     /// Will call the `tree_pos_mut` implementation of the leaf to
     /// set its index
+    #[cfg(feature = "canon_host")]
     pub fn push(&mut self, mut leaf: L) -> Result<usize> {
         let size = match &self.inner {
             NStack::Leaf(l) => l.iter().filter(|l| l.is_some()).count(),
@@ -167,6 +171,7 @@ where
     }
 
     /// Fetch, remove and return the last inserted leaf, if present.
+    #[cfg(feature = "canon_host")]
     pub fn pop(&mut self) -> Result<Option<L>> {
         self.inner
             .pop()
@@ -174,6 +179,7 @@ where
     }
 
     /// Fetch a leaf on a provided index.
+    #[cfg(feature = "canon_host")]
     pub fn get(&self, n: usize) -> Result<Option<L>> {
         self.inner
             .nth::<DEPTH>(n as u64)
@@ -184,6 +190,7 @@ where
     }
 
     /// Return a full merkle opening for this poseidon tree for a given index.
+    #[cfg(feature = "canon_host")]
     pub fn branch(&self, n: usize) -> Result<Option<PoseidonBranch<DEPTH>>> {
         let branch = self.inner.nth::<DEPTH>(n as u64).map_err(|e| {
             anyhow!("Error fetching the Nth item from the tree: {:?}", e)
@@ -196,11 +203,13 @@ where
     }
 
     /// Return the current root/state of the tree.
+    #[cfg(feature = "canon_host")]
     pub fn root(&self) -> Result<BlsScalar> {
         self.branch(0).map(|b| b.unwrap_or_default().root())
     }
 
     /// Iterates over the tree, provided its annotation implements [`PoseidonWalkableAnnotation`]
+    #[cfg(feature = "canon_host")]
     pub fn iter_walk<D: Clone>(
         &self,
         data: D,
@@ -221,6 +230,7 @@ where
 ///
 /// The data can be any struct that implements `Clone`, and will be used to define the traversal
 /// path over the tree.
+#[cfg(feature = "canon_host")]
 pub struct PoseidonTreeIterator<L, A, S, D, const DEPTH: usize>
 where
     L: PoseidonLeaf<S>,
@@ -233,6 +243,7 @@ where
     data: D,
 }
 
+#[cfg(feature = "canon_host")]
 impl<L, A, S, D, const DEPTH: usize> PoseidonTreeIterator<L, A, S, D, DEPTH>
 where
     L: PoseidonLeaf<S>,
@@ -258,6 +269,7 @@ where
     }
 }
 
+#[cfg(feature = "canon_host")]
 impl<L, A, S, D, const DEPTH: usize> Iterator
     for PoseidonTreeIterator<L, A, S, D, DEPTH>
 where

@@ -68,7 +68,7 @@ computed and placed in the first Level position.
 ### Zero Knowledge Merkle Opening Proof example:
 
 ```no_run
-#[cfg(feature = "canon")]
+#[cfg(feature = "canon_host")]
 {
 
 use anyhow::Result;
