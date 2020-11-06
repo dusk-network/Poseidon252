@@ -1,6 +1,6 @@
 [package]
 name = "poseidon252"
-version = "0.13.0"
+version = "0.13.1"
 authors = [
   "zer0 <matteo@dusk.network>",	"vlopes11 <victor@dusk.network>",	"CPerezz <carlos@dusk.network>", "Kristoffer Ström <kristoffer@dusk.network>"
 ]
@@ -25,6 +25,7 @@ criterion = "0.3"
 
 [features]
 canon = ["canonical", "canonical_derive", "nstack", "microkelvin", "dusk-plonk/canon"]
+canon_host = ["canon", "canonical/host"]
 
 [profile.dev]
 opt-level = 3

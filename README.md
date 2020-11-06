@@ -170,6 +170,15 @@ fn main() -> Result<()> {
 }
 ```
 
+## Canonical
+The canonical implementations aim to make available a single representation of the Merkle tree to constrained (referred to as "hosted") and unconstrained (referred to as "host") environments.
+
+For that, we rely on the features `canon` and `canon_host`.
+
+`canon` feature will require all the crates needed for the Merkle tree to function.
+
+`canon_host` feature will require `canon`, with the addition of the host environment implementations.
+
 ## Documentation
 This crate contains info about all of the functions that the library provides as well as the
 documentation regarding the data structures that it exports. To check it, please feel free to go to
