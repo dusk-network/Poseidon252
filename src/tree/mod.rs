@@ -5,9 +5,8 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use anyhow::{anyhow, Result};
-
-#[cfg(feature = "canon")]
 use canonical::{Canon, Store};
+use canonical_derive::Canon;
 use dusk_plonk::prelude::BlsScalar;
 use microkelvin::{Branch, Cardinality, Nth};
 use nstack::NStack;
@@ -54,7 +53,7 @@ where
 ///
 /// The `BlsScalar` borrow of the annotation must represent the root poseidon merkle opening
 /// for the annotated subtree
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Canon)]
 pub struct PoseidonTree<L, A, S, const DEPTH: usize>
 where
     L: PoseidonLeaf<S>,
