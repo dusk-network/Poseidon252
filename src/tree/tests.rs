@@ -4,7 +4,6 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![cfg(feature = "canon")]
 use crate::tree::zk::merkle_opening;
 use crate::tree::{
     PoseidonAnnotation, PoseidonLeaf, PoseidonMaxAnnotation, PoseidonTree,
