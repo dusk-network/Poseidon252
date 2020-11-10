@@ -28,7 +28,7 @@ criterion = "0.3"
 [features]
 default = ["std"]
 std = ["hades252/default", "dusk-bls12_381/default", "dusk-jubjub/std"]
-canon = ["canonical", "canonical_derive", "nstack", "microkelvin", "dusk-plonk/canon"]
+canon = ["canonical", "canonical_derive", "nstack", "microkelvin", "dusk-bls12_381/canon", "dusk-jubjub/canon"]
 canon_host = ["canon", "canonical/host"]
 
 

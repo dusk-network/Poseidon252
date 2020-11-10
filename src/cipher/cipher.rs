@@ -16,6 +16,7 @@ use super::{
     CIPHER_BYTES_SIZE, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
 };
 
+#[cfg(feature = "std")]
 pub use super::CipherError;
 
 /// ```ignore

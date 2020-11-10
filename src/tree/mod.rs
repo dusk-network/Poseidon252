@@ -20,6 +20,7 @@ pub use branch::{PoseidonBranch, PoseidonLevel};
 mod annotation;
 mod branch;
 
+#[cfg(feature = "std")]
 /// Zero-Knowledge implementations for the poseidon tree
 pub mod zk;
 
@@ -171,6 +172,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 /// Main iterator of the poseidon tree.
 ///
 /// Depends on an implementation of `PoseidonWalkableAnnotation` for the tree annotation
@@ -192,6 +194,7 @@ where
     data: D,
 }
 
+#[cfg(feature = "std")]
 impl<L, A, S, D, const DEPTH: usize> PoseidonTreeIterator<L, A, S, D, DEPTH>
 where
     L: PoseidonLeaf<S>,
@@ -217,6 +220,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<L, A, S, D, const DEPTH: usize> Iterator
     for PoseidonTreeIterator<L, A, S, D, DEPTH>
 where
