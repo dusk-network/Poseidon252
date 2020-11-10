@@ -4,6 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#![cfg(feature = "std")]
 use thiserror::Error;
 
 /// Error definitions for the decription process

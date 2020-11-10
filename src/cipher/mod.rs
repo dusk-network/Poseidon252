@@ -4,6 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#![cfg(feature = "std")]
 pub use cipher::PoseidonCipher;
 pub use error::CipherError;
 

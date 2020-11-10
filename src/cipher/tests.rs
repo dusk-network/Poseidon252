@@ -4,6 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#![cfg(feature = "std")]
 use super::{PoseidonCipher, CIPHER_SIZE, MESSAGE_CAPACITY};
 use anyhow::Result;
 use dusk_plonk::jubjub::{AffinePoint, Fr, GENERATOR};

@@ -8,7 +8,7 @@
 use canonical::Canon;
 #[cfg(feature = "canon")]
 use canonical_derive::Canon;
-use dusk_plonk::jubjub::AffinePoint;
+use dusk_jubjub::JubJubAffine;
 use dusk_plonk::prelude::*;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
 
@@ -96,6 +96,7 @@ pub struct PoseidonCipher {
     cipher: [BlsScalar; CIPHER_SIZE],
 }
 
+#[cfg(feature = "std")]
 impl PoseidonCipher {
     /// [`PoseidonCipher`] constructor
     pub fn new(cipher: [BlsScalar; CIPHER_SIZE]) -> Self {
@@ -155,7 +156,7 @@ impl PoseidonCipher {
     /// The message size will be truncated to [`MESSAGE_CAPACITY`] bits
     pub fn encrypt(
         message: &[BlsScalar],
-        secret: &AffinePoint,
+        secret: &JubJubAffine,
         nonce: &BlsScalar,
     ) -> Self {
         let zero = BlsScalar::zero();
@@ -187,7 +188,7 @@ impl PoseidonCipher {
     /// Will return `None` if the decryption fails.
     pub fn decrypt(
         &self,
-        secret: &AffinePoint,
+        secret: &JubJubAffine,
         nonce: &BlsScalar,
     ) -> Result<[BlsScalar; MESSAGE_CAPACITY], CipherError> {
         let zero = BlsScalar::zero();
@@ -219,7 +220,7 @@ impl PoseidonCipher {
 
     /// Returns the initial state of the encryption
     pub fn initial_state(
-        secret: &AffinePoint,
+        secret: &JubJubAffine,
         nonce: BlsScalar,
     ) -> [BlsScalar; WIDTH] {
         [

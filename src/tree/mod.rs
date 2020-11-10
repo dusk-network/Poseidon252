@@ -87,6 +87,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<L, A, S, const DEPTH: usize> PoseidonTree<L, A, S, DEPTH>
 where
     L: PoseidonLeaf<S>,
