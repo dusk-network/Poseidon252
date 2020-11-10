@@ -8,7 +8,7 @@
 use canonical::Canon;
 #[cfg(feature = "canon")]
 use canonical_derive::Canon;
-use dusk_plonk::jubjub::AffinePoint;
+use dusk_plonk::jubjub::JubJubAffine as AffinePoint;
 use dusk_plonk::prelude::*;
 use hades252::{ScalarStrategy, Strategy, WIDTH};
 
