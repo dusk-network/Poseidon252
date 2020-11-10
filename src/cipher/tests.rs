@@ -6,7 +6,9 @@
 
 use super::{PoseidonCipher, CIPHER_SIZE, MESSAGE_CAPACITY};
 use anyhow::Result;
-use dusk_plonk::jubjub::{JubJubAffine as AffinePoint, JubJubScalar as Fr, GENERATOR};
+use dusk_plonk::jubjub::{
+    JubJubAffine as AffinePoint, JubJubScalar as Fr, GENERATOR,
+};
 use dusk_plonk::prelude::*;
 use hades252::WIDTH;
 use rand::RngCore;
