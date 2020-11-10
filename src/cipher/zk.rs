@@ -93,7 +93,7 @@ mod tests {
     use super::*;
     use anyhow::Result;
     use dusk_plonk::constraint_system::ecc::scalar_mul::variable_base::variable_base_scalar_mul;
-    use dusk_plonk::jubjub::{dhke, ExtendedPoint, GENERATOR_EXTENDED};
+    use dusk_plonk::jubjub::{dhke, JubJubExtended as ExtendedPoint, GENERATOR_EXTENDED};
 
     #[test]
     fn gadget() -> Result<()> {
