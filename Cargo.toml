@@ -14,13 +14,13 @@ dusk-bls12_381 = {version = "0.3", default-features = false}
 dusk-jubjub = {version = "0.5", default-features = false}
 anyhow = "1.0"
 thiserror = "1.0"
-canonical = {git = "https://github.com/dusk-network/canonical", branch = "hashing_resolv", optional = true}
-canonical_derive = {git = "https://github.com/dusk-network/canonical", branch = "hashing_resolv", optional = true}
+canonical = {version = "0.4", optional = true}
+canonical_derive = {version = "0.4", optional = true}
 microkelvin = {version = "0.5", optional = true}
 nstack = {version = "0.6", optional = true}
 
 [dev-dependencies]
-canonical_host = {git = "https://github.com/dusk-network/canonical", branch = "hashing_resolv"}
+canonical_host = {version = "0.4"}
 rand = "0.7"
 rand_core = "0.5"
 criterion = "0.3"
