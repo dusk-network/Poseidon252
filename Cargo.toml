@@ -1,6 +1,6 @@
 [package]
 name = "poseidon252"
-version = "0.13.1"
+version = "0.13.2"
 authors = [
   "zer0 <matteo@dusk.network>",	"vlopes11 <victor@dusk.network>",	"CPerezz <carlos@dusk.network>", "Kristoffer Ström <kristoffer@dusk.network>"
 ]
@@ -12,6 +12,7 @@ hades252 = { git = "https://github.com/dusk-network/hades252", tag = "v0.10.1", 
 dusk-plonk = {version = "0.3", default-features = false}
 dusk-bls12_381 = {version = "0.3", default-features = false}
 dusk-jubjub = {version = "0.5", default-features = false}
+
 anyhow = "1.0"
 thiserror = "1.0"
 canonical = {version = "0.4", optional = true}
