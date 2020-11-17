@@ -29,7 +29,7 @@ pub fn prepare_input_gadget(
     input: &[BlsScalar],
     perm: &mut [Variable; hades252::WIDTH],
 ) {
-    let n = cmp::min(input.len(), hades252::WIDTH - 1);
+    let n = std::cmp::min(input.len(), hades252::WIDTH - 1);
 
     let mut mask = 0;
     (0..n).fold(1, |flag, _| {
