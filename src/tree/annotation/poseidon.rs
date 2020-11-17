@@ -9,7 +9,7 @@ use crate::tree::PoseidonLeaf;
 use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
-use dusk_plonk::prelude::*;
+use dusk_bls12_381::BlsScalar;
 use hades252::{ScalarStrategy, Strategy};
 use microkelvin::{Annotation, Cardinality};
 use nstack::NStack;
@@ -92,13 +92,6 @@ impl Borrow<BlsScalar> for PoseidonAnnotation {
     }
 }
 
-impl<L, S> PoseidonTreeAnnotation<L, S> for PoseidonAnnotation
-where
-    L: PoseidonLeaf<S>,
-    S: Store,
-{
-}
-
 impl<L, S> Annotation<NStack<L, PoseidonAnnotation, S>, S>
     for PoseidonAnnotation
 where
@@ -134,4 +127,11 @@ where
     fn from_node(node: &NStack<L, PoseidonAnnotation, S>) -> Self {
         Self::from_generic_node(node)
     }
+}
+
+impl<L, S> PoseidonTreeAnnotation<L, S> for PoseidonAnnotation
+where
+    L: PoseidonLeaf<S>,
+    S: Store,
+{
 }

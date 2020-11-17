@@ -7,7 +7,7 @@
 use super::{PoseidonLeaf, PoseidonTreeAnnotation};
 use canonical::Store;
 use core::ops::Deref;
-use dusk_plonk::prelude::BlsScalar;
+use dusk_bls12_381::BlsScalar;
 use hades252::{ScalarStrategy, Strategy};
 use microkelvin::Branch;
 use nstack::NStack;

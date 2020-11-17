@@ -4,101 +4,31 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use crate::Error;
+
 #[cfg(feature = "canon")]
 use canonical::Canon;
 #[cfg(feature = "canon")]
 use canonical_derive::Canon;
-use dusk_plonk::jubjub::JubJubAffine as AffinePoint;
-use dusk_plonk::prelude::*;
-use hades252::{ScalarStrategy, Strategy, WIDTH};
 
-use super::{
-    CIPHER_BYTES_SIZE, CIPHER_SIZE, ENCRYPTED_DATA_SIZE, MESSAGE_CAPACITY,
-};
+use dusk_bls12_381::BlsScalar;
+use dusk_jubjub::JubJubAffine;
+use hades252::strategies::{ScalarStrategy, Strategy};
 
-pub use super::CipherError;
+const MESSAGE_CAPACITY: usize = 2;
+const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
+const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * 32;
 
-/// ```ignore
-/// Encapsulates an encrypted data
-///
-/// This implementation is optimized for a message containing 2 scalars
-///
-/// # Examples
-/// use dusk_plonk::jubjub::{dhke, ExtendedPoint, GENERATOR};
-/// use dusk_plonk::prelude::*;
-/// use poseidon252::cipher::{PoseidonCipher, MESSAGE_CAPACITY};
-///
-/// use std::ops::Mul;
-///
-/// fn main() {
-///     let mut rng = rand::thread_rng();
-///
-///     // Generate a secret and a public key for Bob
-///     let bob_secret = JubJubScalar::random(&mut rng);
-///     let bob_public = GENERATOR.to_niels().mul(&bob_secret);
-///
-///     // Generate a secret and a public key for Alice
-///     let alice_secret = JubJubScalar::random(&mut rng);
-///     let alice_public = GENERATOR.to_niels().mul(&alice_secret);
-///
-///     // Generate a secret message
-///     let a = BlsScalar::random(&mut rng);
-///     let b = BlsScalar::random(&mut rng);
-///     let message = [a, b];
-///
-///     // Bob's view (sender)
-///     // The cipher and nonce are safe to be broadcasted publicly
-///     let (cipher, nonce) = sender(&bob_secret, &alice_public, &message);
-///
-///     // Alice's view (receiver)
-///     let decrypted_message =
-///         receiver(&alice_secret, &bob_public, &cipher, &nonce);
-///
-///     // Successful communication
-///     assert_eq!(decrypted_message, message);
-/// }
-///
-/// fn sender(
-///     sender_secret: &JubJubScalar,
-///     receiver_public: &ExtendedPoint,
-///     message: &[BlsScalar],
-/// ) -> (PoseidonCipher, BlsScalar) {
-///     // Use the Diffie-Hellman protocol to generate a shared secret
-///     let shared_secret = dhke(sender_secret, receiver_public);
-///
-///     // Generate a random nonce that will be public
-///     let nonce = BlsScalar::random(&mut rand::thread_rng());
-///
-///     // Encrypt the message
-///     let cipher = PoseidonCipher::encrypt(&message, &shared_secret, &nonce);
-///
-///     (cipher, nonce)
-/// }
-///
-/// fn receiver(
-///     receiver_secret: &JubJubScalar,
-///     sender_public: &ExtendedPoint,
-///     cipher: &PoseidonCipher,
-///     nonce: &BlsScalar,
-/// ) -> [BlsScalar; MESSAGE_CAPACITY] {
-///     // Use the Diffie-Hellman protocol to generate a shared secret
-///     let shared_secret = dhke(receiver_secret, sender_public);
-///
-///     // Decrypt the message
-///     cipher
-///         .decrypt(&shared_secret, &nonce)
-///         .expect("Failed to decrypt!")
-/// }
-/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default)]
 #[cfg_attr(feature = "canon", derive(Canon))]
+/// Encapsulates an encrypted data
 pub struct PoseidonCipher {
     cipher: [BlsScalar; CIPHER_SIZE],
 }
 
 impl PoseidonCipher {
     /// [`PoseidonCipher`] constructor
-    pub fn new(cipher: [BlsScalar; CIPHER_SIZE]) -> Self {
+    pub const fn new(cipher: [BlsScalar; CIPHER_SIZE]) -> Self {
         Self { cipher }
     }
 
@@ -141,21 +71,47 @@ impl PoseidonCipher {
     }
 
     /// Maximum number of scalars allowed per message
-    pub fn capacity() -> usize {
+    pub const fn capacity() -> usize {
         MESSAGE_CAPACITY
     }
 
-    /// Bytes consumed on serialization of the poseidon cipher
-    pub const fn serialized_size() -> usize {
-        ENCRYPTED_DATA_SIZE
+    /// Number of scalars used in a cipher
+    pub const fn cipher_size() -> usize {
+        CIPHER_SIZE
+    }
+
+    /// Number of bytes used by from/to bytes `PoseidonCipher` function
+    pub const fn cipher_size_bytes() -> usize {
+        CIPHER_BYTES_SIZE
+    }
+
+    /// Returns the initial state of the encryption
+    pub fn initial_state(
+        secret: &JubJubAffine,
+        nonce: BlsScalar,
+    ) -> [BlsScalar; hades252::WIDTH] {
+        [
+            // Domain - Maximum plaintext length of the elements of Fq, as defined in the paper
+            BlsScalar::from_raw([0x100000000u64, 0, 0, 0]),
+            // The size of the message is constant because any absent input is replaced by zero
+            BlsScalar::from_raw([MESSAGE_CAPACITY as u64, 0, 0, 0]),
+            secret.get_x(),
+            secret.get_y(),
+            nonce,
+        ]
+    }
+
+    /// Getter for the cipher
+    pub const fn cipher(&self) -> &[BlsScalar; CIPHER_SIZE] {
+        &self.cipher
     }
 
     /// Encrypt a slice of scalars into an internal cipher representation
     ///
-    /// The message size will be truncated to [`MESSAGE_CAPACITY`] bits
+    /// The message size will be truncated to [`PoseidonCipher::capacity()`] bits
     pub fn encrypt(
         message: &[BlsScalar],
-        secret: &AffinePoint,
+        secret: &JubJubAffine,
         nonce: &BlsScalar,
     ) -> Self {
         let zero = BlsScalar::zero();
@@ -187,9 +143,9 @@ impl PoseidonCipher {
     /// Will return `None` if the decryption fails.
     pub fn decrypt(
         &self,
-        secret: &AffinePoint,
+        secret: &JubJubAffine,
         nonce: &BlsScalar,
-    ) -> Result<[BlsScalar; MESSAGE_CAPACITY], CipherError> {
+    ) -> Result<[BlsScalar; MESSAGE_CAPACITY], Error<()>> {
         let zero = BlsScalar::zero();
         let mut strategy = ScalarStrategy::new();
 
@@ -206,46 +162,9 @@ impl PoseidonCipher {
         strategy.perm(&mut state);
 
         if self.cipher[MESSAGE_CAPACITY] != state[1] {
-            return Err(CipherError::FailedDecrypt);
+            return Err(Error::CipherDecryptionFailed);
         }
 
         Ok(message)
-    }
-
-    /// Getter for the cipher
-    pub fn cipher(&self) -> &[BlsScalar; CIPHER_SIZE] {
-        &self.cipher
-    }
-
-    /// Returns the initial state of the encryption
-    pub fn initial_state(
-        secret: &AffinePoint,
-        nonce: BlsScalar,
-    ) -> [BlsScalar; WIDTH] {
-        [
-            // Domain - Maximum plaintext length of the elements of Fq, as defined in the paper
-            BlsScalar::from_raw([0x100000000u64, 0, 0, 0]),
-            // The size of the message is constant because any absent input is replaced by zero
-            BlsScalar::from_raw([MESSAGE_CAPACITY as u64, 0, 0, 0]),
-            secret.get_x(),
-            secret.get_y(),
-            nonce,
-        ]
-    }
-
-    /// Returns the initial state of the encryption within a composer circuit
-    pub fn initial_state_circuit(
-        composer: &mut StandardComposer,
-        ks0: Variable,
-        ks1: Variable,
-        nonce: Variable,
-    ) -> [Variable; WIDTH] {
-        let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
-        let domain = composer.add_witness_to_circuit_description(domain);
-
-        let length = BlsScalar::from_raw([MESSAGE_CAPACITY as u64, 0, 0, 0]);
-        let length = composer.add_witness_to_circuit_description(length);
-
-        [domain, length, ks0, ks1, nonce]
     }
 }

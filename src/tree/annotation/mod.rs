@@ -4,10 +4,10 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use super::PoseidonLeaf;
+use crate::tree::PoseidonLeaf;
 use canonical::{Canon, Store};
 use core::borrow::Borrow;
-use dusk_plonk::prelude::*;
+use dusk_bls12_381::BlsScalar;
 use microkelvin::{Annotation, Cardinality, Compound, Step, Walk};
 use nstack::NStack;
 

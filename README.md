@@ -26,7 +26,7 @@ The sponge hash techniqe requires a padding to be applied before the data can
 be hashed.
 
 This is done to avoid hash collitions as stated in the paper of the Poseidon Hash
-algorithm. See: (https://eprint.iacr.org/2019/458.pdf)[https://eprint.iacr.org/2019/458.pdf].
+algorithm. See: <https://eprint.iacr.org/2019/458.pdf>.
 The inputs of the `sponge_hash` are always `Scalar` or need to be capable of being represented
 as it.
 
@@ -68,7 +68,7 @@ computed and placed in the first Level position.
 ### Zero Knowledge Merkle Opening Proof example:
 
 ```no_run
-#[cfg(feature = "canon")]
+#[cfg(all(feature = "canon", feature = "std"))]
 {
 
 use anyhow::Result;
@@ -76,8 +76,7 @@ use canonical::Canon;
 use canonical_derive::Canon;
 use canonical_host::MemStore;
 use dusk_plonk::prelude::*;
-use poseidon252::tree::zk::merkle_opening;
-use poseidon252::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree};
+use poseidon252::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree, merkle_opening};
 
 // Constant depth of the merkle tree
 const DEPTH: usize = 17;
@@ -129,7 +128,7 @@ fn main() -> Result<()> {
     // Append 1024 elements to the tree
     for i in 0..1024 {
         let l = DataLeaf::from(i as u64);
-        tree.push(l)?;
+        tree.push(l).unwrap();
     }
 
     // Create a merkle opening tester gadget
