@@ -46,8 +46,8 @@ pub fn merkle_opening<const DEPTH: usize>(
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::MockLeaf;
-    use crate::{merkle_opening, PoseidonAnnotation, PoseidonTree};
+    use crate::tree::tests::MockLeaf;
+    use crate::tree::{merkle_opening, PoseidonAnnotation, PoseidonTree};
     use anyhow::Result;
     use canonical_host::MemStore;
     use dusk_plonk::prelude::*;

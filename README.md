@@ -76,8 +76,7 @@ use canonical::Canon;
 use canonical_derive::Canon;
 use canonical_host::MemStore;
 use dusk_plonk::prelude::*;
-use poseidon252::tree::zk::merkle_opening;
-use poseidon252::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree};
+use poseidon252::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree, merkle_opening};
 
 // Constant depth of the merkle tree
 const DEPTH: usize = 17;
@@ -129,7 +128,7 @@ fn main() -> Result<()> {
     // Append 1024 elements to the tree
     for i in 0..1024 {
         let l = DataLeaf::from(i as u64);
-        tree.push(l)?;
+        tree.push(l).unwrap();
     }
 
     // Create a merkle opening tester gadget

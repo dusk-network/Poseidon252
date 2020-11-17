@@ -5,12 +5,12 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use super::PoseidonTreeAnnotation;
-use crate::tree::hash;
 use crate::tree::PoseidonLeaf;
 use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
+use hades252::{ScalarStrategy, Strategy};
 use microkelvin::{Annotation, Cardinality};
 use nstack::NStack;
 
@@ -65,7 +65,8 @@ impl PoseidonAnnotation {
         }
 
         perm[0] = BlsScalar::from(mask);
-        let poseidon_root = hash::permutate(&mut perm);
+        ScalarStrategy::new().perm(&mut perm);
+        let poseidon_root = perm[1];
 
         Self {
             cardinality,

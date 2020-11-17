@@ -18,7 +18,7 @@
 //! use canonical_derive::Canon;
 //! use canonical_host::MemStore;
 //! use dusk_plonk::prelude::*;
-//! use poseidon252_tree::{merkle_opening, PoseidonAnnotation, PoseidonLeaf, PoseidonTree};
+//! use poseidon252::tree::{merkle_opening, PoseidonAnnotation, PoseidonLeaf, PoseidonTree};
 //!
 //! // Constant depth of the merkle tree
 //! const DEPTH: usize = 17;
@@ -112,8 +112,6 @@ mod annotation;
 mod branch;
 mod leaf;
 mod tree;
-
-pub(crate) mod hash;
 
 #[cfg(feature = "std")]
 mod zk;
