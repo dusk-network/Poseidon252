@@ -4,11 +4,11 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![deny(missing_docs)]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_const_generics)]
 #![feature(external_doc)]
 #![doc(include = "../README.md")]
-#![cfg_attr(not(feature = "std"), no_std)]
+#![deny(missing_docs)]
 
 /// Encryption and decryption implementation over a Poseidon cipher
 pub mod cipher;

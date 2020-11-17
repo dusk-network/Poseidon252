@@ -4,28 +4,27 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![cfg(feature = "std")]
-use super::{PoseidonCipher, CIPHER_SIZE, MESSAGE_CAPACITY};
-use anyhow::Result;
-use dusk_plonk::jubjub::{
-    JubJubAffine as AffinePoint, JubJubScalar as Fr, GENERATOR,
-};
-use dusk_plonk::prelude::*;
-use hades252::WIDTH;
+use crate::cipher::PoseidonCipher;
+use core::ops::Mul;
+use dusk_bls12_381::BlsScalar;
+use dusk_jubjub::{JubJubAffine, JubJubScalar, GENERATOR};
 use rand::RngCore;
-use std::ops::Mul;
 
-fn gen() -> ([BlsScalar; MESSAGE_CAPACITY], AffinePoint, BlsScalar) {
+fn gen() -> (
+    [BlsScalar; PoseidonCipher::capacity()],
+    JubJubAffine,
+    BlsScalar,
+) {
     let mut rng = rand::thread_rng();
 
-    let mut message = [BlsScalar::zero(); MESSAGE_CAPACITY];
+    let mut message = [BlsScalar::zero(); PoseidonCipher::capacity()];
     message
         .iter_mut()
         .for_each(|m| *m = BlsScalar::random(&mut rng));
 
     let mut secret = [0u8; 64];
     rng.fill_bytes(&mut secret);
-    let secret = Fr::from_bytes_wide(&secret);
+    let secret = JubJubScalar::from_bytes_wide(&secret);
     let secret = GENERATOR.to_niels().mul(&secret).into();
 
     let nonce = BlsScalar::random(&mut rng);
@@ -36,17 +35,20 @@ fn gen() -> ([BlsScalar; MESSAGE_CAPACITY], AffinePoint, BlsScalar) {
 #[test]
 fn sanity() {
     // The secret is always a pair with nonce, so the message capacity should be at least 2
-    assert!(MESSAGE_CAPACITY > 1);
+    assert!(PoseidonCipher::capacity() > 1);
 
     // The cipher size only makes sense to be `capacity + 1`
-    assert_eq!(CIPHER_SIZE, MESSAGE_CAPACITY + 1);
+    assert_eq!(
+        PoseidonCipher::cipher_size(),
+        PoseidonCipher::capacity() + 1
+    );
 
     // The hades permutation cannot be performed if the cipher is bigger than hades width
-    assert!(WIDTH >= CIPHER_SIZE);
+    assert!(hades252::WIDTH >= PoseidonCipher::cipher_size());
 }
 
 #[test]
-fn encrypt() -> Result<()> {
+fn encrypt() -> Result<(), &'static str> {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
@@ -58,7 +60,7 @@ fn encrypt() -> Result<()> {
 }
 
 #[test]
-fn single_bit() -> Result<()> {
+fn single_bit() -> Result<(), &'static str> {
     let (_, secret, nonce) = gen();
     let message = BlsScalar::random(&mut rand::thread_rng());
 
@@ -71,15 +73,15 @@ fn single_bit() -> Result<()> {
 }
 
 #[test]
-fn overflow() -> Result<()> {
+fn overflow() -> Result<(), &'static str> {
     let (_, secret, nonce) = gen();
-    let message =
-        [BlsScalar::random(&mut rand::thread_rng()); MESSAGE_CAPACITY + 1];
+    let message = [BlsScalar::random(&mut rand::thread_rng());
+        PoseidonCipher::capacity() + 1];
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
     let decrypt = cipher.decrypt(&secret, &nonce)?;
 
-    assert_eq!(message[0..MESSAGE_CAPACITY], decrypt);
+    assert_eq!(message[0..PoseidonCipher::capacity()], decrypt);
 
     Ok(())
 }
@@ -94,7 +96,7 @@ fn wrong_key_fail() {
 }
 
 #[test]
-fn bytes() -> Result<()> {
+fn bytes() -> Result<(), &'static str> {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);

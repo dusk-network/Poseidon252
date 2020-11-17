@@ -5,12 +5,12 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use super::PoseidonTreeAnnotation;
+use crate::tree::hash;
 use crate::tree::PoseidonLeaf;
 use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
-use dusk_plonk::prelude::*;
-use hades252::{ScalarStrategy, Strategy};
+use dusk_bls12_381::BlsScalar;
 use microkelvin::{Annotation, Cardinality};
 use nstack::NStack;
 
@@ -65,8 +65,7 @@ impl PoseidonAnnotation {
         }
 
         perm[0] = BlsScalar::from(mask);
-        ScalarStrategy::new().perm(&mut perm);
-        let poseidon_root = perm[1];
+        let poseidon_root = hash::permutate(&mut perm);
 
         Self {
             cardinality,
@@ -90,13 +89,6 @@ impl Borrow<BlsScalar> for PoseidonAnnotation {
     fn borrow(&self) -> &BlsScalar {
         &self.poseidon_root
     }
-}
-
-impl<L, S> PoseidonTreeAnnotation<L, S> for PoseidonAnnotation
-where
-    L: PoseidonLeaf<S>,
-    S: Store,
-{
 }
 
 impl<L, S> Annotation<NStack<L, PoseidonAnnotation, S>, S>
@@ -134,4 +126,11 @@ where
     fn from_node(node: &NStack<L, PoseidonAnnotation, S>) -> Self {
         Self::from_generic_node(node)
     }
+}
+
+impl<L, S> PoseidonTreeAnnotation<L, S> for PoseidonAnnotation
+where
+    L: PoseidonLeaf<S>,
+    S: Store,
+{
 }

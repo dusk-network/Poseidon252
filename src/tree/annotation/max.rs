@@ -11,7 +11,7 @@ use crate::tree::PoseidonLeaf;
 use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
-use dusk_plonk::prelude::*;
+use dusk_bls12_381::BlsScalar;
 use microkelvin::{Annotation, Cardinality, Compound, Max, Step, Walk};
 use nstack::NStack;
 

@@ -4,20 +4,18 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::tree::zk::merkle_opening;
 use crate::tree::{
     PoseidonAnnotation, PoseidonLeaf, PoseidonMaxAnnotation, PoseidonTree,
 };
-use anyhow::Result;
 use canonical::Canon;
 use canonical_derive::Canon;
 use canonical_host::MemStore;
 use core::borrow::Borrow;
-use dusk_plonk::prelude::*;
+use dusk_bls12_381::BlsScalar;
 use hades252::{ScalarStrategy, Strategy};
 
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
-struct MockLeaf {
+pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,
     pub expiration: u64,
@@ -55,17 +53,17 @@ impl Borrow<u64> for MockLeaf {
 
 #[test]
 fn tree_append_fetch() {
+    const MAX: usize = 4097;
+    let mut v = [MockLeaf::default(); MAX];
+
     let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, 17> =
         PoseidonTree::new();
-    let mut v = vec![];
-    let max = 4097;
-
-    for i in 0..max {
+    for i in 0..MAX {
         let mut s = MockLeaf::from(i as u64);
         let pos = tree.push(s).unwrap();
         assert_eq!(i, pos);
         s.pos = i as u64;
-        v.push(s);
+        v[i] = s;
     }
 
     v.iter().enumerate().for_each(|(i, s)| {
@@ -73,25 +71,25 @@ fn tree_append_fetch() {
         assert_eq!(s, &l);
     });
 
-    v.into_iter().rev().for_each(|s| {
+    v.iter().rev().for_each(|s| {
         let t = tree.pop().unwrap().unwrap();
-        assert_eq!(s, t);
+        assert_eq!(s, &t);
     });
 }
 
 #[test]
 fn tree_max_walk() {
+    const MAX: usize = 1025;
+    let mut v = [MockLeaf::default(); MAX];
+
     let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation, MemStore, 17> =
         PoseidonTree::new();
-    let mut v = vec![];
-    let max = 1025;
-
-    for i in 0..max {
+    for i in 0..MAX {
         let mut s = MockLeaf::from(i as u64);
         let pos = tree.push(s).unwrap();
         assert_eq!(i, pos);
         s.pos = i as u64;
-        v.push(s);
+        v[i] = s;
     }
 
     let w = 170;
@@ -104,17 +102,18 @@ fn tree_max_walk() {
             assert_eq!(pos + i as u64, leaf.pos());
         });
 
-    assert!(tree.iter_walk((max + 1) as u64).unwrap().next().is_none());
+    assert!(tree.iter_walk((MAX + 1) as u64).unwrap().next().is_none());
 }
 
 #[test]
 fn tree_max_walk_non_continuous() {
+    const MAX: usize = 1025;
+    let mut v = [MockLeaf::default(); MAX];
+
     let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation, MemStore, 17> =
         PoseidonTree::new();
-    let mut v = vec![];
-    let max = 1025;
 
-    for i in 0..max {
+    for i in 0..MAX {
         let mut s = MockLeaf::from(i as u64);
 
         if i % 4 == 0 {
@@ -124,7 +123,7 @@ fn tree_max_walk_non_continuous() {
         let pos = tree.push(s).unwrap();
         assert_eq!(i, pos);
         s.pos = i as u64;
-        v.push(s);
+        v[i] = s;
     }
 
     let w = 170;
@@ -140,7 +139,7 @@ fn tree_max_walk_non_continuous() {
             pos += 1;
         });
 
-    assert!(tree.iter_walk((max + 1) as u64).unwrap().next().is_none());
+    assert!(tree.iter_walk((MAX + 1) as u64).unwrap().next().is_none());
 }
 
 #[test]
@@ -192,51 +191,4 @@ fn tree_branch_leaf() {
             assert_eq!(root, root_p);
         }
     });
-}
-
-#[test]
-fn tree_merkle_opening() -> Result<()> {
-    const DEPTH: usize = 17;
-
-    let pub_params = PublicParameters::setup(1 << 15, &mut rand::thread_rng())?;
-    let (ck, ok) = pub_params.trim(1 << 15)?;
-
-    let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, DEPTH> =
-        PoseidonTree::new();
-
-    for i in 0..1024 {
-        let l = MockLeaf::from(i as u64);
-        tree.push(l)?;
-    }
-
-    let gadget_tester =
-        |composer: &mut StandardComposer,
-         tree: &PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, DEPTH>,
-         n: usize| {
-            let branch = tree.branch(n).unwrap().unwrap();
-            let root = tree.root().unwrap();
-
-            let leaf = BlsScalar::from(n as u64);
-            let leaf = composer.add_input(leaf);
-
-            let root_p = merkle_opening::<DEPTH>(composer, &branch, leaf);
-            composer.constrain_to_constant(root_p, BlsScalar::zero(), -root);
-        };
-
-    let label = b"opening_gadget";
-
-    for i in [0, 567, 1023].iter() {
-        let mut prover = Prover::new(label);
-        gadget_tester(prover.mut_cs(), &tree, *i);
-        prover.preprocess(&ck)?;
-        let proof = prover.prove(&ck)?;
-
-        let mut verifier = Verifier::new(label);
-        gadget_tester(verifier.mut_cs(), &tree, *i);
-        verifier.preprocess(&ck)?;
-        let pi = verifier.mut_cs().public_inputs.clone();
-        verifier.verify(&proof, &ok, &pi).unwrap();
-    }
-
-    Ok(())
 }

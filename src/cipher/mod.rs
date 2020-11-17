@@ -4,35 +4,15 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-pub use cipher::PoseidonCipher;
-#[cfg(feature = "std")]
-pub use error::CipherError;
-
-/// Maximum number of scalars allowed per message
-pub const MESSAGE_CAPACITY: usize = 2;
-
-/// Number of scalars used in a cipher
-pub const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
-
-/// Number of bytes used by from/to bytes `PoseidonCipher` function
-pub const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * 32;
-
-/// Bytes consumed on serialization of the poseidon cipher
-///
-/// This is kept for backwards compatibility since the constant definition is
-/// redundant to [`CIPHER_BYTES_SIZE`]
-pub const ENCRYPTED_DATA_SIZE: usize = CIPHER_SIZE * 32;
-
-/// [`PoseidonCipher`] definition
-pub mod cipher;
-
-#[cfg(feature = "std")]
-/// Error definition for the cipher generation process
-pub mod error;
+mod cipher;
 
 #[cfg(test)]
 mod tests;
 
 #[cfg(feature = "std")]
-/// Plonk gadget for Poseidon encryption
-pub mod zk;
+mod zk;
+
+pub use cipher::PoseidonCipher;
+
+#[cfg(feature = "std")]
+pub use zk::{poseidon_cipher_decrypt, poseidon_cipher_encrypt};
