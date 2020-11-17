@@ -8,6 +8,7 @@ use super::{
     PoseidonBranch, PoseidonLeaf, PoseidonTreeAnnotation,
     PoseidonWalkableAnnotation,
 };
+use crate::Error;
 use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use dusk_bls12_381::BlsScalar;
@@ -80,7 +81,7 @@ where
     ///
     /// Will call the `tree_pos_mut` implementation of the leaf to
     /// set its index
-    pub fn push(&mut self, mut leaf: L) -> Result<usize, &'static str> {
+    pub fn push(&mut self, mut leaf: L) -> Result<usize, Error<S::Error>> {
         let size = match &self.inner {
             NStack::Leaf(l) => l.iter().filter(|l| l.is_some()).count(),
             NStack::Node(n) => n
@@ -95,33 +96,33 @@ where
         leaf.set_pos(size as u64);
         self.inner
             .push(leaf)
-            .map_err(|_| "Error pushing to the poseidon tree!")?;
+            .map_err(|e| Error::TreePushFailed(e))?;
 
         Ok(size)
     }
 
     /// Fetch, remove and return the last inserted leaf, if present.
-    pub fn pop(&mut self) -> Result<Option<L>, &'static str> {
-        self.inner.pop().map_err(|_| "Error on pop of the tree!")
+    pub fn pop(&mut self) -> Result<Option<L>, Error<S::Error>> {
+        self.inner.pop().map_err(|e| Error::TreePopFailed(e))
     }
 
     /// Fetch a leaf on a provided index.
-    pub fn get(&self, n: usize) -> Result<Option<L>, &'static str> {
+    pub fn get(&self, n: usize) -> Result<Option<L>, Error<S::Error>> {
         self.inner
             .nth::<DEPTH>(n as u64)
             .map(|o| o.map(|l| l.clone()))
-            .map_err(|_| "Error fetching the Nth item from the tree!")
+            .map_err(|e| Error::TreeGetFailed(e))
     }
 
     /// Return a full merkle opening for this poseidon tree for a given index.
     pub fn branch(
         &self,
         n: usize,
-    ) -> Result<Option<PoseidonBranch<DEPTH>>, &'static str> {
+    ) -> Result<Option<PoseidonBranch<DEPTH>>, Error<S::Error>> {
         let branch = self
             .inner
             .nth::<DEPTH>(n as u64)
-            .map_err(|_| "Error fetching the Nth item from the tree!")?;
+            .map_err(|e| Error::TreeGetFailed(e))?;
 
         match branch {
             Some(b) => Ok(Some(PoseidonBranch::from(&b))),
@@ -130,7 +131,7 @@ where
     }
 
     /// Return the current root/state of the tree.
-    pub fn root(&self) -> Result<BlsScalar, &'static str> {
+    pub fn root(&self) -> Result<BlsScalar, Error<S::Error>> {
         self.branch(0).map(|b| b.unwrap_or_default().root())
     }
 
@@ -204,7 +205,7 @@ where
     S: Store,
     D: Clone,
 {
-    type Item = Result<L, &'static str>;
+    type Item = Result<L, Error<S::Error>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let pos = self.pos;

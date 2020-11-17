@@ -33,7 +33,7 @@ impl PoseidonCipher {
 /// the encryption of the message.
 ///
 /// The returned set of variables is the cipher text
-pub fn poseidon_cipher_encrypt(
+pub fn encrypt(
     composer: &mut StandardComposer,
     shared_secret: &Point,
     nonce: Variable,
@@ -73,7 +73,7 @@ pub fn poseidon_cipher_encrypt(
 /// the decryption of the cipher.
 ///
 /// The returned set of variables is the original message
-pub fn poseidon_cipher_decrypt(
+pub fn decrypt(
     composer: &mut StandardComposer,
     shared_secret: &Point,
     nonce: Variable,
@@ -110,9 +110,7 @@ pub fn poseidon_cipher_decrypt(
 
 #[cfg(test)]
 mod tests {
-    use crate::cipher::{
-        poseidon_cipher_decrypt, poseidon_cipher_encrypt, PoseidonCipher,
-    };
+    use crate::cipher::{decrypt, encrypt, PoseidonCipher};
     use anyhow::Result;
     use dusk_bls12_381::BlsScalar;
     use dusk_jubjub::{dhke, JubJubExtended, GENERATOR_EXTENDED};
@@ -171,24 +169,16 @@ mod tests {
                 },
             );
 
-            let cipher_gadget = poseidon_cipher_encrypt(
-                composer,
-                shared.point(),
-                nonce,
-                &message_circuit,
-            );
+            let cipher_gadget =
+                encrypt(composer, shared.point(), nonce, &message_circuit);
 
             cipher.iter().zip(cipher_gadget.iter()).for_each(|(c, g)| {
                 let x = composer.add_input(*c);
                 composer.assert_equal(x, *g);
             });
 
-            let message_gadget = poseidon_cipher_decrypt(
-                composer,
-                shared.point(),
-                nonce,
-                &cipher_gadget,
-            );
+            let message_gadget =
+                decrypt(composer, shared.point(), nonce, &cipher_gadget);
 
             message
                 .iter()

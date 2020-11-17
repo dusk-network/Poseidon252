@@ -8,7 +8,7 @@
 #![feature(min_const_generics)]
 #![feature(external_doc)]
 #![doc(include = "../README.md")]
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 
 /// Encryption and decryption implementation over a Poseidon cipher
 pub mod cipher;
@@ -21,3 +21,7 @@ pub mod sponge;
 /// The module handling posedion-trees.
 #[cfg(feature = "canon")]
 pub mod tree;
+
+mod error;
+
+pub use error::Error;

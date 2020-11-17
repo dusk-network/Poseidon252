@@ -4,6 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use crate::Error;
+
 #[cfg(feature = "canon")]
 use canonical::Canon;
 #[cfg(feature = "canon")]
@@ -143,7 +145,7 @@ impl PoseidonCipher {
         &self,
         secret: &JubJubAffine,
         nonce: &BlsScalar,
-    ) -> Result<[BlsScalar; MESSAGE_CAPACITY], &'static str> {
+    ) -> Result<[BlsScalar; MESSAGE_CAPACITY], Error<()>> {
         let zero = BlsScalar::zero();
         let mut strategy = ScalarStrategy::new();
 
@@ -160,7 +162,7 @@ impl PoseidonCipher {
         strategy.perm(&mut state);
 
         if self.cipher[MESSAGE_CAPACITY] != state[1] {
-            return Err("Decryption failed for the provided secret+nonce");
+            return Err(Error::CipherDecryptionFailed);
         }
 
         Ok(message)

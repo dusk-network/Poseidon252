@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 17-11-20
+### Changed
+- No-Std compatibility.
+
 ## [0.13.1] - 06-11-20
 ### Changed
 - Feature split between `canon` and `canon_host` for constrained and unconstrained environments.

@@ -9,7 +9,7 @@ use dusk_bls12_381::BlsScalar;
 
 /// A struct that will be used as a poseidon tree leaf must implement this trait
 ///
-/// After [`PoseidonTree::push`], `tree_pos_mut` will be called to set the
+/// After `PoseidonTree::push`, `tree_pos_mut` will be called to set the
 /// index of the leaf on the tree
 pub trait PoseidonLeaf<S>: Canon<S> + Clone
 where

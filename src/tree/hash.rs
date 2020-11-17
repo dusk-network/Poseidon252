@@ -7,11 +7,6 @@
 use dusk_bls12_381::BlsScalar;
 use hades252::strategies::{ScalarStrategy, Strategy};
 
-#[cfg(feature = "std")]
-use dusk_plonk::prelude::*;
-#[cfg(feature = "std")]
-use hades252::strategies::GadgetStrategy;
-
 /// Perform the Hades252 permutation
 pub fn permutate(input: &mut [BlsScalar; hades252::WIDTH]) -> BlsScalar {
     ScalarStrategy::new().perm(input);
@@ -19,67 +14,9 @@ pub fn permutate(input: &mut [BlsScalar; hades252::WIDTH]) -> BlsScalar {
     input[1]
 }
 
-/// Truncate a set of messages to [`width()`] and set the first element as the bitflags
-/// representing the provided input
-///
-/// Mirror implementation of [`prepare_input`] for a given plonk circuit
-#[cfg(feature = "std")]
-pub fn prepare_input_gadget(
-    composer: &mut StandardComposer,
-    input: &[BlsScalar],
-    perm: &mut [Variable; hades252::WIDTH],
-) {
-    let n = std::cmp::min(input.len(), hades252::WIDTH - 1);
-
-    let mut mask = 0;
-    (0..n).fold(1, |flag, _| {
-        mask |= flag;
-        flag << 1
-    });
-
-    let flag = BlsScalar::from(mask);
-    let flag = composer.add_input(flag);
-    perm[0] = flag;
-
-    perm.iter_mut()
-        .skip(1)
-        .zip(input.iter())
-        .for_each(|(p, i)| *p = composer.add_input(*i));
-}
-
-/// Perform the Hades252 permutation inside of a circuit
-///
-/// Mirror implementation of [`permutate`]
-#[cfg(feature = "std")]
-pub fn permutate_gadget(
-    composer: &mut StandardComposer,
-    input: &mut [Variable; hades252::WIDTH],
-) -> Variable {
-    GadgetStrategy::new(composer).perm(input);
-
-    input[1]
-}
-
-/// Perform the poseidon hash of a provided set of circuit variables.
-///
-/// Mirror the implementation of [`hash`] for a circuit
-#[cfg(feature = "std")]
-pub fn hash_gadget(
-    composer: &mut StandardComposer,
-    input: &[BlsScalar],
-) -> Variable {
-    let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
-
-    let mut perm = [zero; hades252::WIDTH];
-    prepare_input_gadget(composer, input, &mut perm);
-
-    permutate_gadget(composer, &mut perm)
-}
-
 #[cfg(feature = "std")]
 #[cfg(test)]
 mod tests {
-    //use super::{hash, prepare_input, width};
     use dusk_bls12_381::BlsScalar;
 
     use crate::merkle::hash_gadget;

@@ -5,6 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::cipher::PoseidonCipher;
+use crate::Error;
 use core::ops::Mul;
 use dusk_bls12_381::BlsScalar;
 use dusk_jubjub::{JubJubAffine, JubJubScalar, GENERATOR};
@@ -48,7 +49,7 @@ fn sanity() {
 }
 
 #[test]
-fn encrypt() -> Result<(), &'static str> {
+fn encrypt() -> Result<(), Error<()>> {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
@@ -60,7 +61,7 @@ fn encrypt() -> Result<(), &'static str> {
 }
 
 #[test]
-fn single_bit() -> Result<(), &'static str> {
+fn single_bit() -> Result<(), Error<()>> {
     let (_, secret, nonce) = gen();
     let message = BlsScalar::random(&mut rand::thread_rng());
 
@@ -73,7 +74,7 @@ fn single_bit() -> Result<(), &'static str> {
 }
 
 #[test]
-fn overflow() -> Result<(), &'static str> {
+fn overflow() -> Result<(), Error<()>> {
     let (_, secret, nonce) = gen();
     let message = [BlsScalar::random(&mut rand::thread_rng());
         PoseidonCipher::capacity() + 1];
@@ -96,7 +97,7 @@ fn wrong_key_fail() {
 }
 
 #[test]
-fn bytes() -> Result<(), &'static str> {
+fn bytes() -> Result<(), Error<()>> {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);

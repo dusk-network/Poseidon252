@@ -26,7 +26,7 @@ The sponge hash techniqe requires a padding to be applied before the data can
 be hashed.
 
 This is done to avoid hash collitions as stated in the paper of the Poseidon Hash
-algorithm. See: (https://eprint.iacr.org/2019/458.pdf)[https://eprint.iacr.org/2019/458.pdf].
+algorithm. See: <https://eprint.iacr.org/2019/458.pdf>.
 The inputs of the `sponge_hash` are always `Scalar` or need to be capable of being represented
 as it.
 
