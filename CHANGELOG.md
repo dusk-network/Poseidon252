@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 21-11-20
+### Changed
+- Sponge hash defined as a no-std function.
+
 ## [0.14.0] - 17-11-20
 ### Changed
 - No-Std compatibility.
