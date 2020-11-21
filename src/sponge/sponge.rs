@@ -39,7 +39,11 @@ pub fn sponge_hash(messages: &[BlsScalar]) -> BlsScalar {
     let l = messages.len();
     let m = l / (WIDTH - 1);
     let n = m * (WIDTH - 1);
-    let last_iteration = if l == n { m - 1 } else { l / (WIDTH - 1) };
+    let last_iteration = if l == n {
+        m.saturating_sub(1)
+    } else {
+        l / (WIDTH - 1)
+    };
 
     messages
         .chunks(WIDTH - 1)
