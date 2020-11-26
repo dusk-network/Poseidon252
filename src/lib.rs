@@ -12,10 +12,8 @@
 
 /// Encryption and decryption implementation over a Poseidon cipher
 pub mod cipher;
-#[cfg(feature = "std")]
 /// Module containing a fixed-length Poseidon hash implementation
 pub mod perm_uses;
-#[cfg(feature = "std")]
 /// Reference implementation for the Poseidon Sponge hash function
 pub mod sponge;
 /// The module handling posedion-trees.

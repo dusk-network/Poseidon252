@@ -4,5 +4,6 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-pub(crate) mod pad;
 pub mod sponge;
+
+pub use sponge::sponge_hash as hash;
