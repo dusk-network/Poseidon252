@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 04-12-20
+### Fixed
+- PoseidonMaxAnnotation borrow fix for latest microkelvin.
+
 ## [0.14.0] - 17-11-20
 ### Changed
 - No-Std compatibility.

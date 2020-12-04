@@ -37,12 +37,9 @@ impl Borrow<BlsScalar> for PoseidonMaxAnnotation {
     }
 }
 
-impl Borrow<u64> for PoseidonMaxAnnotation {
-    fn borrow(&self) -> &u64 {
-        match &self.max {
-            Max::Maximum(m) => m,
-            Max::NegativeInfinity => &u64::min_value(),
-        }
+impl Borrow<Max<u64>> for PoseidonMaxAnnotation {
+    fn borrow(&self) -> &Max<u64> {
+        &self.max
     }
 }
 
@@ -88,6 +85,14 @@ where
     }
 }
 
+#[inline]
+fn borrow_u64<A: Borrow<Max<u64>>>(ann: &A) -> u64 {
+    match ann.borrow() {
+        Max::NegativeInfinity => 0,
+        Max::Maximum(m) => *m,
+    }
+}
+
 impl<C, L, S> PoseidonWalkableAnnotation<C, u64, L, S> for PoseidonMaxAnnotation
 where
     L: PoseidonLeaf<S>,
@@ -100,7 +105,9 @@ where
     fn poseidon_walk(walk: Walk<'_, C, S>, data: u64) -> Step<'_, C, S> {
         match walk {
             Walk::Leaf(l) if data <= *l.borrow() => Step::Found(l),
-            Walk::Node(n) if data <= *n.annotation().borrow() => Step::Into(n),
+            Walk::Node(n) if data <= borrow_u64(n.annotation()) => {
+                Step::Into(n)
+            }
             _ => Step::Next,
         }
     }
