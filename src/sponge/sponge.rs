@@ -4,103 +4,181 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-//! The `pad` module implements the Sponge's padding algorithm
-use super::pad::*;
+//! Sponge hash and gadget definition
 
+use dusk_bls12_381::BlsScalar;
+use hades252::{ScalarStrategy, Strategy, WIDTH};
+
+#[cfg(feature = "std")]
 use dusk_plonk::prelude::*;
-use hades252::strategies::*;
-use hades252::WIDTH;
 
-/// The `hash` function takes an arbitrary number of Scalars and returns the
-/// hash, using the `Hades` ScalarStragegy
+#[cfg(feature = "std")]
+use hades252::GadgetStrategy;
+
+/// The `hash` function takes an arbitrary number of Scalars and returns the hash, using the
+/// `Hades` ScalarStragegy.
+///
+/// As the paper definition, the capacity `c` is set to [`WIDTH`], and `r` is set to `c - 1`.
+///
+/// Considering `r` is set to `c - 1`, the first bit will be the capacity and will have no message
+/// addition, and the remainder bits of the permutation will have the corresponding element of the
+/// chunk added.
+///
+/// The last permutation will append `1` to the message as a padding separator value. The padding
+/// values will be zeroes. To avoid collision, the padding will imply one additional permutation
+/// in case `|m|` is a multiple of `r`.
 pub fn sponge_hash(messages: &[BlsScalar]) -> BlsScalar {
-    let mut strategy = ScalarStrategy::new();
+    let mut h = ScalarStrategy::new();
+    let mut state = [BlsScalar::zero(); WIDTH];
 
-    // The value used to pad the words is zero.
-    let padder = BlsScalar::zero();
-    // One will identify the end of messages.
-    let eom = BlsScalar::one();
+    // If exists an `m` such as `m · (WIDTH - 1) == l`, then the last iteration index should be
+    // `m - 1`.
+    //
+    // In other words, if `l` is a multiple of `WIDTH - 1`, then the last iteration of the chunk
+    // should have an extra appended padding `1`.
+    let l = messages.len();
+    let m = l / (WIDTH - 1);
+    let n = m * (WIDTH - 1);
+    let last_iteration = if l == n {
+        m.saturating_sub(1)
+    } else {
+        l / (WIDTH - 1)
+    };
 
-    let mut words = pad(messages, WIDTH, padder, eom);
-    // If the words len is less than the Hades252 permutation `WIDTH` we directly
-    // call the permutation saving useless additions by zero.
-    if words.len() == WIDTH {
-        strategy.perm(&mut words);
-        return words[1];
-    }
-    // If the words len is bigger than the Hades252 permutation `WIDTH` then we
-    // need to collapse the padded limbs. See bottom of pag. 16 of
-    // https://eprint.iacr.org/2019/458.pdf
-    let words = words.chunks(WIDTH).fold(
-        vec![BlsScalar::zero(); WIDTH],
-        |mut inputs, values| {
-            let mut values = values.iter();
-            inputs
-                .iter_mut()
-                .for_each(|input| *input += values.next().unwrap());
-            strategy.perm(&mut inputs);
-            inputs
-        },
-    );
+    messages
+        .chunks(WIDTH - 1)
+        .enumerate()
+        .for_each(|(i, chunk)| {
+            // Last chunk should have an added `1` followed by zeroes, if there is room for such
+            if i == last_iteration && chunk.len() < WIDTH - 1 {
+                state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
+                    *s += c;
+                });
 
-    words[1]
+                state[chunk.len() + 1] += BlsScalar::one();
+
+                h.perm(&mut state);
+            // If its the last iteration and there is no available room to append `1`, then there
+            // must be an extra permutation for the padding
+            } else if i == last_iteration {
+                state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
+                    *s += c;
+                });
+
+                h.perm(&mut state);
+
+                state[1] += BlsScalar::one();
+
+                h.perm(&mut state);
+            // If its not the last permutation, add the chunk of the message to the corresponding
+            // `r` elements
+            } else {
+                state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
+                    *s += c;
+                });
+
+                h.perm(&mut state);
+            }
+        });
+
+    state[1]
 }
 
-/// The `hash` function takes an arbitrary number of plonk `Variable`s and returns the
-/// hash, using the `Hades` GadgetStragegy
+#[cfg(feature = "std")]
+/// Mirror the implementation of [`sponge_hash`] inside of a PLONK circuit.
+///
+/// The circuit will be defined by the length of `messages`. This means that a pre-computed circuit
+/// will not behave generically for different messages sizes.
+///
+/// The expected usage is the length of the message to be known publically as the circuit
+/// definition. Hence, the padding value `1` will be appended as a circuit description.
+///
+/// The returned value is the hashed witness data computed as a variable.
 pub fn sponge_hash_gadget(
     composer: &mut StandardComposer,
     messages: &[Variable],
 ) -> Variable {
     // Create and constrait one and zero as witnesses.
-    let zero = composer.add_input(BlsScalar::zero());
-    composer.constrain_to_constant(zero, BlsScalar::zero(), BlsScalar::zero());
-    let one = composer.add_input(BlsScalar::one());
-    composer.constrain_to_constant(one, BlsScalar::one(), BlsScalar::zero());
-    // The value used to pad the words is zero.
-    let padder = zero;
-    // One will identify the end of messages.
-    let eom = one;
-    let mut words = pad(messages, WIDTH, padder, eom);
-    // If the words len is less than the Hades252 permutation `WIDTH` we directly
-    // call the permutation saving useless additions by zero.
-    if words.len() == WIDTH {
-        let mut strategy = GadgetStrategy::new(composer);
-        strategy.perm(&mut words);
-        return words[1];
-    }
-    // If the words len is bigger than the Hades252 permutation `WIDTH` then we
-    // need to collapse the padded limbs. See bottom of pag. 16 of
-    // https://eprint.iacr.org/2019/458.pdf
-    let words =
-        words
-            .chunks(WIDTH)
-            .fold(vec![padder; WIDTH], |mut inputs, values| {
-                let mut values = values.iter();
-                inputs.iter_mut().for_each(|input| {
-                    *input = composer.add(
-                        (BlsScalar::one(), *input),
-                        (BlsScalar::one(), *values.next().unwrap()),
-                        BlsScalar::zero(),
-                        BlsScalar::zero(),
-                    )
-                });
-                let mut strategy = GadgetStrategy::new(composer);
-                strategy.perm(&mut inputs);
-                inputs
-            });
+    let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
 
-    words[1]
+    let mut state = [zero; WIDTH];
+
+    let l = messages.len();
+    let m = l / (WIDTH - 1);
+    let n = m * (WIDTH - 1);
+    let last_iteration = if l == n { m - 1 } else { l / (WIDTH - 1) };
+
+    messages
+        .chunks(WIDTH - 1)
+        .enumerate()
+        .for_each(|(i, chunk)| {
+            if i == last_iteration && chunk.len() < WIDTH - 1 {
+                state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
+                    *s = composer.add(
+                        (BlsScalar::one(), *s),
+                        (BlsScalar::one(), *c),
+                        BlsScalar::zero(),
+                        BlsScalar::zero(),
+                    );
+                });
+
+                state[chunk.len() + 1] = composer.add(
+                    (BlsScalar::one(), state[chunk.len() + 1]),
+                    (BlsScalar::zero(), zero),
+                    BlsScalar::one(),
+                    BlsScalar::zero(),
+                );
+
+                GadgetStrategy::new(composer).perm(&mut state);
+            } else if i == last_iteration {
+                state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
+                    *s = composer.add(
+                        (BlsScalar::one(), *s),
+                        (BlsScalar::one(), *c),
+                        BlsScalar::zero(),
+                        BlsScalar::zero(),
+                    );
+                });
+
+                GadgetStrategy::new(composer).perm(&mut state);
+
+                state[1] = composer.add(
+                    (BlsScalar::one(), state[1]),
+                    (BlsScalar::zero(), zero),
+                    BlsScalar::one(),
+                    BlsScalar::zero(),
+                );
+
+                GadgetStrategy::new(composer).perm(&mut state);
+            } else {
+                state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
+                    *s = composer.add(
+                        (BlsScalar::one(), *s),
+                        (BlsScalar::one(), *c),
+                        BlsScalar::zero(),
+                        BlsScalar::zero(),
+                    );
+                });
+
+                GadgetStrategy::new(composer).perm(&mut state);
+            }
+        });
+
+    state[1]
 }
 
 #[cfg(test)]
+#[cfg(feature = "std")]
 mod tests {
-    use super::*;
     use anyhow::Result;
+    use hades252::WIDTH;
+
+    use super::*;
+
     const CAPACITY: usize = 1 << 12;
 
-    fn poseidon_sponge_params(width: usize) -> (Vec<BlsScalar>, BlsScalar) {
-        let mut input = vec![BlsScalar::zero(); width];
+    fn poseidon_sponge_params<const N: usize>() -> ([BlsScalar; N], BlsScalar) {
+        let mut input = [BlsScalar::zero(); N];
         input
             .iter_mut()
             .for_each(|s| *s = BlsScalar::random(&mut rand::thread_rng()));
@@ -110,9 +188,8 @@ mod tests {
 
     // Checks that the result of the hades permutation is the same as the one obtained by
     // the sponge gadget
-    fn sponge_gadget_tester(
-        width: usize,
-        i: Vec<BlsScalar>,
+    fn sponge_gadget_tester<const N: usize>(
+        i: &[BlsScalar],
         out: BlsScalar,
         composer: &mut StandardComposer,
     ) {
@@ -123,7 +200,7 @@ mod tests {
             BlsScalar::zero(),
         );
 
-        let mut i_var = vec![zero; width];
+        let mut i_var = vec![zero; N];
         i.iter().zip(i_var.iter_mut()).for_each(|(i, v)| {
             *v = composer.add_input(*i);
         });
@@ -156,15 +233,15 @@ mod tests {
         // Test with width = 3
 
         // Proving
-        let (i, o) = poseidon_sponge_params(3usize);
+        let (i, o) = poseidon_sponge_params::<3>();
         let mut prover = Prover::new(b"sponge_tester");
-        sponge_gadget_tester(3usize, i.clone(), o, prover.mut_cs());
+        sponge_gadget_tester::<3>(&i, o, prover.mut_cs());
         prover.preprocess(&ck)?;
         let proof = prover.prove(&ck)?;
 
         // Verify
         let mut verifier = Verifier::new(b"sponge_tester");
-        sponge_gadget_tester(3usize, i, o, verifier.mut_cs());
+        sponge_gadget_tester::<3>(&i, o, verifier.mut_cs());
         verifier.preprocess(&ck)?;
         verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
     }
@@ -179,15 +256,15 @@ mod tests {
         // Test with width = 5
 
         // Proving
-        let (i, o) = poseidon_sponge_params(WIDTH);
+        let (i, o) = poseidon_sponge_params::<WIDTH>();
         let mut prover = Prover::new(b"sponge_tester");
-        sponge_gadget_tester(WIDTH, i.clone(), o, prover.mut_cs());
+        sponge_gadget_tester::<WIDTH>(&i, o, prover.mut_cs());
         prover.preprocess(&ck)?;
         let proof = prover.prove(&ck)?;
 
         // Verify
         let mut verifier = Verifier::new(b"sponge_tester");
-        sponge_gadget_tester(WIDTH, i, o, verifier.mut_cs());
+        sponge_gadget_tester::<WIDTH>(&i, o, verifier.mut_cs());
         verifier.preprocess(&ck)?;
         verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
     }
@@ -202,15 +279,15 @@ mod tests {
         // Test with width = 15
 
         // Proving
-        let (i, o) = poseidon_sponge_params(15usize);
+        let (i, o) = poseidon_sponge_params::<15>();
         let mut prover = Prover::new(b"sponge_tester");
-        sponge_gadget_tester(15usize, i.clone(), o, prover.mut_cs());
+        sponge_gadget_tester::<15>(&i, o, prover.mut_cs());
         prover.preprocess(&ck)?;
         let proof = prover.prove(&ck)?;
 
         // Verify
         let mut verifier = Verifier::new(b"sponge_tester");
-        sponge_gadget_tester(15usize, i, o, verifier.mut_cs());
+        sponge_gadget_tester::<15>(&i, o, verifier.mut_cs());
         verifier.preprocess(&ck)?;
         verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
     }
