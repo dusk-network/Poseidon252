@@ -5,7 +5,6 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(min_const_generics)]
 #![feature(external_doc)]
 #![doc(include = "../README.md")]
 #![warn(missing_docs)]
