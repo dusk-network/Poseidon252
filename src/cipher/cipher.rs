@@ -12,13 +12,13 @@ use canonical::Canon;
 use canonical_derive::Canon;
 
 use dusk_bls12_381::BlsScalar;
-use dusk_bytes::Serializable;
+use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
 use dusk_jubjub::JubJubAffine;
 use hades252::strategies::{ScalarStrategy, Strategy};
 
 const MESSAGE_CAPACITY: usize = 2;
 const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
-const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * 32;
+const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * BlsScalar::SIZE;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default)]
 #[cfg_attr(feature = "canon", derive(Canon))]
@@ -27,48 +27,39 @@ pub struct PoseidonCipher {
     cipher: [BlsScalar; CIPHER_SIZE],
 }
 
-impl PoseidonCipher {
-    /// [`PoseidonCipher`] constructor
-    pub const fn new(cipher: [BlsScalar; CIPHER_SIZE]) -> Self {
-        Self { cipher }
-    }
-
+impl Serializable<CIPHER_BYTES_SIZE> for PoseidonCipher {
+    type Error = BytesError;
     /// Convert the instance to a bytes representation
-    pub fn to_bytes(&self) -> [u8; CIPHER_BYTES_SIZE] {
-        let mut bytes = [0u8; CIPHER_BYTES_SIZE];
+    fn to_bytes(&self) -> [u8; Self::SIZE] {
+        let mut bytes = [0u8; Self::SIZE];
 
         self.cipher.iter().enumerate().for_each(|(i, c)| {
-            let n = i * 32;
-            bytes[n..n + 32].copy_from_slice(&c.to_bytes());
+            let n = i * BlsScalar::SIZE;
+            bytes[n..n + BlsScalar::SIZE].copy_from_slice(&c.to_bytes());
         });
 
         bytes
     }
 
     /// Create an instance from a previous `PoseidonCipher::to_bytes` function
-    pub fn from_bytes(bytes: &[u8; CIPHER_BYTES_SIZE]) -> Option<Self> {
-        let mut cipher: [Option<BlsScalar>; CIPHER_SIZE] = [None; CIPHER_SIZE];
-        let mut b = [0u8; 32];
+    fn from_bytes(bytes: &[u8; Self::SIZE]) -> Result<Self, Self::Error> {
+        let mut cipher: [BlsScalar; CIPHER_SIZE] =
+            [BlsScalar::zero(); CIPHER_SIZE];
 
-        cipher.iter_mut().enumerate().for_each(|(i, c)| {
-            let n = i * 32;
-            b.copy_from_slice(&bytes[n..n + 32]);
-
-            let s = BlsScalar::from_bytes(&b);
-            if s.is_ok() {
-                c.replace(s.unwrap());
-            }
-        });
-
-        let mut scalars = [BlsScalar::zero(); CIPHER_SIZE];
-        for (c, s) in cipher.iter().zip(scalars.iter_mut()) {
-            match c {
-                Some(c) => *s = *c,
-                None => return None,
-            }
+        for (i, scalar) in cipher.iter_mut().enumerate() {
+            let idx = i * BlsScalar::SIZE;
+            let len = idx + BlsScalar::SIZE;
+            *scalar = BlsScalar::from_slice(&bytes[idx..len])?;
         }
 
-        Some(PoseidonCipher::new(scalars))
+        Ok(Self::new(cipher))
+    }
+}
+
+impl PoseidonCipher {
+    /// [`PoseidonCipher`] constructor
+    pub const fn new(cipher: [BlsScalar; CIPHER_SIZE]) -> Self {
+        Self { cipher }
     }
 
     /// Maximum number of scalars allowed per message

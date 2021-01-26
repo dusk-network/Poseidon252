@@ -8,6 +8,7 @@ use crate::cipher::PoseidonCipher;
 use crate::Error;
 use core::ops::Mul;
 use dusk_bls12_381::BlsScalar;
+use dusk_bytes::Serializable;
 use dusk_jubjub::{JubJubAffine, JubJubScalar, GENERATOR};
 use rand::RngCore;
 
@@ -35,7 +36,8 @@ fn gen() -> (
 
 #[test]
 fn sanity() {
-    // The secret is always a pair with nonce, so the message capacity should be at least 2
+    // The secret is always a pair with nonce, so the message capacity should be
+    // at least 2
     assert!(PoseidonCipher::capacity() > 1);
 
     // The cipher size only makes sense to be `capacity + 1`
@@ -44,7 +46,8 @@ fn sanity() {
         PoseidonCipher::capacity() + 1
     );
 
-    // The hades permutation cannot be performed if the cipher is bigger than hades width
+    // The hades permutation cannot be performed if the cipher is bigger than
+    // hades width
     assert!(hades252::WIDTH >= PoseidonCipher::cipher_size());
 }
 
