@@ -12,6 +12,7 @@ use canonical::Canon;
 use canonical_derive::Canon;
 
 use dusk_bls12_381::BlsScalar;
+use dusk_bytes::Serializable;
 use dusk_jubjub::JubJubAffine;
 use hades252::strategies::{ScalarStrategy, Strategy};
 
@@ -54,7 +55,7 @@ impl PoseidonCipher {
             b.copy_from_slice(&bytes[n..n + 32]);
 
             let s = BlsScalar::from_bytes(&b);
-            if s.is_some().into() {
+            if s.is_ok() {
                 c.replace(s.unwrap());
             }
         });
@@ -91,9 +92,11 @@ impl PoseidonCipher {
         nonce: BlsScalar,
     ) -> [BlsScalar; hades252::WIDTH] {
         [
-            // Domain - Maximum plaintext length of the elements of Fq, as defined in the paper
+            // Domain - Maximum plaintext length of the elements of Fq, as
+            // defined in the paper
             BlsScalar::from_raw([0x100000000u64, 0, 0, 0]),
-            // The size of the message is constant because any absent input is replaced by zero
+            // The size of the message is constant because any absent input is
+            // replaced by zero
             BlsScalar::from_raw([MESSAGE_CAPACITY as u64, 0, 0, 0]),
             secret.get_x(),
             secret.get_y(),
@@ -108,7 +111,8 @@ impl PoseidonCipher {
 
     /// Encrypt a slice of scalars into an internal cipher representation
     ///
-    /// The message size will be truncated to [`PoseidonCipher::capacity()`] bits
+    /// The message size will be truncated to [`PoseidonCipher::capacity()`]
+    /// bits
     pub fn encrypt(
         message: &[BlsScalar],
         secret: &JubJubAffine,
