@@ -109,7 +109,7 @@ where
     /// Fetch a leaf on a provided index.
     pub fn get(&self, n: usize) -> Result<Option<L>, Error<S::Error>> {
         self.inner
-            .nth::<DEPTH>(n as u64)
+            .nth(n as u64)
             .map(|o| o.map(|l| l.clone()))
             .map_err(|e| Error::TreeGetFailed(e))
     }
@@ -121,7 +121,7 @@ where
     ) -> Result<Option<PoseidonBranch<DEPTH>>, Error<S::Error>> {
         let branch = self
             .inner
-            .nth::<DEPTH>(n as u64)
+            .nth(n as u64)
             .map_err(|e| Error::TreeGetFailed(e))?;
 
         match branch {
@@ -185,7 +185,7 @@ where
 
         // TODO - Naive implementation until iterable branch is implemented
         // https://github.com/dusk-network/microkelvin/issues/23
-        let pos = <Branch<NStack<L, A, S>, S, DEPTH>>::walk(&tree.inner, |w| {
+        let pos = <Branch<NStack<L, A, S>, S>>::walk(&tree.inner, |w| {
             A::poseidon_walk(w, data.clone())
         })
         .map_err(|_| "Error fetching the branch!")?

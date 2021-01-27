@@ -14,7 +14,9 @@ use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use hades252::{ScalarStrategy, Strategy};
 
-#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
+)]
 pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,

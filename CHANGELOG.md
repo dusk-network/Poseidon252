@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 27-01-21
+### Changed
+- Update canonical to v0.5
+- Update dusk-bls12_381 to v0.6
+- Update dusk-jubjub to v0.8
+- Update dusk-plonk to v0.5
+- Update hades252 to v0.12.0
+
 ## [0.15.0] - 04-12-20
 ### Fixed
 - PoseidonMaxAnnotation borrow fix for latest microkelvin.
