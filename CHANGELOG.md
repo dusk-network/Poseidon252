@@ -7,115 +7,159 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.16.0] - 27-01-21
+## [0.16.0] - 2021-01-27
+
 ### Changed
+
 - Update canonical to v0.5
 - Update dusk-bls12_381 to v0.6
 - Update dusk-jubjub to v0.8
 - Update dusk-plonk to v0.5
 - Update hades252 to v0.12.0
+- Remove `hex` crate for unit test in favor of `dusk-bytes`
+- Update CHANGELOG to ISO 8601
+- to/from bytes methods of `PoseidonCipher` refactored in favor of dusk-bytes
 
-## [0.15.0] - 04-12-20
+## [0.15.0] - 2020-12-04
+
 ### Fixed
+
 - PoseidonMaxAnnotation borrow fix for latest microkelvin.
 
-## [0.14.1] - 21-11-20
+## [0.14.1] - 2020-11-21
+
 ### Changed
+
 - Sponge hash defined as a no-std function.
 
-## [0.14.0] - 17-11-20
+## [0.14.0] - 2020-11-17
+
 ### Changed
+
 - No-Std compatibility.
 
-## [0.13.1] - 06-11-20
+## [0.13.1] - 2020-11-06
+
 ### Changed
+
 - Feature split between `canon` and `canon_host` for constrained and unconstrained environments.
 - Canon implementation for PoseidonTree.
 
-## [0.13.0] - 04-11-20
+## [0.13.0] - 2020-11-04
+
 ### Changed
+
 - PoseidonLeaf pos setter for API consistency with Phoenix
 
 ### Removed
+
 - PoseidonCipher std::io implementations
 
-## [0.12.0] - 03-11-20
+## [0.12.0] - 2020-11-04
+
 ### Added
+
 - Gate-featured `canonical` impl.
 - `PoseidonAnnotation` as generic to support walkable implementations
 
-## [0.11.0] - 30-10-20
+## [0.11.0] - 2020-10-30
+
 ### Changed
+
 - Bump `hades252` to `v0.10.0`
 - Major refactor on the poseidon tree to comply with the simplifications provided by microkelvin
 
-## [0.10.0] - 05-10-20
+## [0.10.0] - 2020-10-05
+
 ### Changed
+
 - Bump `hades252` to `v0.9.0`
 - Bump `dusk-plonk` to `v0.3.1`
 
-## [0.9.0] - 04-10-20
+## [0.9.0] - 2020-10-04
+
 ### Added
+
 - `root()` fn for `PoseidonBranch`.
 
 ### Changed
+
 - Padding implementation for `PoseidonBranch` with opening gadgets.
 
 ### Removed
+
 - Extension fn's from the crate.
 
-## [0.8.1] - 01-10-20
+## [0.8.1] - 2020-10-01
+
 ### Changed
+
 - Implement `inner` and `inner_mut` methods on PoseidonTree
 
-## [0.8.0] - 29-09-20
+## [0.8.0] - 2020-09-29
+
 ### Changed
+
 - Use `dusk-plonk` `v0.2.11`
 - Use `hades252 0.8.0`
 
-## [0.7.0] - 23-09-20
+## [0.7.0] - 2020-09-23
+
 ### Changed
+
 - Removed PI constraint from `merkle_opening_gadget` to implement
-`CircuitBuilder` trait.
+  `CircuitBuilder` trait.
 - Use `nstack 0.5.0`
 
-## [0.6.4] - 07-09-20
+## [0.6.4] - 2020-09-07
+
 ### Added
+
 - `PoseidonCipher` from/to bytes.
 
-## [0.6.3] - 01-09-20
+## [0.6.3] - 2020-09-01
+
 ### Added
+
 - Fixed_len hashing tools with variable input and output scalars.
 
-## [0.6.2] - 27-08-20
+## [0.6.2] - 2020-08-27
+
 ### Added
+
 - `PoseidonCipher` zk encrypt and decrypt functions.
 
-## [0.6.1] - 13-08-20
+## [0.6.1] - 2020-08-13
+
 ### Changed
+
 - `add_constant_witness` method replacement by `add_witness_to_circuit_description`.
 - Changed `dusk-plonk` version to `v0.2.7`.
 - Changed `Hades252` version to `v0.7.0`.
 
-## [0.6.0] - 07-08-20
+## [0.6.0] - 2020-08-07
+
 ### Changed
+
 - Use `dusk-plonk v0.2.0` as dependency.
 - Refactor the tests related to Proof generation to work with the Prover&Verifier abstraction.
 
 ### Fixed
+
 - Constrain `eom` in sponge_hash function.
 
 ### Added
+
 - Poseidon cipher encryption, decryption and plonk gadget for zk prove of encryption with a key.
 
+## [0.5.0] - 2020-07-07
 
-## [0.5.0] - 07-07-20
 ### Added
 
 - `PoseidonTree` abstraction with padding and Proof gen. capabilities.
 
+## [0.4.0] - 2020-06-30
 
-## [0.4.0] - 30-06-20
 ### Changed
 
 - Use NarrowHAMT for ctsize Proofs & padded Branches instead of NStack.
@@ -124,34 +168,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - NStack dependencies are no longer needed nor used.
 
+## [0.3.0] - 2020-06-23
 
-## [0.3.0] - 23-06-20
 ### Added
 
 - Merkle-Tree Opening inclusion proof generation capabilities.
 
 - Methods for generating ZKProofs with PLONK
-getting a kelvin::Branch.
+  getting a kelvin::Branch.
 
 - Use Nstack for merkle-tree branch type.
 
+## [0.2.0] - 2020-06-15
 
-## [0.2.0] - 15-06-20
 ### Added
 
 - PLONK as ZKP algorithm for the poseidon-hash
-functions.
+  functions.
 
 - Optimization on the Sponge hash fn to skip useless addition if the width of the messages is the appropiate one to do it. (WIDTH < HADES_WIDTH -1).
 
 ### Changed
+
 - Both the merkle-hash and the sponge-hash techniqes use now PLONK instead of Bulletproofs.
 
 ### Removed
+
 - Bulletproofs and Curve25519 as dependencies since we no longer use them.
 
+## [0.1.0] - 2020-02-10
 
-## [0.1.0] - 10-02-20
 ### Added
 
 - Poseidon252 Sponge-hash impl with BulletProofs.
