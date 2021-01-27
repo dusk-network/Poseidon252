@@ -1,8 +1,9 @@
-[![Build Status](https://travis-ci.com/dusk-network/Poseidon252.svg?branch=master)](https://travis-ci.com/dusk-network/Poseidon252)
+![Build Status](https://github.com/dusk-network/Poseidon252/workflows/Continuous%20integration/badge.svg)
 [![Repository](https://img.shields.io/badge/github-poseidon252-blueviolet)](https://github.com/dusk-network/Poseidon252)
 [![Documentation](https://img.shields.io/badge/docs-poseidon252-blue)](https://dusk-network.github.io/Poseidon252/index.html)
 
 # Poseidon252
+
 Reference implementation for the Poseidon Hashing algorithm.
 
 #### Reference
@@ -20,6 +21,7 @@ designed & build by the [Dusk-Network team](https://dusk.network/).
 **The library provides the two hashing techniques of Poseidon:**
 
 ## Sponge Hash
+
 The `Sponge` techniqe in Poseidon allows to hash an unlimited ammount of data
 into a single `Scalar`.
 The sponge hash techniqe requires a padding to be applied before the data can
@@ -31,14 +33,15 @@ The inputs of the `sponge_hash` are always `Scalar` or need to be capable of bei
 as it.
 
 The module provides two sponge hash implementations:
+
 - Sponge hash using `Scalar` as backend. Which hashes the inputed `Scalar`s and returns a single
-`Scalar`.
+  `Scalar`.
 
 - Sponge hash gadget using `dusk_plonk::Variable` as a backend. This techniqe is used/required
-when you want to proof pre-images of unconstrained data inside of Zero-Knowledge PLONK circuits.
-
+  when you want to proof pre-images of unconstrained data inside of Zero-Knowledge PLONK circuits.
 
 ## Merkle Hash
+
 The Merkle Level Hashing is a technique that Poseidon is optimized-by-design
 to perform.
 This technique allows us to perform hashes of an entire Merkle Tree using
@@ -55,15 +58,13 @@ The module contains the implementation of 4 variants of the same algorithm to su
 majority of the configurations that the user may need:
 
 - Scalar backend for hashing Merkle Tree levels outside of ZK-Circuits whith two variants:
-One of them computes the bitflags item while the other assumes that it has already been
-computed and placed in the first Level position.
+  One of them computes the bitflags item while the other assumes that it has already been
+  computed and placed in the first Level position.
 
 - `dusk_plonk::Variable` backend for hashing Merkle Tree levels inside of ZK-Circuits,
- specifically, PLONK circuits. This implementation comes also whith two variants;
-One of them computes the bitflags item while the other assumes that it has already been
-computed and placed in the first Level position.
-
-
+  specifically, PLONK circuits. This implementation comes also whith two variants;
+  One of them computes the bitflags item while the other assumes that it has already been
+  computed and placed in the first Level position.
 
 ### Zero Knowledge Merkle Opening Proof example:
 
@@ -170,6 +171,7 @@ fn main() -> Result<()> {
 ```
 
 ## Canonical
+
 The canonical implementations aim to make available a single representation of the Merkle tree to constrained (referred to as "hosted") and unconstrained (referred to as "host") environments.
 
 For that, we rely on the features `canon` and `canon_host`.
@@ -179,6 +181,7 @@ For that, we rely on the features `canon` and `canon_host`.
 `canon_host` feature will require `canon`, with the addition of the host environment implementations.
 
 ## Documentation
+
 This crate contains info about all of the functions that the library provides as well as the
 documentation regarding the data structures that it exports. To check it, please feel free to go to
 the [documentation page](https://dusk-network.github.io/Poseidon252/poseidon252/index.html)
@@ -192,5 +195,6 @@ This code is licensed under Mozilla Public License Version 2.0 (MPL-2.0). Please
 Implementation designed by the [dusk](https://dusk.network) team.
 
 ## Contributing
+
 - If you want to contribute to this repository/project please, check [CONTRIBUTING.md](https://github.com/dusk-network/Poseidon252/blob/master/CONTRIBUTING.md)
 - If you want to report a bug or request a new feature addition, please open an issue on this repository.
