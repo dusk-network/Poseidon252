@@ -72,14 +72,14 @@ impl<const DEPTH: usize> AsRef<[PoseidonLevel]> for PoseidonBranch<DEPTH> {
     }
 }
 
-impl<L, A, S, const DEPTH: usize> From<&Branch<'_, NStack<L, A, S>, S, DEPTH>>
+impl<L, A, S, const DEPTH: usize> From<&Branch<'_, NStack<L, A, S>, S>>
     for PoseidonBranch<DEPTH>
 where
     L: PoseidonLeaf<S>,
     A: PoseidonTreeAnnotation<L, S>,
     S: Store,
 {
-    fn from(b: &Branch<'_, NStack<L, A, S>, S, DEPTH>) -> Self {
+    fn from(b: &Branch<'_, NStack<L, A, S>, S>) -> Self {
         let mut branch = PoseidonBranch::default();
         let mut depth = 0;
 
