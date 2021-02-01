@@ -1,8 +1,8 @@
 [package]
 name = "poseidon252"
-version = "0.16.0"
+version = "0.17.0"
 authors = [
-  "zer0 <matteo@dusk.network>",	"vlopes11 <victor@dusk.network>",	"CPerezz <carlos@dusk.network>", "Kristoffer Ström <kristoffer@dusk.network>"
+  "zer0 <matteo@dusk.network>", "vlopes11 <victor@dusk.network>", "CPerezz <carlos@dusk.network>", "Kristoffer Ström <kristoffer@dusk.network>"
 ]
 edition = "2018"
 
@@ -27,6 +27,7 @@ criterion = "0.3"
 
 [features]
 default = ["std"]
+alloc = []
 std = [
     "hades252/default",
     "dusk-bls12_381/default",
@@ -41,7 +42,8 @@ canon = [
     "canonical",
     "canonical_derive",
     "microkelvin",
-    "nstack"
+    "nstack",
+    "alloc"
 ]
 canon_host = [
     "canon",

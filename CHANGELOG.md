@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2021-02-01
+
+### Changed
+
+- Sponge gadget import path simplified.
+
+### Fixed
+
+- PoseidonBranch minimum depth fixed. [#112](https://github.com/dusk-network/poseidon252/issues/112)
+
 ## [0.16.0] - 2021-01-27
 
 ### Changed

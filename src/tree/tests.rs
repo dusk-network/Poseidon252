@@ -176,7 +176,7 @@ fn tree_branch_leaf() {
 
             assert_eq!(BlsScalar::from(i as u64), leaf);
 
-            let root_p = branch.as_ref().iter().take(DEPTH - 1).fold(
+            let root_p = branch.as_ref().iter().take(DEPTH).fold(
                 leaf,
                 |needle, level| {
                     assert_eq!(needle, **level);
@@ -191,4 +191,29 @@ fn tree_branch_leaf() {
             assert_eq!(root, root_p);
         }
     });
+}
+
+#[test]
+fn tree_branch_depth() {
+    let mut h = ScalarStrategy::new();
+    let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, 17> =
+        PoseidonTree::new();
+
+    let leaf = MockLeaf::from(1);
+    tree.push(leaf).unwrap();
+
+    let mut perm_base = [BlsScalar::zero(); hades252::WIDTH];
+    perm_base[0] = BlsScalar::one();
+    perm_base[1] = leaf.poseidon_hash();
+
+    let mut perm = perm_base;
+    for _ in 0..17 {
+        let needle = perm[1];
+        perm.copy_from_slice(&perm_base);
+        perm[1] = needle;
+        h.perm(&mut perm);
+    }
+
+    let branch = tree.branch(0).unwrap().unwrap();
+    assert_eq!(&perm[1], branch.root());
 }

@@ -99,7 +99,7 @@ pub fn sponge_hash(messages: &[BlsScalar]) -> BlsScalar {
 /// circuit description.
 ///
 /// The returned value is the hashed witness data computed as a variable.
-pub fn sponge_hash_gadget(
+pub fn sponge_gadget(
     composer: &mut StandardComposer,
     messages: &[Variable],
 ) -> Variable {
@@ -213,7 +213,7 @@ mod tests {
         let o_var = composer.add_input(out);
 
         // Apply Poseidon Sponge hash to the inputs
-        let computed_o_var = sponge_hash_gadget(composer, &i_var);
+        let computed_o_var = sponge_gadget(composer, &i_var);
 
         // Check that the Gadget sponge hash result = Scalar sponge hash result
         composer.add_gate(

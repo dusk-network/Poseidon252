@@ -5,7 +5,10 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use super::{PoseidonLeaf, PoseidonTreeAnnotation};
+
+use alloc::vec::Vec;
 use canonical::Store;
+use core::iter;
 use core::ops::Deref;
 use dusk_bls12_381::BlsScalar;
 use hades252::{ScalarStrategy, Strategy};
@@ -42,13 +45,21 @@ impl AsRef<[BlsScalar]> for PoseidonLevel {
 }
 
 /// Represents a full path for a merkle opening
-#[derive(Debug, Clone, Copy)]
-pub struct PoseidonBranch<const DEPTH: usize>([PoseidonLevel; DEPTH]);
+#[derive(Debug, Clone)]
+pub struct PoseidonBranch<const DEPTH: usize> {
+    path: Vec<PoseidonLevel>,
+}
 
 impl<const DEPTH: usize> PoseidonBranch<DEPTH> {
+    /// Root representation when the tree is empty
+    pub const NULL_ROOT: BlsScalar = BlsScalar::zero();
+
     /// Represents the root for a given path of an opening over a subtree
-    pub fn root(&self) -> BlsScalar {
-        *self.0[DEPTH - 1]
+    pub fn root(&self) -> &BlsScalar {
+        self.path
+            .last()
+            .map(|l| l.deref())
+            .unwrap_or(&Self::NULL_ROOT)
     }
 }
 
@@ -56,19 +67,23 @@ impl<const DEPTH: usize> Deref for PoseidonBranch<DEPTH> {
     type Target = BlsScalar;
 
     fn deref(&self) -> &Self::Target {
-        self.0[0].deref()
+        self.path[0].deref()
     }
 }
 
 impl<const DEPTH: usize> Default for PoseidonBranch<DEPTH> {
     fn default() -> Self {
-        PoseidonBranch([PoseidonLevel::default(); DEPTH])
+        let path = iter::repeat(PoseidonLevel::default())
+            .take(DEPTH + 1)
+            .collect();
+
+        Self { path }
     }
 }
 
 impl<const DEPTH: usize> AsRef<[PoseidonLevel]> for PoseidonBranch<DEPTH> {
     fn as_ref(&self) -> &[PoseidonLevel] {
-        &self.0
+        &self.path
     }
 }
 
@@ -86,7 +101,7 @@ where
         b.levels()
             .iter()
             .rev()
-            .zip(branch.0.iter_mut())
+            .zip(branch.path.iter_mut())
             .for_each(|(l, b)| {
                 depth += 1;
                 b.offset = l.offset() + 1;
@@ -127,11 +142,11 @@ where
         }
 
         let flag = BlsScalar::one();
-        let level = branch.0[depth - 1].level;
+        let level = branch.path[depth - 1].level;
         let mut perm = [BlsScalar::zero(); hades252::WIDTH];
 
         let mut h = ScalarStrategy::new();
-        branch.0.iter_mut().skip(depth).fold(level, |l, b| {
+        branch.path.iter_mut().skip(depth).fold(level, |l, b| {
             perm.copy_from_slice(&l);
             h.perm(&mut perm);
 
