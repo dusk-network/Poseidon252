@@ -131,7 +131,7 @@ where
         let mut perm = [BlsScalar::zero(); hades252::WIDTH];
 
         let mut h = ScalarStrategy::new();
-        branch.0.iter_mut().skip(depth).fold(level, |l, b| {
+        branch.0.iter_mut().skip(depth - 1).fold(level, |l, b| {
             perm.copy_from_slice(&l);
             h.perm(&mut perm);
 

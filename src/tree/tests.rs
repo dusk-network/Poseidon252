@@ -14,7 +14,9 @@ use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use hades252::{ScalarStrategy, Strategy};
 
-#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
+)]
 pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,
@@ -191,4 +193,29 @@ fn tree_branch_leaf() {
             assert_eq!(root, root_p);
         }
     });
+}
+
+#[test]
+fn tree_branch_depth() {
+    let mut h = ScalarStrategy::new();
+    let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, 17> =
+        PoseidonTree::new();
+
+    let leaf = MockLeaf::from(1);
+    tree.push(leaf).unwrap();
+
+    let mut perm_base = [BlsScalar::zero(); hades252::WIDTH];
+    perm_base[0] = BlsScalar::one();
+    perm_base[1] = leaf.poseidon_hash();
+
+    let mut perm = perm_base;
+    for _ in 0..17 {
+        let needle = perm[1];
+        perm.copy_from_slice(&perm_base);
+        perm[1] = needle;
+        h.perm(&mut perm);
+    }
+
+    let branch = tree.branch(0).unwrap().unwrap();
+    assert_eq!(perm[1], branch.root());
 }
