@@ -43,12 +43,14 @@ impl AsRef<[BlsScalar]> for PoseidonLevel {
 
 /// Represents a full path for a merkle opening
 #[derive(Debug, Clone, Copy)]
-pub struct PoseidonBranch<const DEPTH: usize>([PoseidonLevel; DEPTH]);
+// TODO Const generics does not support evaluation
+// https://github.com/rust-lang/rust/issues/76560
+pub struct PoseidonBranch<const DEPTH: usize>([PoseidonLevel; 18]);
 
 impl<const DEPTH: usize> PoseidonBranch<DEPTH> {
     /// Represents the root for a given path of an opening over a subtree
     pub fn root(&self) -> BlsScalar {
-        *self.0[DEPTH - 1]
+        *self.0[DEPTH]
     }
 }
 
@@ -62,7 +64,7 @@ impl<const DEPTH: usize> Deref for PoseidonBranch<DEPTH> {
 
 impl<const DEPTH: usize> Default for PoseidonBranch<DEPTH> {
     fn default() -> Self {
-        PoseidonBranch([PoseidonLevel::default(); DEPTH])
+        PoseidonBranch([PoseidonLevel::default(); 18])
     }
 }
 
@@ -131,7 +133,7 @@ where
         let mut perm = [BlsScalar::zero(); hades252::WIDTH];
 
         let mut h = ScalarStrategy::new();
-        branch.0.iter_mut().skip(depth - 1).fold(level, |l, b| {
+        branch.0.iter_mut().skip(depth).fold(level, |l, b| {
             perm.copy_from_slice(&l);
             h.perm(&mut perm);
 

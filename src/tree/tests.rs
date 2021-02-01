@@ -14,9 +14,7 @@ use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use hades252::{ScalarStrategy, Strategy};
 
-#[derive(
-    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
-)]
+#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
 pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,
@@ -178,7 +176,7 @@ fn tree_branch_leaf() {
 
             assert_eq!(BlsScalar::from(i as u64), leaf);
 
-            let root_p = branch.as_ref().iter().take(DEPTH - 1).fold(
+            let root_p = branch.as_ref().iter().take(DEPTH).fold(
                 leaf,
                 |needle, level| {
                     assert_eq!(needle, **level);
