@@ -215,5 +215,5 @@ fn tree_branch_depth() {
     }
 
     let branch = tree.branch(0).unwrap().unwrap();
-    assert_eq!(perm[1], branch.root());
+    assert_eq!(&perm[1], branch.root());
 }

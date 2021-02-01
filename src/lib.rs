@@ -9,6 +9,9 @@
 #![doc(include = "../README.md")]
 #![warn(missing_docs)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 /// Encryption and decryption implementation over a Poseidon cipher
 pub mod cipher;
 /// Module containing a fixed-length Poseidon hash implementation

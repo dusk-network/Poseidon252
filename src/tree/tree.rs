@@ -132,7 +132,7 @@ where
 
     /// Return the current root/state of the tree.
     pub fn root(&self) -> Result<BlsScalar, Error<S::Error>> {
-        self.branch(0).map(|b| b.unwrap_or_default().root())
+        self.branch(0).map(|b| b.unwrap_or_default().root().clone())
     }
 
     /// Iterates over the tree, provided its annotation implements [`PoseidonWalkableAnnotation`]
