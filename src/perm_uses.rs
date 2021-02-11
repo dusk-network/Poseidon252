@@ -7,14 +7,14 @@
 //! The `pad` module implements the padding algorithm on the Poseidon hash.
 
 use dusk_bls12_381::BlsScalar;
-use hades252::strategies::{ScalarStrategy, Strategy};
+use dusk_hades::strategies::{ScalarStrategy, Strategy};
 
 /// Takes in one BlsScalar and outputs 2.
 /// This function is fixed.
 pub fn two_outputs(message: BlsScalar) -> [BlsScalar; 2] {
     const CAPACITY: BlsScalar = BlsScalar::from_raw([0, 1, 0, 0]);
 
-    let mut words = [BlsScalar::zero(); hades252::WIDTH];
+    let mut words = [BlsScalar::zero(); dusk_hades::WIDTH];
 
     words[0] = CAPACITY;
     words[1] = message;

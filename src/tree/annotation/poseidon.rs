@@ -10,7 +10,7 @@ use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use hades252::{ScalarStrategy, Strategy};
+use dusk_hades::{ScalarStrategy, Strategy};
 use microkelvin::{Annotation, Cardinality};
 use nstack::NStack;
 
@@ -36,7 +36,7 @@ impl PoseidonAnnotation {
         let cardinality =
             <Cardinality as Annotation<NStack<L, A, S>, S>>::from_node(node);
 
-        let mut perm = [BlsScalar::zero(); hades252::WIDTH];
+        let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
         let mut flag = 1;
         let mut mask = 0;
 

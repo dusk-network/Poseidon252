@@ -11,14 +11,14 @@ use canonical::Store;
 use core::iter;
 use core::ops::Deref;
 use dusk_bls12_381::BlsScalar;
-use hades252::{ScalarStrategy, Strategy};
+use dusk_hades::{ScalarStrategy, Strategy};
 use microkelvin::Branch;
 use nstack::NStack;
 
 /// Represents a level of a branch on a given depth
 #[derive(Debug, Default, Clone, Copy)]
 pub struct PoseidonLevel {
-    level: [BlsScalar; hades252::WIDTH],
+    level: [BlsScalar; dusk_hades::WIDTH],
     offset: usize,
 }
 
@@ -143,7 +143,7 @@ where
 
         let flag = BlsScalar::one();
         let level = branch.path[depth - 1].level;
-        let mut perm = [BlsScalar::zero(); hades252::WIDTH];
+        let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
 
         let mut h = ScalarStrategy::new();
         branch.path.iter_mut().skip(depth).fold(level, |l, b| {

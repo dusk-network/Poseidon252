@@ -5,8 +5,8 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use super::PoseidonBranch;
+use dusk_hades::{GadgetStrategy, Strategy};
 use dusk_plonk::prelude::*;
-use hades252::{GadgetStrategy, Strategy};
 
 /// Perform a merkle opening for a given branch and return the calculated root
 pub fn merkle_opening<const DEPTH: usize>(
@@ -19,7 +19,7 @@ pub fn merkle_opening<const DEPTH: usize>(
     let mut root = zero;
 
     // Generate a permutation container
-    let mut perm = [zero; hades252::WIDTH];
+    let mut perm = [zero; dusk_hades::WIDTH];
 
     // For every level, replace the level offset with needle,
     // permutate the level and set the needle to the next level

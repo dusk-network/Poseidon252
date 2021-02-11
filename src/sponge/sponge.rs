@@ -7,13 +7,13 @@
 //! Sponge hash and gadget definition
 
 use dusk_bls12_381::BlsScalar;
-use hades252::{ScalarStrategy, Strategy, WIDTH};
+use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
 
 #[cfg(feature = "std")]
 use dusk_plonk::prelude::*;
 
 #[cfg(feature = "std")]
-use hades252::GadgetStrategy;
+use dusk_hades::GadgetStrategy;
 
 /// The `hash` function takes an arbitrary number of Scalars and returns the
 /// hash, using the `Hades` ScalarStragegy.
@@ -176,7 +176,7 @@ pub fn sponge_gadget(
 #[cfg(feature = "std")]
 mod tests {
     use anyhow::Result;
-    use hades252::WIDTH;
+    use dusk_hades::WIDTH;
 
     use super::*;
 
