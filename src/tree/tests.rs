@@ -12,7 +12,7 @@ use canonical_derive::Canon;
 use canonical_host::MemStore;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use hades252::{ScalarStrategy, Strategy};
+use dusk_hades::{ScalarStrategy, Strategy};
 
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
 pub struct MockLeaf {
@@ -147,7 +147,7 @@ fn tree_branch_leaf() {
     const DEPTH: usize = 17;
 
     let mut h = ScalarStrategy::new();
-    let zero = [BlsScalar::zero(); hades252::WIDTH];
+    let zero = [BlsScalar::zero(); dusk_hades::WIDTH];
     let mut perm = zero;
 
     [
@@ -202,7 +202,7 @@ fn tree_branch_depth() {
     let leaf = MockLeaf::from(1);
     tree.push(leaf).unwrap();
 
-    let mut perm_base = [BlsScalar::zero(); hades252::WIDTH];
+    let mut perm_base = [BlsScalar::zero(); dusk_hades::WIDTH];
     perm_base[0] = BlsScalar::one();
     perm_base[1] = leaf.poseidon_hash();
 

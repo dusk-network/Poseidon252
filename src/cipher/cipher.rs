@@ -13,8 +13,8 @@ use canonical_derive::Canon;
 
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
+use dusk_hades::strategies::{ScalarStrategy, Strategy};
 use dusk_jubjub::JubJubAffine;
-use hades252::strategies::{ScalarStrategy, Strategy};
 
 const MESSAGE_CAPACITY: usize = 2;
 const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
@@ -81,7 +81,7 @@ impl PoseidonCipher {
     pub fn initial_state(
         secret: &JubJubAffine,
         nonce: BlsScalar,
-    ) -> [BlsScalar; hades252::WIDTH] {
+    ) -> [BlsScalar; dusk_hades::WIDTH] {
         [
             // Domain - Maximum plaintext length of the elements of Fq, as
             // defined in the paper

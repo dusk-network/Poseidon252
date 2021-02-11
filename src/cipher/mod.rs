@@ -4,9 +4,9 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-//! # Poseidon 252 Cipher
+//! # Dusk-Poseidon Cipher
 //!
-//! Encryption/decryption implementation with Poseidon252 backend.
+//! Encryption/decryption implementation with Dusk-Poseidon backend.
 //!
 //! This implementation is optimized for a message containing 2 scalars.
 //!
@@ -24,7 +24,7 @@
 //! use core::ops::Mul;
 //! use dusk_bls12_381::BlsScalar;
 //! use dusk_jubjub::{dhke, JubJubExtended, JubJubScalar, GENERATOR};
-//! use poseidon252::cipher::PoseidonCipher;
+//! use dusk_poseidon::cipher::PoseidonCipher;
 //!
 //! fn sender(
 //!     sender_secret: &JubJubScalar,

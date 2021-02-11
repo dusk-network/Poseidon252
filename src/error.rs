@@ -25,7 +25,7 @@ pub enum Error<E: fmt::Debug> {
 #[cfg(feature = "std")]
 impl<E: fmt::Debug> std_fmt::Display for Error<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std_fmt::Result {
-        write!(f, "Poseidon252 Error: {:?}", &self)
+        write!(f, "Dusk-Poseidon Error: {:?}", &self)
     }
 }
 

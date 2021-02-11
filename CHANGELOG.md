@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2021-02-11
+
+### Changed
+
+- Change crate's name from `Poseidon252` to `dusk-poseidon`
+- Implement `Canon` for `PoseidonBranch`
+
 ## [0.17.0] - 2021-02-01
 
 ### Changed

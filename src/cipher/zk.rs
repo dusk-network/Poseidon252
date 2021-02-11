@@ -6,9 +6,9 @@
 
 use crate::cipher::PoseidonCipher;
 use dusk_bls12_381::BlsScalar;
+use dusk_hades::strategies::{GadgetStrategy, Strategy};
 use dusk_plonk::constraint_system::ecc::Point;
 use dusk_plonk::prelude::*;
-use hades252::strategies::{GadgetStrategy, Strategy};
 
 impl PoseidonCipher {
     /// Returns the initial state of the encryption within a composer circuit
@@ -17,7 +17,7 @@ impl PoseidonCipher {
         ks0: Variable,
         ks1: Variable,
         nonce: Variable,
-    ) -> [Variable; hades252::WIDTH] {
+    ) -> [Variable; dusk_hades::WIDTH] {
         let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
         let domain = composer.add_witness_to_circuit_description(domain);
 
