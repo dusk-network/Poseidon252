@@ -7,7 +7,8 @@
 use super::{PoseidonLeaf, PoseidonTreeAnnotation};
 
 use alloc::vec::Vec;
-use canonical::Store;
+use canonical::{Canon, Store};
+use canonical_derive::Canon;
 use core::iter;
 use core::ops::Deref;
 use dusk_bls12_381::BlsScalar;
@@ -16,16 +17,16 @@ use microkelvin::Branch;
 use nstack::NStack;
 
 /// Represents a level of a branch on a given depth
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Canon)]
 pub struct PoseidonLevel {
     level: [BlsScalar; dusk_hades::WIDTH],
-    offset: usize,
+    offset: u64,
 }
 
 impl PoseidonLevel {
     /// Represents the offset of a node for a given path produced by a branch
     /// in a merkle opening
-    pub fn offset(&self) -> usize {
+    pub fn offset(&self) -> u64 {
         self.offset
     }
 }
@@ -34,7 +35,7 @@ impl Deref for PoseidonLevel {
     type Target = BlsScalar;
 
     fn deref(&self) -> &Self::Target {
-        &self.level[self.offset]
+        &self.level[self.offset as usize]
     }
 }
 
@@ -45,7 +46,7 @@ impl AsRef<[BlsScalar]> for PoseidonLevel {
 }
 
 /// Represents a full path for a merkle opening
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Canon)]
 pub struct PoseidonBranch<const DEPTH: usize> {
     path: Vec<PoseidonLevel>,
 }
@@ -104,7 +105,7 @@ where
             .zip(branch.path.iter_mut())
             .for_each(|(l, b)| {
                 depth += 1;
-                b.offset = l.offset() + 1;
+                b.offset = l.offset() as u64 + 1;
 
                 let mut flag = 1;
                 let mut mask = 0;

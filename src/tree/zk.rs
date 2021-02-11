@@ -25,7 +25,7 @@ pub fn merkle_opening<const DEPTH: usize>(
     // permutate the level and set the needle to the next level
     // to the poseidon result of the permutation
     branch.as_ref().iter().fold(leaf, |needle, level| {
-        let offset = level.offset();
+        let offset = level.offset() as usize;
 
         level.as_ref().iter().enumerate().for_each(|(i, l)| {
             if i != offset {
