@@ -18,7 +18,7 @@
 //! use canonical_derive::Canon;
 //! use canonical_host::MemStore;
 //! use dusk_plonk::prelude::*;
-//! use poseidon252::tree::{merkle_opening, PoseidonAnnotation, PoseidonLeaf, PoseidonTree};
+//! use dusk_poseidon::tree::{merkle_opening, PoseidonAnnotation, PoseidonLeaf, PoseidonTree};
 //!
 //! // Constant depth of the merkle tree
 //! const DEPTH: usize = 17;

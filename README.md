@@ -77,7 +77,7 @@ use canonical::Canon;
 use canonical_derive::Canon;
 use canonical_host::MemStore;
 use dusk_plonk::prelude::*;
-use poseidon252::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree, merkle_opening};
+use dusk_poseidon::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree, merkle_opening};
 
 // Constant depth of the merkle tree
 const DEPTH: usize = 17;
