@@ -1,8 +1,8 @@
 ![Build Status](https://github.com/dusk-network/Poseidon252/workflows/Continuous%20integration/badge.svg)
 [![Repository](https://img.shields.io/badge/github-poseidon252-blueviolet)](https://github.com/dusk-network/Poseidon252)
-[![Documentation](https://img.shields.io/badge/docs-poseidon252-blue)](https://dusk-network.github.io/Poseidon252/index.html)
+[![Documentation](https://img.shields.io/badge/docs-poseidon252-blue)](https://docs.rs/dusk-poseidon/latest/dusk_poseidon/)
 
-# Poseidon252
+# Dusk-Poseidon
 
 Reference implementation for the Poseidon Hashing algorithm.
 
@@ -15,7 +15,7 @@ required to perform Poseidon Hashes.
 
 This hashes heavily rely on the Hades permutation, which is one of the key parts that Poseidon needs in order
 to work.
-This library uses the reference implementation of [Hades252](https://github.com/dusk-network/hades252) which has been
+This library uses the reference implementation of [Dusk-Hades](https://github.com/dusk-network/hades252) which has been
 designed & build by the [Dusk-Network team](https://dusk.network/).
 
 **The library provides the two hashing techniques of Poseidon:**
@@ -45,7 +45,7 @@ The module provides two sponge hash implementations:
 The Merkle Level Hashing is a technique that Poseidon is optimized-by-design
 to perform.
 This technique allows us to perform hashes of an entire Merkle Tree using
-`Hades252` as backend.
+`Dusk-Hades` as backend.
 
 The technique requires the computation of a `bitflags` element which is always
 positioned as the first item of the level when we hash it, and it basically generated

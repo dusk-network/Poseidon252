@@ -4,9 +4,9 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-//! # Poseidon 252 Cipher
+//! # Dusk-Poseidon Cipher
 //!
-//! Encryption/decryption implementation with Poseidon252 backend.
+//! Encryption/decryption implementation with Dusk-Poseidon backend.
 //!
 //! This implementation is optimized for a message containing 2 scalars.
 //!

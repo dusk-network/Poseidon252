@@ -1,4 +1,4 @@
-# Contributing to Poseidon252
+# Contributing to Dusk-Poseidon
 
 All of the code under this repository is licensed under the
 Mozilla Public License Version 2.0.

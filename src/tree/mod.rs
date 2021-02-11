@@ -4,9 +4,9 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-//! # Poseidon252 Merkle Tree
+//! # Dusk-Poseidon Merkle Tree
 //!
-//! Implementation of a Merkle Tree with a Poseidon252 backend and zero-knowledge opening proof powered by PLONK.
+//! Implementation of a Merkle Tree with a Dusk-Poseidon backend and zero-knowledge opening proof powered by PLONK.
 //!
 //! ### Example
 //!
