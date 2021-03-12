@@ -123,7 +123,7 @@ pub fn sponge_gadget(
                         (BlsScalar::one(), *s),
                         (BlsScalar::one(), *c),
                         BlsScalar::zero(),
-                        BlsScalar::zero(),
+                        None,
                     );
                 });
 
@@ -131,7 +131,7 @@ pub fn sponge_gadget(
                     (BlsScalar::one(), state[chunk.len() + 1]),
                     (BlsScalar::zero(), zero),
                     BlsScalar::one(),
-                    BlsScalar::zero(),
+                    None,
                 );
 
                 GadgetStrategy::new(composer).perm(&mut state);
@@ -141,7 +141,7 @@ pub fn sponge_gadget(
                         (BlsScalar::one(), *s),
                         (BlsScalar::one(), *c),
                         BlsScalar::zero(),
-                        BlsScalar::zero(),
+                        None,
                     );
                 });
 
@@ -151,7 +151,7 @@ pub fn sponge_gadget(
                     (BlsScalar::one(), state[1]),
                     (BlsScalar::zero(), zero),
                     BlsScalar::one(),
-                    BlsScalar::zero(),
+                    None,
                 );
 
                 GadgetStrategy::new(composer).perm(&mut state);
@@ -161,7 +161,7 @@ pub fn sponge_gadget(
                         (BlsScalar::one(), *s),
                         (BlsScalar::one(), *c),
                         BlsScalar::zero(),
-                        BlsScalar::zero(),
+                        None,
                     );
                 });
 
@@ -199,11 +199,7 @@ mod tests {
         composer: &mut StandardComposer,
     ) {
         let zero = composer.add_input(BlsScalar::zero());
-        composer.constrain_to_constant(
-            zero,
-            BlsScalar::zero(),
-            BlsScalar::zero(),
-        );
+        composer.constrain_to_constant(zero, BlsScalar::zero(), None);
 
         let mut i_var = vec![zero; N];
         i.iter().zip(i_var.iter_mut()).for_each(|(i, v)| {
@@ -224,7 +220,7 @@ mod tests {
             -BlsScalar::one(),
             BlsScalar::zero(),
             BlsScalar::zero(),
-            BlsScalar::zero(),
+            None,
         );
     }
 
@@ -248,7 +244,9 @@ mod tests {
         let mut verifier = Verifier::new(b"sponge_tester");
         sponge_gadget_tester::<3>(&i, o, verifier.mut_cs());
         verifier.preprocess(&ck)?;
-        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
+        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])?;
+
+        Ok(())
     }
 
     #[test]
@@ -271,7 +269,9 @@ mod tests {
         let mut verifier = Verifier::new(b"sponge_tester");
         sponge_gadget_tester::<WIDTH>(&i, o, verifier.mut_cs());
         verifier.preprocess(&ck)?;
-        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
+        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])?;
+
+        Ok(())
     }
 
     #[test]
@@ -294,7 +294,9 @@ mod tests {
         let mut verifier = Verifier::new(b"sponge_tester");
         sponge_gadget_tester::<15>(&i, o, verifier.mut_cs());
         verifier.preprocess(&ck)?;
-        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])
+        verifier.verify(&proof, &vk, &vec![BlsScalar::zero()])?;
+
+        Ok(())
     }
 
     #[test]
