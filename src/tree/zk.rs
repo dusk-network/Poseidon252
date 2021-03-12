@@ -87,7 +87,7 @@ mod tests {
             let leaf = composer.add_input(leaf);
 
             let root_p = merkle_opening::<DEPTH>(composer, &branch, leaf);
-            composer.constrain_to_constant(root_p, BlsScalar::zero(), -root);
+            composer.constrain_to_constant(root_p, BlsScalar::zero(), Some(-root));
         };
 
         let label = b"opening_gadget";
@@ -101,7 +101,7 @@ mod tests {
             let mut verifier = Verifier::new(label);
             gadget_tester(verifier.mut_cs(), &tree, *i);
             verifier.preprocess(&ck)?;
-            let pi = verifier.mut_cs().public_inputs.clone();
+            let pi = verifier.mut_cs().construct_dense_pi_vec();
             verifier.verify(&proof, &ok, &pi).unwrap();
         }
 

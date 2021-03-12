@@ -57,7 +57,7 @@ pub fn encrypt(
             (BlsScalar::one(), state[i + 1]),
             (BlsScalar::one(), x),
             BlsScalar::zero(),
-            BlsScalar::zero(),
+            None,
         );
 
         cipher[i] = state[i + 1];
@@ -95,7 +95,7 @@ pub fn decrypt(
             (BlsScalar::one(), cipher[i]),
             (-BlsScalar::one(), state[i + 1]),
             BlsScalar::zero(),
-            BlsScalar::zero(),
+            None,
         );
 
         state[i + 1] = cipher[i];
@@ -200,21 +200,6 @@ mod tests {
         );
         prover.preprocess(&ck)?;
         let proof = prover.prove(&ck)?;
-
-        // Everything was performed privately on this encryption
-        // There must be no public information
-        prover
-            .mut_cs()
-            .public_inputs
-            .iter()
-            .try_for_each(|p| {
-                if p == &BlsScalar::zero() {
-                    Ok(())
-                } else {
-                    Err("PI is not zero")
-                }
-            })
-            .unwrap();
 
         let mut verifier = Verifier::new(label);
 
