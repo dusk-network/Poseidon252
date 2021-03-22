@@ -87,7 +87,11 @@ mod tests {
             let leaf = composer.add_input(leaf);
 
             let root_p = merkle_opening::<DEPTH>(composer, &branch, leaf);
-            composer.constrain_to_constant(root_p, BlsScalar::zero(), Some(-root));
+            composer.constrain_to_constant(
+                root_p,
+                BlsScalar::zero(),
+                Some(-root),
+            );
         };
 
         let label = b"opening_gadget";
