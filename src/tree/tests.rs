@@ -13,12 +13,23 @@ use canonical_host::MemStore;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
+use rand::{CryptoRng, RngCore};
 
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
 pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,
     pub expiration: u64,
+}
+
+impl MockLeaf {
+    pub fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
+        let s = BlsScalar::random(rng);
+        let pos = 0;
+        let expiration = rng.next_u64();
+
+        Self { s, pos, expiration }
+    }
 }
 
 impl From<u64> for MockLeaf {
