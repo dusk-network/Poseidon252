@@ -79,10 +79,7 @@
 //!         let branch = tree.branch(n).unwrap().unwrap();
 //!         let root = tree.root().unwrap();
 //!
-//!         let leaf = BlsScalar::from(n as u64);
-//!         let leaf = composer.add_input(leaf);
-//!
-//!         let root_p = merkle_opening::<DEPTH>(composer, &branch, leaf);
+//!         let root_p = merkle_opening::<DEPTH>(composer, &branch);
 //!         composer.constrain_to_constant(root_p, BlsScalar::zero(), Some(-root));
 //!     };
 //!
