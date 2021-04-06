@@ -89,7 +89,7 @@ mod tests {
     use crate::tree::{self, PoseidonAnnotation, PoseidonBranch, PoseidonTree};
     use canonical_host::MemStore;
     use dusk_plonk::circuit;
-    use dusk_plonk::prelude::Error as PlonkError;
+    use dusk_plonk::error::Error as PlonkError;
     use dusk_plonk::prelude::*;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
