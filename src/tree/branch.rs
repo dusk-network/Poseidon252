@@ -26,8 +26,19 @@ pub struct PoseidonLevel {
 impl PoseidonLevel {
     /// Represents the offset of a node for a given path produced by a branch
     /// in a merkle opening
-    pub fn offset(&self) -> u64 {
+    ///
+    /// The first position in a level set is represented as offset `1` because internally the hades
+    /// permutation preprend the bitflags for merkle opening consistency
+    pub const fn offset(&self) -> u64 {
         self.offset
+    }
+
+    /// Represents the current level offset as a bitflag
+    ///
+    /// The LSB (least significant bit) represents the offset `1`. Any increment on the offset will
+    /// left shift this flag by `1`.
+    pub const fn offset_flag(&self) -> u64 {
+        1 << (self.offset - 1)
     }
 }
 
