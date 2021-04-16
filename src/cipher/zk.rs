@@ -117,32 +117,31 @@ mod tests {
     use dusk_plonk::constraint_system::ecc::scalar_mul::variable_base::variable_base_scalar_mul;
     use dusk_plonk::constraint_system::ecc::Point;
     use dusk_plonk::prelude::*;
+    use rand_core::OsRng;
 
     #[test]
     fn gadget() -> Result<()> {
-        let mut rng = rand::thread_rng();
-
         // Generate a secret and a public key for Bob
-        let bob_secret = JubJubScalar::random(&mut rng);
+        let bob_secret = JubJubScalar::random(&mut OsRng);
 
         // Generate a secret and a public key for Alice
-        let alice_secret = JubJubScalar::random(&mut rng);
+        let alice_secret = JubJubScalar::random(&mut OsRng);
         let alice_public = GENERATOR_EXTENDED * &alice_secret;
 
         // Generate a shared secret
         let shared_secret = dhke(&bob_secret, &alice_public);
 
         // Generate a secret message
-        let a = BlsScalar::random(&mut rng);
-        let b = BlsScalar::random(&mut rng);
+        let a = BlsScalar::random(&mut OsRng);
+        let b = BlsScalar::random(&mut OsRng);
         let message = [a, b];
 
         // Perform the encryption
-        let nonce = BlsScalar::random(&mut rng);
+        let nonce = BlsScalar::random(&mut OsRng);
         let cipher = PoseidonCipher::encrypt(&message, &shared_secret, &nonce);
 
         let size = 13;
-        let pp = PublicParameters::setup(1 << size, &mut rng)?;
+        let pp = PublicParameters::setup(1 << size, &mut OsRng)?;
         let (ck, vk) = pp.trim(1 << size)?;
 
         let label = b"poseidon-cipher";
