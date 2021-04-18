@@ -13,9 +13,11 @@ use canonical_host::MemStore;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
-use rand::{CryptoRng, RngCore};
+use rand_core::{CryptoRng, RngCore};
 
-#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
+)]
 pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,
@@ -42,7 +44,7 @@ impl From<u64> for MockLeaf {
     }
 }
 
-impl PoseidonLeaf<MemStore> for MockLeaf {
+impl PoseidonLeaf for MockLeaf {
     fn poseidon_hash(&self) -> BlsScalar {
         self.s
     }

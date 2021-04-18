@@ -19,7 +19,7 @@ use nstack::NStack;
 /// The recommended usage for extended annotations for poseidon trees is to have
 /// this structure as attribute of the concrete annotation, and reflect the borrows
 /// of the cardinality and scalar to the poseidon annotation implementation.
-#[derive(Debug, Clone, Canon)]
+#[derive(Debug, Clone, Canon, Default)]
 pub struct PoseidonAnnotation {
     cardinality: Cardinality,
     poseidon_root: BlsScalar,
@@ -27,14 +27,14 @@ pub struct PoseidonAnnotation {
 
 impl PoseidonAnnotation {
     /// Create a new poseidon annotation from a generic node implementation
-    pub fn from_generic_node<L, A, S>(node: &NStack<L, A, S>) -> Self
+    pub fn from_generic_node<L, A>(node: &NStack<L, A>) -> Self
     where
-        L: PoseidonLeaf<S>,
-        A: PoseidonTreeAnnotation<L, S>,
-        S: Store,
+        L: PoseidonLeaf,
+        A: PoseidonTreeAnnotation<L>,
+        A: Annotation<L>,
     {
         let cardinality =
-            <Cardinality as Annotation<NStack<L, A, S>, S>>::from_node(node);
+            <Cardinality as Annotation<NStack<L, A>>>::from_leaf(node);
 
         let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
         let mut flag = 1;
@@ -92,30 +92,12 @@ impl Borrow<BlsScalar> for PoseidonAnnotation {
     }
 }
 
-impl<L, S> Annotation<NStack<L, PoseidonAnnotation, S>, S>
-    for PoseidonAnnotation
+impl<L> Annotation<L> for PoseidonAnnotation
 where
-    L: PoseidonLeaf<S>,
-    S: Store,
+    L: PoseidonLeaf,
 {
-    fn identity() -> Self {
-        let cardinality = <Cardinality as Annotation<
-            NStack<L, PoseidonAnnotation, S>,
-            S,
-        >>::identity();
-        let poseidon_root = BlsScalar::zero();
-
-        Self {
-            cardinality,
-            poseidon_root,
-        }
-    }
-
     fn from_leaf(leaf: &L) -> Self {
-        let cardinality = <Cardinality as Annotation<
-            NStack<L, PoseidonAnnotation, S>,
-            S,
-        >>::from_leaf(leaf);
+        let cardinality = Cardinality::from_leaf(leaf);
         let poseidon_root = leaf.poseidon_hash();
 
         Self {
@@ -123,15 +105,6 @@ where
             poseidon_root,
         }
     }
-
-    fn from_node(node: &NStack<L, PoseidonAnnotation, S>) -> Self {
-        Self::from_generic_node(node)
-    }
 }
 
-impl<L, S> PoseidonTreeAnnotation<L, S> for PoseidonAnnotation
-where
-    L: PoseidonLeaf<S>,
-    S: Store,
-{
-}
+impl<L> PoseidonTreeAnnotation<L> for PoseidonAnnotation where L: PoseidonLeaf {}

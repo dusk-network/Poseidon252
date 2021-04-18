@@ -87,17 +87,14 @@ pub fn merkle_opening<const DEPTH: usize>(
 mod tests {
     use crate::tree::tests::MockLeaf;
     use crate::tree::{self, PoseidonAnnotation, PoseidonBranch, PoseidonTree};
-    use canonical_host::MemStore;
     use dusk_plonk::circuit;
     use dusk_plonk::error::Error as PlonkError;
     use dusk_plonk::prelude::*;
-    use rand::rngs::StdRng;
-    use rand::SeedableRng;
-    use rand::{CryptoRng, RngCore};
+    use rand_core::{CryptoRng, OsRng, RngCore, SeedableRng};
 
     const DEPTH: usize = 17;
     const CAPACITY: usize = 1 << 15;
-    type Tree = PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, DEPTH>;
+    type Tree = PoseidonTree<MockLeaf, PoseidonAnnotation, DEPTH>;
 
     struct MerkleOpeningCircuit {
         branch: PoseidonBranch<DEPTH>,
@@ -152,7 +149,7 @@ mod tests {
 
     #[test]
     fn tree_merkle_opening() {
-        let mut rng = StdRng::seed_from_u64(0xbeef);
+        let mut rng = OsRng;
         let pp = PublicParameters::setup(CAPACITY, &mut rng).unwrap();
         let label = b"dusk-network";
 

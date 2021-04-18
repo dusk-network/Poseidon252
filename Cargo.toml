@@ -30,7 +30,7 @@ rand_core = {version="0.6", default-features=false}
 criterion = "0.3"
 
 [features]
-default = ["std"]
+default = ["std", "canon"]
 alloc = []
 std = [
     "dusk-plonk/default",
