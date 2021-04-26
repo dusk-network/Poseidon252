@@ -25,6 +25,7 @@
 //! use dusk_bls12_381::BlsScalar;
 //! use dusk_jubjub::{dhke, JubJubExtended, JubJubScalar, GENERATOR};
 //! use dusk_poseidon::cipher::PoseidonCipher;
+//! use rand_core::OsRng;
 //!
 //! fn sender(
 //!     sender_secret: &JubJubScalar,
@@ -35,7 +36,7 @@
 //!     let shared_secret = dhke(sender_secret, receiver_public);
 //!
 //!     // Generate a random nonce that will be public
-//!     let nonce = BlsScalar::random(&mut rand::thread_rng());
+//!     let nonce = BlsScalar::random(&mut OsRng);
 //!
 //!     // Encrypt the message
 //!     let cipher = PoseidonCipher::encrypt(&message, &shared_secret, &nonce);
@@ -58,7 +59,7 @@
 //!         .expect("Failed to decrypt!")
 //! }
 //!
-//! let mut rng = rand::thread_rng();
+//! let mut rng = OsRng;
 //!
 //! // Generate a secret and a public key for Bob
 //! let bob_secret = JubJubScalar::random(&mut rng);

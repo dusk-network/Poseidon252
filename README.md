@@ -73,11 +73,10 @@ majority of the configurations that the user may need:
 {
 
 use anyhow::Result;
-use canonical::Canon;
 use canonical_derive::Canon;
-use canonical_host::MemStore;
 use dusk_plonk::prelude::*;
 use dusk_poseidon::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree, merkle_opening};
+use rand_core::OsRng;
 
 // Constant depth of the merkle tree
 const DEPTH: usize = 17;
@@ -100,7 +99,7 @@ impl From<u64> for DataLeaf {
 }
 
 // Any leaf of the poseidon tree must implement `PoseidonLeaf`
-impl PoseidonLeaf<MemStore> for DataLeaf {
+impl PoseidonLeaf for DataLeaf {
     // Cryptographic hash of the data leaf
     fn poseidon_hash(&self) -> BlsScalar {
         self.data
@@ -119,11 +118,11 @@ impl PoseidonLeaf<MemStore> for DataLeaf {
 
 fn main() -> Result<()> {
     // Create the ZK keys
-    let pub_params = PublicParameters::setup(1 << 15, &mut rand::thread_rng())?;
+    let pub_params = PublicParameters::setup(1 << 15, &mut OsRng)?;
     let (ck, ok) = pub_params.trim(1 << 15)?;
 
-    // Instantiate a new tree with the MemStore implementation
-    let mut tree: PoseidonTree<DataLeaf, PoseidonAnnotation, MemStore, DEPTH> =
+    // Instantiate a new tree.
+    let mut tree: PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH> =
         PoseidonTree::new();
 
     // Append 1024 elements to the tree
@@ -135,9 +134,9 @@ fn main() -> Result<()> {
     // Create a merkle opening tester gadget
     let gadget_tester =
         |composer: &mut StandardComposer,
-         tree: &PoseidonTree<DataLeaf, PoseidonAnnotation, MemStore, DEPTH>,
+         tree: &PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH>,
          n: usize| {
-            let branch = tree.branch(n).unwrap().unwrap();
+            let branch = tree.branch(n as u64).unwrap().unwrap();
             let root = tree.root().unwrap();
 
             let root_p = merkle_opening::<DEPTH>(composer, &branch);
