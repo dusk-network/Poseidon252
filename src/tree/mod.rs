@@ -10,7 +10,7 @@
 //!
 //! ### Example
 //!
-//! ```rust,no_run
+//! ```rust
 //! #[cfg(feature = "std")]
 //! {
 //! use anyhow::Result;

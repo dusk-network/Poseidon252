@@ -68,7 +68,7 @@ majority of the configurations that the user may need:
 
 ### Zero Knowledge Merkle Opening Proof example:
 
-```no_run
+```rust
 #[cfg(all(feature = "canon", feature = "std"))]
 {
 
