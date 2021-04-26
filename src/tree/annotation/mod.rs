@@ -5,11 +5,10 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::tree::PoseidonLeaf;
-use canonical::{Canon, Store};
+use canonical::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Annotation, Cardinality, Child, Compound, Step, Walk};
-use nstack::NStack;
+use microkelvin::{Annotation, Cardinality};
 
 mod max;
 mod poseidon;

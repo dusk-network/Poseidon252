@@ -6,13 +6,11 @@
 
 use super::PoseidonTreeAnnotation;
 use crate::tree::PoseidonLeaf;
-use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
 use microkelvin::{Annotation, Cardinality, Combine, Compound, IterChild};
-use nstack::NStack;
 
 /// A microkelvin annotation with the minimum data for a functional poseidon tree
 ///

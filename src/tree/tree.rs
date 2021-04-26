@@ -5,11 +5,10 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use super::{PoseidonBranch, PoseidonLeaf, PoseidonTreeAnnotation};
-use crate::Error;
-use canonical::{Canon, CanonError};
+use canonical::CanonError;
 use canonical_derive::Canon;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Annotation, Branch, Cardinality, Combine, Nth};
+use microkelvin::{Annotation, Cardinality, Combine, Nth};
 use nstack::NStack;
 
 /// Represents a Merkle Tree with a given depth that will be calculated using poseidon hash

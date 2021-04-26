@@ -7,7 +7,6 @@
 use super::{PoseidonLeaf, PoseidonTreeAnnotation};
 
 use alloc::vec::Vec;
-use canonical::Canon;
 use canonical_derive::Canon;
 use core::iter;
 use core::ops::Deref;

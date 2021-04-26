@@ -6,14 +6,10 @@
 
 use super::{PoseidonAnnotation, PoseidonTreeAnnotation};
 use crate::tree::PoseidonLeaf;
-use canonical::Canon;
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{
-    Annotation, Cardinality, Combine, Compound, Keyed, MaxKey, Step, Walk,
-};
-use nstack::NStack;
+use microkelvin::{Annotation, Cardinality, Combine, Compound, Keyed, MaxKey};
 
 /// Extends the standard [`PoseidonAnnotation`] with an annotation that holds an agnostic maximum
 /// value
@@ -62,14 +58,6 @@ where
         let max = <MaxKey<u64> as Annotation<L>>::from_leaf(leaf);
 
         Self { poseidon, max }
-    }
-}
-
-#[inline]
-fn borrow_u64<A: Borrow<MaxKey<u64>>>(ann: &A) -> u64 {
-    match ann.borrow() {
-        MaxKey::NegativeInfinity => 0,
-        MaxKey::Maximum(m) => *m,
     }
 }
 

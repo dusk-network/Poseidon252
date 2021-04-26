@@ -90,7 +90,7 @@ mod tests {
     use dusk_plonk::circuit;
     use dusk_plonk::error::Error as PlonkError;
     use dusk_plonk::prelude::*;
-    use rand_core::{CryptoRng, OsRng, RngCore, SeedableRng};
+    use rand_core::{CryptoRng, OsRng, RngCore};
 
     const DEPTH: usize = 17;
     const CAPACITY: usize = 1 << 15;
