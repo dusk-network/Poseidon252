@@ -5,6 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use super::{PoseidonBranch, PoseidonLeaf, PoseidonTreeAnnotation};
+use crate::Error;
 use canonical::CanonError;
 use canonical_derive::Canon;
 use dusk_bls12_381::BlsScalar;
@@ -75,31 +76,34 @@ where
     ///
     /// Will call the `tree_pos_mut` implementation of the leaf to
     /// set its index
-    pub fn push(&mut self, mut leaf: L) -> Result<u64, CanonError> {
+    pub fn push(&mut self, mut leaf: L) -> Result<u64, Error> {
         let size = Cardinality::combine(&self.inner).into();
 
         leaf.set_pos(size);
-        self.inner.push(leaf)?;
+        self.inner.push(leaf).map_err(|_| Error::TreePushFailed)?;
 
         Ok(size)
     }
 
     /// Fetch, remove and return the last inserted leaf, if present.
-    pub fn pop(&mut self) -> Result<Option<L>, CanonError> {
-        self.inner.pop()
+    pub fn pop(&mut self) -> Result<Option<L>, Error> {
+        self.inner.pop().map_err(|_| Error::TreePopFailed)
     }
 
     /// Fetch a leaf on a provided index.
-    pub fn get(&self, n: u64) -> Result<Option<L>, CanonError> {
-        self.inner.nth(n).map(|o| o.map(|l| l.clone()))
+    pub fn get(&self, n: u64) -> Result<Option<L>, Error> {
+        self.inner
+            .nth(n)
+            .map(|o| o.map(|l| l.clone()))
+            .map_err(|_| Error::TreePopFailed)
     }
 
     /// Return a full merkle opening for this poseidon tree for a given index.
     pub fn branch(
         &self,
         n: u64,
-    ) -> Result<Option<PoseidonBranch<DEPTH>>, CanonError> {
-        let branch = self.inner.nth(n)?;
+    ) -> Result<Option<PoseidonBranch<DEPTH>>, Error> {
+        let branch = self.inner.nth(n).map_err(|_| Error::TreeBranchFailed)?;
 
         match branch {
             Some(b) => Ok(Some(PoseidonBranch::from(&b))),
@@ -108,8 +112,10 @@ where
     }
 
     /// Return the current root/state of the tree.
-    pub fn root(&self) -> Result<BlsScalar, CanonError> {
-        self.branch(0).map(|b| b.unwrap_or_default().root().clone())
+    pub fn root(&self) -> Result<BlsScalar, Error> {
+        self.branch(0)
+            .map(|b| b.unwrap_or_default().root().clone())
+            .map_err(|_| Error::TreeBranchFailed)
     }
 
     /// Provides an iterator over the leaves of the tree from a provided starting point.
@@ -117,12 +123,11 @@ where
     pub fn iter_walk(
         &self,
         start: u64,
-    ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, CanonError>
-    {
+    ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, Error> {
         let result = self.inner.nth(start);
         match result {
             Ok(Some(iter)) => Ok(iter),
-            _ => Err(CanonError::NotFound),
+            _ => Err(Error::TreeIterFailed),
         }
     }
 
@@ -134,11 +139,10 @@ where
     pub fn annotated_iter_walk(
         &self,
         walker: impl Walker<NStack<L, A>, A>,
-    ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, CanonError>
-    {
+    ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, Error> {
         match Branch::walk(&self.inner, walker) {
             Ok(Some(iter)) => Ok(iter),
-            _ => Err(CanonError::NotFound),
+            _ => Err(Error::TreeIterFailed),
         }
     }
 }

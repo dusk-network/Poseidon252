@@ -138,7 +138,7 @@ impl PoseidonCipher {
         &self,
         secret: &JubJubAffine,
         nonce: &BlsScalar,
-    ) -> Result<[BlsScalar; MESSAGE_CAPACITY], Error<()>> {
+    ) -> Result<[BlsScalar; MESSAGE_CAPACITY], Error> {
         let zero = BlsScalar::zero();
         let mut strategy = ScalarStrategy::new();
 

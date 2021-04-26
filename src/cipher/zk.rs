@@ -111,7 +111,6 @@ pub fn decrypt(
 #[cfg(test)]
 mod tests {
     use crate::cipher::{decrypt, encrypt, PoseidonCipher};
-    use anyhow::Result;
     use dusk_bls12_381::BlsScalar;
     use dusk_jubjub::{dhke, JubJubExtended, GENERATOR_EXTENDED};
     use dusk_plonk::constraint_system::ecc::scalar_mul::variable_base::variable_base_scalar_mul;
@@ -119,7 +118,7 @@ mod tests {
     use rand_core::OsRng;
 
     #[test]
-    fn gadget() -> Result<()> {
+    fn gadget() -> Result<(), Error> {
         // Generate a secret and a public key for Bob
         let bob_secret = JubJubScalar::random(&mut OsRng);
 
