@@ -4,15 +4,15 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use super::{
-    PoseidonAnnotation, PoseidonTreeAnnotation, PoseidonWalkableAnnotation,
-};
+use super::{PoseidonAnnotation, PoseidonTreeAnnotation};
 use crate::tree::PoseidonLeaf;
 use canonical::Canon;
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Annotation, Cardinality, Compound, MaxKey, Step, Walk};
+use microkelvin::{
+    Annotation, Cardinality, Combine, Compound, Keyed, MaxKey, Step, Walk,
+};
 use nstack::NStack;
 
 /// Extends the standard [`PoseidonAnnotation`] with an annotation that holds an agnostic maximum
@@ -47,6 +47,7 @@ impl<L> PoseidonTreeAnnotation<L> for PoseidonMaxAnnotation
 where
     L: PoseidonLeaf,
     L: Borrow<u64>,
+    L: Keyed<u64>,
 {
 }
 
@@ -54,6 +55,7 @@ impl<L> Annotation<L> for PoseidonMaxAnnotation
 where
     L: PoseidonLeaf,
     L: Borrow<u64>,
+    L: Keyed<u64>,
 {
     fn from_leaf(leaf: &L) -> Self {
         let poseidon = PoseidonAnnotation::from_leaf(leaf);
@@ -71,21 +73,19 @@ fn borrow_u64<A: Borrow<MaxKey<u64>>>(ann: &A) -> u64 {
     }
 }
 
-impl<C, L, A> PoseidonWalkableAnnotation<C, u64, L, A> for PoseidonMaxAnnotation
+impl<C, A> Combine<C, A> for PoseidonMaxAnnotation
 where
-    L: PoseidonLeaf,
-    L: Borrow<u64>,
-    C: Clone,
-    A: Annotation<L>,
     C: Compound<A>,
+    C::Leaf: PoseidonLeaf + Keyed<u64> + Borrow<u64>,
+    A: Annotation<C::Leaf>
+        + PoseidonTreeAnnotation<C::Leaf>
+        + Borrow<Cardinality>
+        + Borrow<MaxKey<u64>>,
 {
-    fn poseidon_walk(walk: Walk<C, A>, data: u64) -> Step {
-        match walk {
-            Walk::Leaf(l) if data <= *l.borrow() => Step::Found(l),
-            Walk::Node(n) if data <= borrow_u64(n.annotation()) => {
-                Step::Into(n)
-            }
-            _ => Step::Next,
+    fn combine(node: &C) -> Self {
+        PoseidonMaxAnnotation {
+            poseidon: PoseidonAnnotation::combine(node),
+            max: MaxKey::combine(node),
         }
     }
 }

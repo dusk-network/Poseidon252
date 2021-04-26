@@ -25,32 +25,3 @@ where
     L: PoseidonLeaf,
 {
 }
-
-/// This trait will grant the ability of tree traversal using the `Branch::walk`
-/// for a provided annotation
-pub trait PoseidonWalkableAnnotation<C, D, L, A>:
-    PoseidonTreeAnnotation<L>
-where
-    C: Compound<A>,
-    A: Annotation<L>,
-    C: Clone,
-    D: Clone,
-    L: PoseidonLeaf,
-{
-    /// Traversal logic of the walkable annotation
-    ///
-    /// This will define the traversal path over the tree provided the generic data.
-    ///
-    /// The purpose of the data is to act as a filter over annotations, and this will be equally
-    /// passed to leaves and nodes.
-    fn poseidon_walk(walk: Walk<C, A>, data: D) -> Step;
-
-    /// Uses the internal implementation of `poseidon_walk` to check if a leaf is compatible with
-    /// a provided data.
-    fn poseidon_leaf_found(leaf: &L, data: D) -> bool {
-        match Self::poseidon_walk(Child::Leaf(leaf), data) {
-            Step::Found(_) => true,
-            _ => false,
-        }
-    }
-}
