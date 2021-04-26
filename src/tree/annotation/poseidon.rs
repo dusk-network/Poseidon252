@@ -11,7 +11,7 @@ use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
-use microkelvin::{Annotation, Cardinality};
+use microkelvin::{Annotation, Cardinality, Combine, Compound, IterChild};
 use nstack::NStack;
 
 /// A microkelvin annotation with the minimum data for a functional poseidon tree
@@ -27,40 +27,34 @@ pub struct PoseidonAnnotation {
 
 impl PoseidonAnnotation {
     /// Create a new poseidon annotation from a generic node implementation
-    pub fn from_generic_node<L, A>(node: &NStack<L, A>) -> Self
+    pub fn from_generic_node<C, A>(node: &C) -> Self
     where
-        L: PoseidonLeaf,
-        A: PoseidonTreeAnnotation<L>,
-        A: Annotation<L>,
+        C::Leaf: PoseidonLeaf,
+        A: PoseidonTreeAnnotation<C::Leaf>,
+        A: Annotation<C::Leaf>,
+        C: Compound<A>,
     {
-        let cardinality =
-            <Cardinality as Annotation<NStack<L, A>>>::from_leaf(node);
+        let cardinality = Cardinality::combine(node);
 
         let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
         let mut flag = 1;
         let mut mask = 0;
 
-        match node {
-            NStack::Leaf(l) => {
-                l.iter().zip(perm.iter_mut().skip(1)).for_each(|(l, p)| {
-                    if let Some(l) = l {
-                        mask |= flag;
-                        *p = l.poseidon_hash();
-                    }
+        for (i, child) in node.children().enumerate() {
+            match child {
+                IterChild::Leaf(l) => {
+                    mask |= flag;
+                    perm[i + 1] = l.poseidon_hash();
 
                     flag <<= 1;
-                });
-            }
+                }
 
-            NStack::Node(n) => {
-                n.iter().zip(perm.iter_mut().skip(1)).for_each(|(n, p)| {
-                    if let Some(n) = n {
-                        mask |= flag;
-                        *p = *n.annotation().borrow();
-                    }
+                IterChild::Node(n) => {
+                    mask |= flag;
+                    perm[i + 1] = *n.annotation().borrow();
 
                     flag <<= 1;
-                });
+                }
             }
         }
 
@@ -108,3 +102,16 @@ where
 }
 
 impl<L> PoseidonTreeAnnotation<L> for PoseidonAnnotation where L: PoseidonLeaf {}
+
+impl<C, A> Combine<C, A> for PoseidonAnnotation
+where
+    C: Compound<A>,
+    C::Leaf: PoseidonLeaf,
+    A: Annotation<C::Leaf>
+        + PoseidonTreeAnnotation<C::Leaf>
+        + Borrow<Cardinality>,
+{
+    fn combine(node: &C) -> Self {
+        PoseidonAnnotation::from_generic_node(node)
+    }
+}
