@@ -72,3 +72,4 @@ codegen-units = 1
 [patch.crates-io]
 nstack = {path = "../nstack", optional = true}
 dusk-hades = { path = "../Hades252", default-features = false }
+microkelvin = {git = "https://github.com/dusk-network/microkelvin", branch = "expose_walker"}

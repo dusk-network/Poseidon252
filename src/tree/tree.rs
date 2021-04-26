@@ -8,7 +8,7 @@ use super::{PoseidonBranch, PoseidonLeaf, PoseidonTreeAnnotation};
 use canonical::CanonError;
 use canonical_derive::Canon;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Annotation, Cardinality, Combine, Nth};
+use microkelvin::{Annotation, Branch, Cardinality, Combine, Nth, Walker};
 use nstack::NStack;
 
 /// Represents a Merkle Tree with a given depth that will be calculated using poseidon hash
@@ -121,6 +121,22 @@ where
     {
         let result = self.inner.nth(start);
         match result {
+            Ok(Some(iter)) => Ok(iter),
+            _ => Err(CanonError::NotFound),
+        }
+    }
+
+    /// Provides an iterator over the leaves of the tree which have been previously annotated via a custom `Walker` passed
+    /// as argument.
+    ///
+    /// # Note
+    /// This is only useful if annotate the tree is going to make the iteration perform sub-linearly.
+    pub fn annotated_iter_walk(
+        &self,
+        walker: impl Walker<NStack<L, A>, A>,
+    ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, CanonError>
+    {
+        match Branch::walk(&self.inner, walker) {
             Ok(Some(iter)) => Ok(iter),
             _ => Err(CanonError::NotFound),
         }
