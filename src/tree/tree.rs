@@ -131,10 +131,12 @@ where
     ///
     /// # Note
     /// This is only useful if annotate the tree is going to make the iteration perform sub-linearly.
-    pub fn annotated_iter_walk(
+    pub fn annotated_iter_walk<W>(
         &self,
-        walker: impl Walker<NStack<L, A>, A>,
+        walker: W,
     ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, CanonError>
+    where
+        W: Walker<NStack<L, A>, A>,
     {
         match Branch::walk(&self.inner, walker) {
             Ok(Some(iter)) => Ok(iter),
