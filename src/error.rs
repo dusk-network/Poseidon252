@@ -20,6 +20,8 @@ pub enum Error<E: fmt::Debug> {
     TreeGetFailed(E),
     /// Decryption failed for the provided secret+nonce
     CipherDecryptionFailed,
+    /// Failed to obtain an Iterator from a tree.
+    TreeIterFailed(E),
 }
 
 #[cfg(feature = "std")]
@@ -36,6 +38,7 @@ impl<E: 'static + fmt::Debug + std_error::Error> std_error::Error for Error<E> {
             Self::TreePushFailed(e) => Some(e),
             Self::TreePopFailed(e) => Some(e),
             Self::TreeGetFailed(e) => Some(e),
+            Self::TreeIterFailed(e) => Some(e),
             _ => None,
         }
     }
