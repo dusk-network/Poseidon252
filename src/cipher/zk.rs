@@ -157,7 +157,7 @@ mod tests {
             let nonce = composer.add_input(nonce);
 
             let secret = composer.add_input((secret).into());
-            let public = Point::from_private_affine(composer, public.into());
+            let public = composer.add_affine(public.into());
 
             let shared = variable_base_scalar_mul(composer, secret, public);
 
@@ -169,7 +169,7 @@ mod tests {
             );
 
             let cipher_gadget =
-                encrypt(composer, shared.point(), nonce, &message_circuit);
+                encrypt(composer, &shared, nonce, &message_circuit);
 
             cipher.iter().zip(cipher_gadget.iter()).for_each(|(c, g)| {
                 let x = composer.add_input(*c);
@@ -177,7 +177,7 @@ mod tests {
             });
 
             let message_gadget =
-                decrypt(composer, shared.point(), nonce, &cipher_gadget);
+                decrypt(composer, &shared, nonce, &cipher_gadget);
 
             message
                 .iter()
