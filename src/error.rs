@@ -4,9 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use core::fmt;
-#[cfg(feature = "std")]
-use std::fmt::{Display, Result};
+use core::fmt::{self, Display, Result};
 
 /// Poseidon error variants
 #[derive(Clone, Debug)]
@@ -25,7 +23,6 @@ pub enum Error {
     CipherDecryptionFailed,
 }
 
-#[cfg(feature = "std")]
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
         write!(f, "Dusk-Poseidon Error: {:?}", &self)
