@@ -24,3 +24,14 @@ where
     L: PoseidonLeaf,
 {
 }
+
+impl<T, L> PoseidonTreeAnnotation<L> for T
+where
+    T: Default
+        + Canon
+        + Annotation<L>
+        + Borrow<Cardinality>
+        + Borrow<BlsScalar>,
+    L: PoseidonLeaf,
+{
+}

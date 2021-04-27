@@ -99,8 +99,6 @@ where
     }
 }
 
-impl<L> PoseidonTreeAnnotation<L> for PoseidonAnnotation where L: PoseidonLeaf {}
-
 impl<C, A> Combine<C, A> for PoseidonAnnotation
 where
     C: Compound<A>,
