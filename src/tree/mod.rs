@@ -112,9 +112,6 @@ mod tree;
 #[cfg(feature = "std")]
 mod zk;
 
-#[cfg(test)]
-mod tests;
-
 pub use annotation::{
     PoseidonAnnotation, PoseidonMaxAnnotation, PoseidonTreeAnnotation,
 };
