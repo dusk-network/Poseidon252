@@ -39,14 +39,6 @@ impl Borrow<MaxKey<u64>> for PoseidonMaxAnnotation {
     }
 }
 
-impl<L> PoseidonTreeAnnotation<L> for PoseidonMaxAnnotation
-where
-    L: PoseidonLeaf,
-    L: Borrow<u64>,
-    L: Keyed<u64>,
-{
-}
-
 impl<L> Annotation<L> for PoseidonMaxAnnotation
 where
     L: PoseidonLeaf,
