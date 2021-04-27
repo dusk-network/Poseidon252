@@ -51,7 +51,7 @@ fn sanity() {
 }
 
 #[test]
-fn encrypt() -> Result<(), Error<()>> {
+fn encrypt() -> Result<(), Error> {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
@@ -63,7 +63,7 @@ fn encrypt() -> Result<(), Error<()>> {
 }
 
 #[test]
-fn single_bit() -> Result<(), Error<()>> {
+fn single_bit() -> Result<(), Error> {
     let (_, secret, nonce) = gen();
     let message = BlsScalar::random(&mut OsRng);
 
@@ -76,7 +76,7 @@ fn single_bit() -> Result<(), Error<()>> {
 }
 
 #[test]
-fn overflow() -> Result<(), Error<()>> {
+fn overflow() -> Result<(), Error> {
     let (_, secret, nonce) = gen();
     let message =
         [BlsScalar::random(&mut OsRng); PoseidonCipher::capacity() + 1];
@@ -99,7 +99,7 @@ fn wrong_key_fail() {
 }
 
 #[test]
-fn bytes() -> Result<(), Error<()>> {
+fn bytes() -> Result<(), Error> {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);

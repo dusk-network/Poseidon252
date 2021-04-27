@@ -21,8 +21,6 @@ canonical_derive = {version = "0.6", optional = true}
 microkelvin = {version = "0.7", optional = true}
 nstack = {version = "0.7", optional = true}
 dusk-plonk = {version="0.8.0-rc.1", default-features = false, optional = true}
-anyhow = { version = "1.0", optional = true }
-thiserror = { version = "1.0", optional = true }
 
 [dev-dependencies]
 canonical_host = "0.5"
@@ -38,8 +36,6 @@ std = [
     "dusk-bls12_381/default",
     "dusk-jubjub/std",
     "dusk-plonk",
-    "anyhow",
-    "thiserror"
 ]
 canon = [
     "dusk-bls12_381/canon",

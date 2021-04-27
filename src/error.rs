@@ -4,42 +4,27 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use core::fmt;
-
-#[cfg(feature = "std")]
-use std::{error as std_error, fmt as std_fmt};
+use core::fmt::{self, Display, Result};
 
 /// Poseidon error variants
-#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum Error<E: fmt::Debug> {
+#[derive(Clone, Debug)]
+pub enum Error {
     /// Error pushing to the poseidon tree
-    TreePushFailed(E),
+    TreePushFailed,
     /// Error on pop of the tree
-    TreePopFailed(E),
+    TreePopFailed,
     /// Error fetching the Nth item from the tree
-    TreeGetFailed(E),
+    TreeGetFailed,
+    /// Failed to obtain a Branch from a tree.
+    TreeBranchFailed,
+    /// Failed to obtain an Iterator from a tree.
+    TreeIterFailed,
     /// Decryption failed for the provided secret+nonce
     CipherDecryptionFailed,
-    /// Failed to obtain an Iterator from a tree.
-    TreeIterFailed(E),
 }
 
-#[cfg(feature = "std")]
-impl<E: fmt::Debug> std_fmt::Display for Error<E> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std_fmt::Result {
+impl Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
         write!(f, "Dusk-Poseidon Error: {:?}", &self)
-    }
-}
-
-#[cfg(feature = "std")]
-impl<E: 'static + fmt::Debug + std_error::Error> std_error::Error for Error<E> {
-    fn source(&self) -> Option<&(dyn std_error::Error + 'static)> {
-        match &self {
-            Self::TreePushFailed(e) => Some(e),
-            Self::TreePopFailed(e) => Some(e),
-            Self::TreeGetFailed(e) => Some(e),
-            Self::TreeIterFailed(e) => Some(e),
-            _ => None,
-        }
     }
 }

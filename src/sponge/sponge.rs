@@ -176,7 +176,6 @@ pub fn sponge_gadget(
 #[cfg(feature = "std")]
 mod tests {
     use super::*;
-    use anyhow::Result;
     use dusk_hades::WIDTH;
     use rand_core::OsRng;
 
@@ -225,7 +224,7 @@ mod tests {
     }
 
     #[test]
-    fn sponge_gadget_width_3() -> Result<()> {
+    fn sponge_gadget_width_3() -> Result<(), Error> {
         // Setup OG params.
         let public_parameters = PublicParameters::setup(CAPACITY, &mut OsRng)?;
         let (ck, vk) = public_parameters.trim(CAPACITY)?;
@@ -249,7 +248,7 @@ mod tests {
     }
 
     #[test]
-    fn sponge_gadget_hades_width() -> Result<()> {
+    fn sponge_gadget_hades_width() -> Result<(), Error> {
         // Setup OG params.
         let public_parameters = PublicParameters::setup(CAPACITY, &mut OsRng)?;
         let (ck, vk) = public_parameters.trim(CAPACITY)?;
@@ -273,7 +272,7 @@ mod tests {
     }
 
     #[test]
-    fn sponge_gadget_width_15() -> Result<()> {
+    fn sponge_gadget_width_15() -> Result<(), Error> {
         // Setup OG params.
         let public_parameters = PublicParameters::setup(1 << 17, &mut OsRng)?;
         let (ck, vk) = public_parameters.trim(1 << 17)?;
