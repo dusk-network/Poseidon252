@@ -12,10 +12,8 @@ use dusk_bls12_381::BlsScalar;
 use microkelvin::{Annotation, Branch, Cardinality, Combine, Nth, Walker};
 use nstack::NStack;
 
-/// Represents a Merkle Tree with a given depth that will be calculated using poseidon hash
-///
-/// The `BlsScalar` borrow of the annotation must represent the root poseidon merkle opening
-/// for the annotated subtree
+/// Represents a Merkle Tree with a given depth that will be calculated using
+/// the Poseidon Hash technique.
 #[derive(Debug, Clone, Canon)]
 pub struct PoseidonTree<L, A, const DEPTH: usize>
 where
@@ -73,9 +71,6 @@ where
     }
 
     /// Append a leaf to the tree. Return the index of the appended leaf.
-    ///
-    /// Will call the `tree_pos_mut` implementation of the leaf to
-    /// set its index
     pub fn push(&mut self, mut leaf: L) -> Result<u64, Error> {
         let size = Cardinality::combine(&self.inner).into();
 
@@ -136,10 +131,13 @@ where
     ///
     /// # Note
     /// This is only useful if annotate the tree is going to make the iteration perform sub-linearly.
-    pub fn annotated_iter_walk(
+    pub fn annotated_iter_walk<W>(
         &self,
-        walker: impl Walker<NStack<L, A>, A>,
-    ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, Error> {
+        walker: W,
+    ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, Error>
+    where
+        W: Walker<NStack<L, A>, A>,
+    {
         match Branch::walk(&self.inner, walker) {
             Ok(Some(iter)) => Ok(iter),
             _ => Err(Error::TreeIterFailed),
