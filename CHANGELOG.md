@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Updated `error` module to be simpler and no_std friendly. [#132](https://github.com/dusk-network/poseidon252/issues/132)
+
+### Removed
+- Removed `anyhow` and `thiserror` from deps. [#132](https://github.com/dusk-network/poseidon252/issues/132)
+
 ## [0.20.0] - 2021-04-06
 
 ### Changed
