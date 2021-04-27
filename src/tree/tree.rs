@@ -11,10 +11,8 @@ use dusk_bls12_381::BlsScalar;
 use microkelvin::{Annotation, Branch, Cardinality, Combine, Nth, Walker};
 use nstack::NStack;
 
-/// Represents a Merkle Tree with a given depth that will be calculated using poseidon hash
-///
-/// The `BlsScalar` borrow of the annotation must represent the root poseidon merkle opening
-/// for the annotated subtree
+/// Represents a Merkle Tree with a given depth that will be calculated using
+/// the Poseidon Hash technique.
 #[derive(Debug, Clone, Canon)]
 pub struct PoseidonTree<L, A, const DEPTH: usize>
 where
@@ -72,9 +70,6 @@ where
     }
 
     /// Append a leaf to the tree. Return the index of the appended leaf.
-    ///
-    /// Will call the `tree_pos_mut` implementation of the leaf to
-    /// set its index
     pub fn push(&mut self, mut leaf: L) -> Result<u64, CanonError> {
         let size = Cardinality::combine(&self.inner).into();
 
