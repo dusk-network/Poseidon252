@@ -90,10 +90,6 @@ mod cipher;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "std")]
 mod zk;
-
 pub use cipher::PoseidonCipher;
-
-#[cfg(feature = "std")]
 pub use zk::{decrypt, encrypt};
