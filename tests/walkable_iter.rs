@@ -16,9 +16,7 @@ use microkelvin::{
     Walk, Walker,
 };
 
-#[derive(
-    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
-)]
+#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
 pub struct TestLeaf {
     hash: BlsScalar,
     pos: u64,
@@ -61,9 +59,7 @@ impl Borrow<u64> for TestLeaf {
     }
 }
 
-#[derive(
-    Copy, Clone, Default, Debug, Canon, Ord, PartialOrd, Eq, PartialEq,
-)]
+#[derive(Copy, Clone, Default, Debug, Canon, Ord, PartialOrd, Eq, PartialEq)]
 pub struct BlockHeight(pub(crate) u64);
 
 #[derive(Clone, Debug, Default, Canon)]
