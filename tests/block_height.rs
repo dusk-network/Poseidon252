@@ -4,6 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#![cfg(feature = "canon")]
 #![cfg(test)]
 use canonical_derive::Canon;
 use core::borrow::Borrow;

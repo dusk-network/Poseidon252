@@ -210,7 +210,7 @@ mod tests {
         );
         verifier.preprocess(&ck)?;
 
-        assert!(verifier.verify(&proof, &vk, &vec![]).is_ok());
+        assert!(verifier.verify(&proof, &vk, &[BlsScalar::zero()]).is_ok());
 
         Ok(())
     }

@@ -4,6 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#![cfg(feature = "canon")]
+
 mod max_annotation;
 use dusk_plonk::circuit;
 use dusk_plonk::error::Error as PlonkError;

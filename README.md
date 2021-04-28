@@ -69,10 +69,8 @@ majority of the configurations that the user may need:
 ### Zero Knowledge Merkle Opening Proof example:
 
 ```rust
-#[cfg(all(feature = "canon", feature = "std"))]
+#[cfg(feature = "canon")]
 {
-
-use anyhow::Result;
 use canonical_derive::Canon;
 use dusk_plonk::prelude::*;
 use dusk_poseidon::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree, merkle_opening};
@@ -116,7 +114,7 @@ impl PoseidonLeaf for DataLeaf {
     }
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Error> {
     // Create the ZK keys
     let pub_params = PublicParameters::setup(1 << 15, &mut OsRng)?;
     let (ck, ok) = pub_params.trim(1 << 15)?;
