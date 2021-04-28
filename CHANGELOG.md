@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Changed featureset config for the crate. [#138](https://github.com/dusk-network/poseidon252/issues/138)
 - Updated `error` module to be simpler and no_std friendly. [#132](https://github.com/dusk-network/poseidon252/issues/132)
 
 ### Removed
