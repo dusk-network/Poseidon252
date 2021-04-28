@@ -290,7 +290,6 @@ mod tests {
         Ok(())
     }
 
-    #[cfg(feature = "std")]
     #[test]
     fn sponge_hash_test() {
         use dusk_bytes::ParseHexStr;
