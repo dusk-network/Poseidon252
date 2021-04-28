@@ -13,7 +13,6 @@
 //! ```rust
 //! #[cfg(feature = "std")]
 //! {
-//! use anyhow::Result;
 //! use canonical_derive::Canon;
 //! use dusk_plonk::prelude::*;
 //! use dusk_poseidon::tree::{merkle_opening, PoseidonAnnotation, PoseidonLeaf, PoseidonTree};
@@ -57,7 +56,7 @@
 //!     }
 //! }
 //!
-//! fn main() -> Result<()> {
+//! fn main() -> Result<(), Error> {
 //!     // Create the ZK keys
 //!     let pub_params = PublicParameters::setup(1 << 15, &mut OsRng)?;
 //!     let (ck, ok) = pub_params.trim(1 << 15)?;
