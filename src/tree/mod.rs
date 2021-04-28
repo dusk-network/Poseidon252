@@ -11,7 +11,6 @@
 //! ### Example
 //!
 //! ```rust
-//! #[cfg(feature = "std")]
 //! {
 //! use canonical_derive::Canon;
 //! use dusk_plonk::prelude::*;
@@ -107,8 +106,6 @@ mod annotation;
 mod branch;
 mod leaf;
 mod tree;
-
-#[cfg(feature = "std")]
 mod zk;
 
 pub use annotation::{
@@ -117,6 +114,4 @@ pub use annotation::{
 pub use branch::{PoseidonBranch, PoseidonLevel};
 pub use leaf::PoseidonLeaf;
 pub use tree::PoseidonTree;
-
-#[cfg(feature = "std")]
 pub use zk::merkle_opening;

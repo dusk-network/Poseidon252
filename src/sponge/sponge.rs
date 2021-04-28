@@ -7,13 +7,9 @@
 //! Sponge hash and gadget definition
 
 use dusk_bls12_381::BlsScalar;
-use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
-
-#[cfg(feature = "std")]
-use dusk_plonk::prelude::*;
-
-#[cfg(feature = "std")]
 use dusk_hades::GadgetStrategy;
+use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
+use dusk_plonk::prelude::*;
 
 /// The `hash` function takes an arbitrary number of Scalars and returns the
 /// hash, using the `Hades` ScalarStragegy.
@@ -87,7 +83,6 @@ pub fn sponge_hash(messages: &[BlsScalar]) -> BlsScalar {
     state[1]
 }
 
-#[cfg(feature = "std")]
 /// Mirror the implementation of [`sponge_hash`] inside of a PLONK circuit.
 ///
 /// The circuit will be defined by the length of `messages`. This means that a
@@ -172,8 +167,8 @@ pub fn sponge_gadget(
     state[1]
 }
 
-#[cfg(test)]
 #[cfg(feature = "std")]
+#[cfg(test)]
 mod tests {
     use super::*;
     use dusk_hades::WIDTH;
@@ -295,6 +290,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn sponge_hash_test() {
         use dusk_bytes::ParseHexStr;

@@ -6,6 +6,5 @@
 
 mod sponge;
 
-#[cfg(feature = "std")]
 pub use sponge::sponge_gadget as gadget;
 pub use sponge::sponge_hash as hash;
