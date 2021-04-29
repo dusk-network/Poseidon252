@@ -11,14 +11,11 @@
 //! ### Example
 //!
 //! ```rust
-//! #[cfg(feature = "std")]
 //! {
-//! use anyhow::Result;
-//! use canonical::Canon;
 //! use canonical_derive::Canon;
-//! use canonical_host::MemStore;
 //! use dusk_plonk::prelude::*;
 //! use dusk_poseidon::tree::{merkle_opening, PoseidonAnnotation, PoseidonLeaf, PoseidonTree};
+//! use rand_core::OsRng;
 //!
 //! // Constant depth of the merkle tree
 //! const DEPTH: usize = 17;
@@ -41,7 +38,7 @@
 //! }
 //!
 //! // Any leaf of the poseidon tree must implement `PoseidonLeaf`
-//! impl PoseidonLeaf<MemStore> for DataLeaf {
+//! impl PoseidonLeaf for DataLeaf {
 //!     // Cryptographic hash of the data leaf
 //!     fn poseidon_hash(&self) -> BlsScalar {
 //!         self.data
@@ -58,13 +55,13 @@
 //!     }
 //! }
 //!
-//! fn main() -> Result<()> {
+//! fn main() -> Result<(), Error> {
 //!     // Create the ZK keys
-//!     let pub_params = PublicParameters::setup(1 << 15, &mut rand::thread_rng())?;
+//!     let pub_params = PublicParameters::setup(1 << 15, &mut OsRng)?;
 //!     let (ck, ok) = pub_params.trim(1 << 15)?;
 //!
-//!     // Instantiate a new tree with the MemStore implementation
-//!     let mut tree: PoseidonTree<DataLeaf, PoseidonAnnotation, MemStore, DEPTH> = PoseidonTree::new();
+//!     // Instantiate a new tree.
+//!     let mut tree: PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH> = PoseidonTree::new();
 //!
 //!     // Append 1024 elements to the tree
 //!     for i in 0..1024 {
@@ -74,9 +71,9 @@
 //!
 //!     // Create a merkle opening tester gadget
 //!     let gadget_tester = |composer: &mut StandardComposer,
-//!                          tree: &PoseidonTree<DataLeaf, PoseidonAnnotation, MemStore, DEPTH>,
+//!                          tree: &PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH>,
 //!                          n: usize| {
-//!         let branch = tree.branch(n).unwrap().unwrap();
+//!         let branch = tree.branch(n as u64).unwrap().unwrap();
 //!         let root = tree.root().unwrap();
 //!
 //!         let root_p = merkle_opening::<DEPTH>(composer, &branch);
@@ -109,20 +106,12 @@ mod annotation;
 mod branch;
 mod leaf;
 mod tree;
-
-#[cfg(feature = "std")]
 mod zk;
-
-#[cfg(test)]
-mod tests;
 
 pub use annotation::{
     PoseidonAnnotation, PoseidonMaxAnnotation, PoseidonTreeAnnotation,
-    PoseidonWalkableAnnotation,
 };
 pub use branch::{PoseidonBranch, PoseidonLevel};
 pub use leaf::PoseidonLeaf;
-pub use tree::{PoseidonTree, PoseidonTreeIterator};
-
-#[cfg(feature = "std")]
+pub use tree::PoseidonTree;
 pub use zk::merkle_opening;

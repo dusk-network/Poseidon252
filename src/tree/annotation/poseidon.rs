@@ -6,20 +6,18 @@
 
 use super::PoseidonTreeAnnotation;
 use crate::tree::PoseidonLeaf;
-use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
-use microkelvin::{Annotation, Cardinality};
-use nstack::NStack;
+use microkelvin::{Annotation, Cardinality, Combine, Compound, IterChild};
 
 /// A microkelvin annotation with the minimum data for a functional poseidon tree
 ///
 /// The recommended usage for extended annotations for poseidon trees is to have
 /// this structure as attribute of the concrete annotation, and reflect the borrows
 /// of the cardinality and scalar to the poseidon annotation implementation.
-#[derive(Debug, Clone, Canon)]
+#[derive(Debug, Clone, Canon, Default)]
 pub struct PoseidonAnnotation {
     cardinality: Cardinality,
     poseidon_root: BlsScalar,
@@ -27,40 +25,34 @@ pub struct PoseidonAnnotation {
 
 impl PoseidonAnnotation {
     /// Create a new poseidon annotation from a generic node implementation
-    pub fn from_generic_node<L, A, S>(node: &NStack<L, A, S>) -> Self
+    pub fn from_generic_node<C, A>(node: &C) -> Self
     where
-        L: PoseidonLeaf<S>,
-        A: PoseidonTreeAnnotation<L, S>,
-        S: Store,
+        C::Leaf: PoseidonLeaf,
+        A: PoseidonTreeAnnotation<C::Leaf>,
+        A: Annotation<C::Leaf>,
+        C: Compound<A>,
     {
-        let cardinality =
-            <Cardinality as Annotation<NStack<L, A, S>, S>>::from_node(node);
+        let cardinality = Cardinality::combine(node);
 
         let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
         let mut flag = 1;
         let mut mask = 0;
 
-        match node {
-            NStack::Leaf(l) => {
-                l.iter().zip(perm.iter_mut().skip(1)).for_each(|(l, p)| {
-                    if let Some(l) = l {
-                        mask |= flag;
-                        *p = l.poseidon_hash();
-                    }
+        for (i, child) in node.children().enumerate() {
+            match child {
+                IterChild::Leaf(l) => {
+                    mask |= flag;
+                    perm[i + 1] = l.poseidon_hash();
 
                     flag <<= 1;
-                });
-            }
+                }
 
-            NStack::Node(n) => {
-                n.iter().zip(perm.iter_mut().skip(1)).for_each(|(n, p)| {
-                    if let Some(n) = n {
-                        mask |= flag;
-                        *p = *n.annotation().borrow();
-                    }
+                IterChild::Node(n) => {
+                    mask |= flag;
+                    perm[i + 1] = *n.annotation().borrow();
 
                     flag <<= 1;
-                });
+                }
             }
         }
 
@@ -92,30 +84,12 @@ impl Borrow<BlsScalar> for PoseidonAnnotation {
     }
 }
 
-impl<L, S> Annotation<NStack<L, PoseidonAnnotation, S>, S>
-    for PoseidonAnnotation
+impl<L> Annotation<L> for PoseidonAnnotation
 where
-    L: PoseidonLeaf<S>,
-    S: Store,
+    L: PoseidonLeaf,
 {
-    fn identity() -> Self {
-        let cardinality = <Cardinality as Annotation<
-            NStack<L, PoseidonAnnotation, S>,
-            S,
-        >>::identity();
-        let poseidon_root = BlsScalar::zero();
-
-        Self {
-            cardinality,
-            poseidon_root,
-        }
-    }
-
     fn from_leaf(leaf: &L) -> Self {
-        let cardinality = <Cardinality as Annotation<
-            NStack<L, PoseidonAnnotation, S>,
-            S,
-        >>::from_leaf(leaf);
+        let cardinality = Cardinality::from_leaf(leaf);
         let poseidon_root = leaf.poseidon_hash();
 
         Self {
@@ -123,15 +97,17 @@ where
             poseidon_root,
         }
     }
-
-    fn from_node(node: &NStack<L, PoseidonAnnotation, S>) -> Self {
-        Self::from_generic_node(node)
-    }
 }
 
-impl<L, S> PoseidonTreeAnnotation<L, S> for PoseidonAnnotation
+impl<C, A> Combine<C, A> for PoseidonAnnotation
 where
-    L: PoseidonLeaf<S>,
-    S: Store,
+    C: Compound<A>,
+    C::Leaf: PoseidonLeaf,
+    A: Annotation<C::Leaf>
+        + PoseidonTreeAnnotation<C::Leaf>
+        + Borrow<Cardinality>,
 {
+    fn combine(node: &C) -> Self {
+        PoseidonAnnotation::from_generic_node(node)
+    }
 }

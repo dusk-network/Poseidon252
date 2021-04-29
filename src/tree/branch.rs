@@ -7,13 +7,13 @@
 use super::{PoseidonLeaf, PoseidonTreeAnnotation};
 
 use alloc::vec::Vec;
-use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::iter;
 use core::ops::Deref;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
 use microkelvin::Branch;
+use microkelvin::Combine;
 use nstack::NStack;
 
 /// Represents a level of a branch on a given depth
@@ -99,14 +99,14 @@ impl<const DEPTH: usize> AsRef<[PoseidonLevel]> for PoseidonBranch<DEPTH> {
     }
 }
 
-impl<L, A, S, const DEPTH: usize> From<&Branch<'_, NStack<L, A, S>, S>>
+impl<L, A, const DEPTH: usize> From<&Branch<'_, NStack<L, A>, A>>
     for PoseidonBranch<DEPTH>
 where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    S: Store,
+    L: PoseidonLeaf,
+    A: PoseidonTreeAnnotation<L>,
+    A: Combine<NStack<L, A>, A>,
 {
-    fn from(b: &Branch<'_, NStack<L, A, S>, S>) -> Self {
+    fn from(b: &Branch<'_, NStack<L, A>, A>) -> Self {
         let mut branch = PoseidonBranch::default();
         let mut depth = 0;
 

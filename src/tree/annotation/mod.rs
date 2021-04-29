@@ -5,11 +5,10 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::tree::PoseidonLeaf;
-use canonical::{Canon, Store};
+use canonical::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Annotation, Cardinality, Compound, Step, Walk};
-use nstack::NStack;
+use microkelvin::{Annotation, Cardinality};
 
 mod max;
 mod poseidon;
@@ -19,42 +18,20 @@ pub use poseidon::PoseidonAnnotation;
 
 /// Any structure that implements this trait is guaranteed to be compatible
 /// as a poseidon tree annotation
-pub trait PoseidonTreeAnnotation<L, S>:
-    Canon<S>
-    + Annotation<NStack<L, Self, S>, S>
-    + Borrow<Cardinality>
-    + Borrow<BlsScalar>
+pub trait PoseidonTreeAnnotation<L>:
+    Default + Canon + Annotation<L> + Borrow<Cardinality> + Borrow<BlsScalar>
 where
-    L: PoseidonLeaf<S>,
-    S: Store,
+    L: PoseidonLeaf,
 {
 }
 
-/// This trait will grant the ability of tree traversal using the `Branch::walk`
-/// for a provided annotation
-pub trait PoseidonWalkableAnnotation<C, D, L, S>:
-    PoseidonTreeAnnotation<L, S>
+impl<T, L> PoseidonTreeAnnotation<L> for T
 where
-    C: Compound<S, Leaf = L>,
-    C: Clone,
-    D: Clone,
-    L: PoseidonLeaf<S>,
-    S: Store,
+    T: Default
+        + Canon
+        + Annotation<L>
+        + Borrow<Cardinality>
+        + Borrow<BlsScalar>,
+    L: PoseidonLeaf,
 {
-    /// Traversal logic of the walkable annotation
-    ///
-    /// This will define the traversal path over the tree provided the generic data.
-    ///
-    /// The purpose of the data is to act as a filter over annotations, and this will be equally
-    /// passed to leaves and nodes.
-    fn poseidon_walk(walk: Walk<'_, C, S>, data: D) -> Step<'_, C, S>;
-
-    /// Uses the internal implementation of `poseidon_walk` to check if a leaf is compatible with
-    /// a provided data.
-    fn poseidon_leaf_found(leaf: &L, data: D) -> bool {
-        match Self::poseidon_walk(Walk::Leaf(leaf), data) {
-            Step::Found(_) => true,
-            _ => false,
-        }
-    }
 }

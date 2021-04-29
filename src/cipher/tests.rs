@@ -10,15 +10,14 @@ use core::ops::Mul;
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::Serializable;
 use dusk_jubjub::{JubJubAffine, JubJubScalar, GENERATOR};
-use rand::RngCore;
+use rand_core::{OsRng, RngCore};
 
 fn gen() -> (
     [BlsScalar; PoseidonCipher::capacity()],
     JubJubAffine,
     BlsScalar,
 ) {
-    let mut rng = rand::thread_rng();
-
+    let mut rng = OsRng;
     let mut message = [BlsScalar::zero(); PoseidonCipher::capacity()];
     message
         .iter_mut()
@@ -29,7 +28,7 @@ fn gen() -> (
     let secret = JubJubScalar::from_bytes_wide(&secret);
     let secret = GENERATOR.to_niels().mul(&secret).into();
 
-    let nonce = BlsScalar::random(&mut rng);
+    let nonce = BlsScalar::random(&mut OsRng);
 
     (message, secret, nonce)
 }
@@ -52,7 +51,7 @@ fn sanity() {
 }
 
 #[test]
-fn encrypt() -> Result<(), Error<()>> {
+fn encrypt() -> Result<(), Error> {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
@@ -64,9 +63,9 @@ fn encrypt() -> Result<(), Error<()>> {
 }
 
 #[test]
-fn single_bit() -> Result<(), Error<()>> {
+fn single_bit() -> Result<(), Error> {
     let (_, secret, nonce) = gen();
-    let message = BlsScalar::random(&mut rand::thread_rng());
+    let message = BlsScalar::random(&mut OsRng);
 
     let cipher = PoseidonCipher::encrypt(&[message], &secret, &nonce);
     let decrypt = cipher.decrypt(&secret, &nonce)?;
@@ -77,10 +76,10 @@ fn single_bit() -> Result<(), Error<()>> {
 }
 
 #[test]
-fn overflow() -> Result<(), Error<()>> {
+fn overflow() -> Result<(), Error> {
     let (_, secret, nonce) = gen();
-    let message = [BlsScalar::random(&mut rand::thread_rng());
-        PoseidonCipher::capacity() + 1];
+    let message =
+        [BlsScalar::random(&mut OsRng); PoseidonCipher::capacity() + 1];
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
     let decrypt = cipher.decrypt(&secret, &nonce)?;
@@ -100,7 +99,7 @@ fn wrong_key_fail() {
 }
 
 #[test]
-fn bytes() -> Result<(), Error<()>> {
+fn bytes() -> Result<(), Error> {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);

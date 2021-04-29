@@ -7,13 +7,9 @@
 //! Sponge hash and gadget definition
 
 use dusk_bls12_381::BlsScalar;
-use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
-
-#[cfg(feature = "std")]
-use dusk_plonk::prelude::*;
-
-#[cfg(feature = "std")]
 use dusk_hades::GadgetStrategy;
+use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
+use dusk_plonk::prelude::*;
 
 /// The `hash` function takes an arbitrary number of Scalars and returns the
 /// hash, using the `Hades` ScalarStragegy.
@@ -87,7 +83,6 @@ pub fn sponge_hash(messages: &[BlsScalar]) -> BlsScalar {
     state[1]
 }
 
-#[cfg(feature = "std")]
 /// Mirror the implementation of [`sponge_hash`] inside of a PLONK circuit.
 ///
 /// The circuit will be defined by the length of `messages`. This means that a
@@ -172,13 +167,12 @@ pub fn sponge_gadget(
     state[1]
 }
 
-#[cfg(test)]
 #[cfg(feature = "std")]
+#[cfg(test)]
 mod tests {
-    use anyhow::Result;
-    use dusk_hades::WIDTH;
-
     use super::*;
+    use dusk_hades::WIDTH;
+    use rand_core::OsRng;
 
     const CAPACITY: usize = 1 << 12;
 
@@ -186,7 +180,7 @@ mod tests {
         let mut input = [BlsScalar::zero(); N];
         input
             .iter_mut()
-            .for_each(|s| *s = BlsScalar::random(&mut rand::thread_rng()));
+            .for_each(|s| *s = BlsScalar::random(&mut OsRng));
         let output = sponge_hash(&input);
         (input, output)
     }
@@ -225,10 +219,9 @@ mod tests {
     }
 
     #[test]
-    fn sponge_gadget_width_3() -> Result<()> {
+    fn sponge_gadget_width_3() -> Result<(), Error> {
         // Setup OG params.
-        let public_parameters =
-            PublicParameters::setup(CAPACITY, &mut rand::thread_rng())?;
+        let public_parameters = PublicParameters::setup(CAPACITY, &mut OsRng)?;
         let (ck, vk) = public_parameters.trim(CAPACITY)?;
 
         // Test with width = 3
@@ -250,10 +243,9 @@ mod tests {
     }
 
     #[test]
-    fn sponge_gadget_hades_width() -> Result<()> {
+    fn sponge_gadget_hades_width() -> Result<(), Error> {
         // Setup OG params.
-        let public_parameters =
-            PublicParameters::setup(CAPACITY, &mut rand::thread_rng())?;
+        let public_parameters = PublicParameters::setup(CAPACITY, &mut OsRng)?;
         let (ck, vk) = public_parameters.trim(CAPACITY)?;
 
         // Test with width = 5
@@ -275,10 +267,9 @@ mod tests {
     }
 
     #[test]
-    fn sponge_gadget_width_15() -> Result<()> {
+    fn sponge_gadget_width_15() -> Result<(), Error> {
         // Setup OG params.
-        let public_parameters =
-            PublicParameters::setup(1 << 17, &mut rand::thread_rng())?;
+        let public_parameters = PublicParameters::setup(1 << 17, &mut OsRng)?;
         let (ck, vk) = public_parameters.trim(1 << 17)?;
 
         // Test with width = 15

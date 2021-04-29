@@ -4,25 +4,21 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use super::{
-    PoseidonAnnotation, PoseidonTreeAnnotation, PoseidonWalkableAnnotation,
-};
+use super::{PoseidonAnnotation, PoseidonTreeAnnotation};
 use crate::tree::PoseidonLeaf;
-use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Annotation, Cardinality, Compound, Max, Step, Walk};
-use nstack::NStack;
+use microkelvin::{Annotation, Cardinality, Combine, Compound, Keyed, MaxKey};
 
 /// Extends the standard [`PoseidonAnnotation`] with an annotation that holds an agnostic maximum
 /// value
 ///
 /// This maximum value is representes as `u64`, and the tree is iterable over it
-#[derive(Debug, Clone, Canon)]
+#[derive(Debug, Clone, Canon, Default)]
 pub struct PoseidonMaxAnnotation {
     poseidon: PoseidonAnnotation,
-    max: Max<u64>,
+    max: MaxKey<u64>,
 }
 
 impl Borrow<Cardinality> for PoseidonMaxAnnotation {
@@ -37,78 +33,39 @@ impl Borrow<BlsScalar> for PoseidonMaxAnnotation {
     }
 }
 
-impl Borrow<Max<u64>> for PoseidonMaxAnnotation {
-    fn borrow(&self) -> &Max<u64> {
+impl Borrow<MaxKey<u64>> for PoseidonMaxAnnotation {
+    fn borrow(&self) -> &MaxKey<u64> {
         &self.max
     }
 }
 
-impl<L, S> PoseidonTreeAnnotation<L, S> for PoseidonMaxAnnotation
+impl<L> Annotation<L> for PoseidonMaxAnnotation
 where
-    L: PoseidonLeaf<S>,
+    L: PoseidonLeaf,
     L: Borrow<u64>,
-    S: Store,
+    L: Keyed<u64>,
 {
-}
-
-impl<L, S> Annotation<NStack<L, PoseidonMaxAnnotation, S>, S>
-    for PoseidonMaxAnnotation
-where
-    L: PoseidonLeaf<S>,
-    L: Borrow<u64>,
-    S: Store,
-{
-    fn identity() -> Self {
-        let poseidon = <PoseidonAnnotation as Annotation<
-            NStack<L, PoseidonAnnotation, S>,
-            S,
-        >>::identity();
-        let max = <Max<u64> as Annotation<NStack<L, Self, S>, S>>::identity();
-
-        Self { poseidon, max }
-    }
-
     fn from_leaf(leaf: &L) -> Self {
         let poseidon = PoseidonAnnotation::from_leaf(leaf);
-        let max =
-            <Max<u64> as Annotation<NStack<L, Self, S>, S>>::from_leaf(leaf);
-
-        Self { poseidon, max }
-    }
-
-    fn from_node(node: &NStack<L, PoseidonMaxAnnotation, S>) -> Self {
-        let poseidon = PoseidonAnnotation::from_generic_node(node);
-        let max =
-            <Max<u64> as Annotation<NStack<L, Self, S>, S>>::from_node(node);
+        let max = <MaxKey<u64> as Annotation<L>>::from_leaf(leaf);
 
         Self { poseidon, max }
     }
 }
 
-#[inline]
-fn borrow_u64<A: Borrow<Max<u64>>>(ann: &A) -> u64 {
-    match ann.borrow() {
-        Max::NegativeInfinity => 0,
-        Max::Maximum(m) => *m,
-    }
-}
-
-impl<C, L, S> PoseidonWalkableAnnotation<C, u64, L, S> for PoseidonMaxAnnotation
+impl<C, A> Combine<C, A> for PoseidonMaxAnnotation
 where
-    L: PoseidonLeaf<S>,
-    L: Borrow<u64>,
-    C: Clone,
-    C::Annotation: Annotation<C, S>,
-    C: Compound<S, Leaf = L, Annotation = Self>,
-    S: Store,
+    C: Compound<A>,
+    C::Leaf: PoseidonLeaf + Keyed<u64> + Borrow<u64>,
+    A: Annotation<C::Leaf>
+        + PoseidonTreeAnnotation<C::Leaf>
+        + Borrow<Cardinality>
+        + Borrow<MaxKey<u64>>,
 {
-    fn poseidon_walk(walk: Walk<'_, C, S>, data: u64) -> Step<'_, C, S> {
-        match walk {
-            Walk::Leaf(l) if data <= *l.borrow() => Step::Found(l),
-            Walk::Node(n) if data <= borrow_u64(n.annotation()) => {
-                Step::Into(n)
-            }
-            _ => Step::Next,
+    fn combine(node: &C) -> Self {
+        PoseidonMaxAnnotation {
+            poseidon: PoseidonAnnotation::combine(node),
+            max: MaxKey::combine(node),
         }
     }
 }

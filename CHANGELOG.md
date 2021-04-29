@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add integration tests with examples of custom walker iterators [#134](https://github.com/dusk-network/poseidon252/issues/134)
+
+### Changed
+- Change featureset config for the crate [#138](https://github.com/dusk-network/poseidon252/issues/138)
+- Update `error` module to be no_std compatible [#132](https://github.com/dusk-network/poseidon252/issues/132)
+- Update to latest `dusk-poseidon`, `dusk-bls12_381` and `dusk-jubjub` [#126](https://github.com/dusk-network/poseidon252/issues/126)
+- Update to latest `microkelvin v0.7`, `nstack v0.8` and `canonical v0.6` [#125](https://github.com/dusk-network/poseidon252/issues/125)
+- Update randomness provider to `rand_core` [#127](https://github.com/dusk-network/poseidon252/issues/127)
+- Change trait bound system for `PoseidonTree` [#125](https://github.com/dusk-network/poseidon252/issues/125)
+- Update `PoseidonTreeAnnotation` to be an autotrait [#125](https://github.com/dusk-network/poseidon252/issues/125)
+- Update feature system for the crate [#138](https://github.com/dusk-network/poseidon252/issues/138)
+
+### Removed
+- Remove `anyhow` and `thiserror` from deps [#132](https://github.com/dusk-network/poseidon252/issues/132)
+- Remove `PoseidonWalkableIterator` and `PoseidonWalkableAnnotation` [#125](https://github.com/dusk-network/poseidon252/issues/125)
+- Remove `canon_host` feature checks from CI [#136](https://github.com/dusk-network/poseidon252/issues/136)
+- Remove `anyhow` and `thiserror` usage [#132](https://github.com/dusk-network/poseidon252/issues/132)
+
 ## [0.20.0] - 2021-04-06
 
 ### Changed

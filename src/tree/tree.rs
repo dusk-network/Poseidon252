@@ -4,71 +4,64 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use super::{
-    PoseidonBranch, PoseidonLeaf, PoseidonTreeAnnotation,
-    PoseidonWalkableAnnotation,
-};
+use super::{PoseidonBranch, PoseidonLeaf, PoseidonTreeAnnotation};
 use crate::Error;
-use canonical::{Canon, Store};
+use canonical::CanonError;
 use canonical_derive::Canon;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Branch, Cardinality, Nth};
+use microkelvin::{Annotation, Branch, Cardinality, Combine, Nth, Walker};
 use nstack::NStack;
 
-/// Represents a Merkle Tree with a given depth that will be calculated using poseidon hash
-///
-/// The `BlsScalar` borrow of the annotation must represent the root poseidon merkle opening
-/// for the annotated subtree
+/// Represents a Merkle Tree with a given depth that will be calculated using
+/// the Poseidon Hash technique.
 #[derive(Debug, Clone, Canon)]
-pub struct PoseidonTree<L, A, S, const DEPTH: usize>
+pub struct PoseidonTree<L, A, const DEPTH: usize>
 where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    S: Store,
+    L: PoseidonLeaf,
+    A: PoseidonTreeAnnotation<L>,
+    A: Annotation<L>,
 {
-    inner: NStack<L, A, S>,
+    inner: NStack<L, A>,
 }
 
-impl<L, A, S, const DEPTH: usize> AsRef<NStack<L, A, S>>
-    for PoseidonTree<L, A, S, DEPTH>
+impl<L, A, const DEPTH: usize> AsRef<NStack<L, A>> for PoseidonTree<L, A, DEPTH>
 where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    S: Store,
+    L: PoseidonLeaf,
+    A: PoseidonTreeAnnotation<L>,
+    A: Annotation<L> + Combine<NStack<L, A>, A>,
 {
-    fn as_ref(&self) -> &NStack<L, A, S> {
+    fn as_ref(&self) -> &NStack<L, A> {
         &self.inner
     }
 }
 
-impl<L, A, S, const DEPTH: usize> AsMut<NStack<L, A, S>>
-    for PoseidonTree<L, A, S, DEPTH>
+impl<L, A, const DEPTH: usize> AsMut<NStack<L, A>> for PoseidonTree<L, A, DEPTH>
 where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    S: Store,
+    L: PoseidonLeaf,
+    A: PoseidonTreeAnnotation<L>,
+    A: Annotation<L> + Combine<NStack<L, A>, A>,
 {
-    fn as_mut(&mut self) -> &mut NStack<L, A, S> {
+    fn as_mut(&mut self) -> &mut NStack<L, A> {
         &mut self.inner
     }
 }
 
-impl<L, A, S, const DEPTH: usize> Default for PoseidonTree<L, A, S, DEPTH>
+impl<L, A, const DEPTH: usize> Default for PoseidonTree<L, A, DEPTH>
 where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    S: Store,
+    L: PoseidonLeaf,
+    A: PoseidonTreeAnnotation<L>,
+    A: Annotation<L> + Combine<NStack<L, A>, A>,
 {
     fn default() -> Self {
         PoseidonTree::new()
     }
 }
 
-impl<L, A, S, const DEPTH: usize> PoseidonTree<L, A, S, DEPTH>
+impl<L, A, const DEPTH: usize> PoseidonTree<L, A, DEPTH>
 where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    S: Store,
+    L: PoseidonLeaf,
+    A: PoseidonTreeAnnotation<L>,
+    A: Annotation<L> + Combine<NStack<L, A>, A>,
 {
     /// Creates a new poseidon tree
     pub fn new() -> Self {
@@ -78,51 +71,34 @@ where
     }
 
     /// Append a leaf to the tree. Return the index of the appended leaf.
-    ///
-    /// Will call the `tree_pos_mut` implementation of the leaf to
-    /// set its index
-    pub fn push(&mut self, mut leaf: L) -> Result<usize, Error<S::Error>> {
-        let size = match &self.inner {
-            NStack::Leaf(l) => l.iter().filter(|l| l.is_some()).count(),
-            NStack::Node(n) => n
-                .iter()
-                .filter_map(|n| n.as_ref())
-                .map::<&Cardinality, _>(|n| n.annotation().borrow())
-                .map::<u64, _>(|c| c.into())
-                .map(|n| n as usize)
-                .sum(),
-        };
+    pub fn push(&mut self, mut leaf: L) -> Result<u64, Error> {
+        let size = Cardinality::combine(&self.inner).into();
 
-        leaf.set_pos(size as u64);
-        self.inner
-            .push(leaf)
-            .map_err(|e| Error::TreePushFailed(e))?;
+        leaf.set_pos(size);
+        self.inner.push(leaf).map_err(|_| Error::TreePushFailed)?;
 
         Ok(size)
     }
 
     /// Fetch, remove and return the last inserted leaf, if present.
-    pub fn pop(&mut self) -> Result<Option<L>, Error<S::Error>> {
-        self.inner.pop().map_err(|e| Error::TreePopFailed(e))
+    pub fn pop(&mut self) -> Result<Option<L>, Error> {
+        self.inner.pop().map_err(|_| Error::TreePopFailed)
     }
 
     /// Fetch a leaf on a provided index.
-    pub fn get(&self, n: usize) -> Result<Option<L>, Error<S::Error>> {
+    pub fn get(&self, n: u64) -> Result<Option<L>, Error> {
         self.inner
-            .nth(n as u64)
+            .nth(n)
             .map(|o| o.map(|l| l.clone()))
-            .map_err(|e| Error::TreeGetFailed(e))
+            .map_err(|_| Error::TreePopFailed)
     }
 
     /// Return a full merkle opening for this poseidon tree for a given index.
     pub fn branch(
         &self,
-        n: usize,
-    ) -> Result<Option<PoseidonBranch<DEPTH>>, Error<S::Error>> {
-        let branch = self
-            .inner
-            .nth(n as u64)
-            .map_err(|e| Error::TreeGetFailed(e))?;
+        n: u64,
+    ) -> Result<Option<PoseidonBranch<DEPTH>>, Error> {
+        let branch = self.inner.nth(n).map_err(|_| Error::TreeBranchFailed)?;
 
         match branch {
             Some(b) => Ok(Some(PoseidonBranch::from(&b))),
@@ -131,100 +107,40 @@ where
     }
 
     /// Return the current root/state of the tree.
-    pub fn root(&self) -> Result<BlsScalar, Error<S::Error>> {
-        self.branch(0).map(|b| b.unwrap_or_default().root().clone())
+    pub fn root(&self) -> Result<BlsScalar, Error> {
+        self.branch(0)
+            .map(|b| b.unwrap_or_default().root().clone())
+            .map_err(|_| Error::TreeBranchFailed)
     }
 
-    /// Iterates over the tree, provided its annotation implements [`PoseidonWalkableAnnotation`]
-    pub fn iter_walk<D: Clone>(
+    /// Provides an iterator over the leaves of the tree from a provided starting point.
+    /// To iterate the entire tree, simply provide `0` as `start`.
+    pub fn iter_walk(
         &self,
-        data: D,
-    ) -> Result<PoseidonTreeIterator<L, A, S, D, DEPTH>, &'static str>
-    where
-        A: PoseidonWalkableAnnotation<NStack<L, A, S>, D, L, S>,
-    {
-        PoseidonTreeIterator::new(&self, data)
-    }
-}
-
-/// Main iterator of the poseidon tree.
-///
-/// Depends on an implementation of `PoseidonWalkableAnnotation` for the tree annotation
-///
-/// Every iteration will check for a valid `PoseidonWalkableAnnotation::poseidon_walk` call and
-/// return a next leaf if the provided data holds true for the implemented logic
-///
-/// The data can be any struct that implements `Clone`, and will be used to define the traversal
-/// path over the tree.
-pub struct PoseidonTreeIterator<L, A, S, D, const DEPTH: usize>
-where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    S: Store,
-    D: Clone,
-{
-    tree: PoseidonTree<L, A, S, DEPTH>,
-    pos: usize,
-    data: D,
-}
-
-impl<L, A, S, D, const DEPTH: usize> PoseidonTreeIterator<L, A, S, D, DEPTH>
-where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    A: PoseidonWalkableAnnotation<NStack<L, A, S>, D, L, S>,
-    S: Store,
-    D: Clone,
-{
-    /// Iterator constructor
-    pub fn new(
-        tree: &PoseidonTree<L, A, S, DEPTH>,
-        data: D,
-    ) -> Result<Self, &'static str> {
-        let tree = tree.clone();
-
-        // TODO - Naive implementation until iterable branch is implemented
-        // https://github.com/dusk-network/microkelvin/issues/23
-        let pos = <Branch<NStack<L, A, S>, S>>::walk(&tree.inner, |w| {
-            A::poseidon_walk(w, data.clone())
-        })
-        .map_err(|_| "Error fetching the branch!")?
-        .map(|l| l.pos())
-        .unwrap_or(u64::max_value()) as usize;
-
-        Ok(Self { tree, pos, data })
-    }
-}
-
-impl<L, A, S, D, const DEPTH: usize> Iterator
-    for PoseidonTreeIterator<L, A, S, D, DEPTH>
-where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    A: PoseidonWalkableAnnotation<NStack<L, A, S>, D, L, S>,
-    S: Store,
-    D: Clone,
-{
-    type Item = Result<L, Error<S::Error>>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let pos = self.pos;
-        let (pos_p, overflow) = self.pos.overflowing_add(1);
-        if overflow {
-            return None;
+        start: u64,
+    ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, Error> {
+        let result = self.inner.nth(start);
+        match result {
+            Ok(Some(iter)) => Ok(iter),
+            _ => Err(Error::TreeIterFailed),
         }
-        self.pos = pos_p;
+    }
 
-        match self.tree.get(pos) {
-            // Hack until iterable branch is available
-            // This will prevent the iteration over non-filtered data
-            // https://github.com/dusk-network/microkelvin/issues/23
-            Ok(Some(l)) if A::poseidon_leaf_found(&l, self.data.clone()) => {
-                Some(Ok(l))
-            }
-            Ok(Some(_)) => self.next(),
-            Err(e) => Some(Err(e)),
-            _ => None,
+    /// Provides an iterator over the leaves of the tree which have been previously annotated via a custom `Walker` passed
+    /// as argument.
+    ///
+    /// # Note
+    /// This is only useful if annotate the tree is going to make the iteration perform sub-linearly.
+    pub fn annotated_iter_walk<W>(
+        &self,
+        walker: W,
+    ) -> Result<impl IntoIterator<Item = Result<&L, CanonError>>, Error>
+    where
+        W: Walker<NStack<L, A>, A>,
+    {
+        match Branch::walk(&self.inner, walker) {
+            Ok(Some(iter)) => Ok(iter),
+            _ => Err(Error::TreeIterFailed),
         }
     }
 }
