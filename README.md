@@ -119,7 +119,7 @@ fn main() -> Result<(), Error> {
     let pub_params = PublicParameters::setup(1 << 15, &mut OsRng)?;
     let (ck, ok) = pub_params.trim(1 << 15)?;
 
-    // Instantiate a new tree.
+    // Instantiate a new tree
     let mut tree: PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH> =
         PoseidonTree::new();
 
