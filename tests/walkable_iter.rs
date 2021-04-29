@@ -5,13 +5,13 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #![cfg(feature = "canon")]
-#![cfg(test)]
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_poseidon::tree::{
     PoseidonAnnotation, PoseidonLeaf, PoseidonTree, PoseidonTreeAnnotation,
 };
+use dusk_poseidon::Error;
 use microkelvin::{
     Annotation, Cardinality, Child, Combine, Compound, Keyed, MaxKey, Step,
     Walk, Walker,
@@ -157,57 +157,52 @@ where
     }
 }
 
-mod tests {
-    use super::*;
-    use dusk_poseidon::Error;
+#[test]
+fn custom_walker_iter() -> Result<(), Error> {
+    let mut tree = PoseidonTree::<TestLeaf, TestAnnotation, 17>::new();
 
-    #[test]
-    fn custom_walker_iter() -> Result<(), Error> {
-        let mut tree = PoseidonTree::<TestLeaf, TestAnnotation, 17>::new();
+    // Fill the tree with different leafs with different block heights.
+    for i in 0..18 {
+        let leaf = TestLeaf::new(i);
+        let pos = tree.push(leaf)?;
+        assert_eq!(pos, i);
+        let key: BlockHeight = *leaf.key();
+        assert_eq!(key, BlockHeight(i as u64));
+    }
 
-        // Fill the tree with different leafs with different block heights.
-        for i in 0..18 {
-            let leaf = TestLeaf::new(i);
-            let pos = tree.push(leaf)?;
-            assert_eq!(pos, i);
-            let key: BlockHeight = *leaf.key();
-            assert_eq!(key, BlockHeight(i as u64));
-        }
+    let mut leaf_count = 0;
+    // For a block_height of 0, the custom walker should iterate over all the leaves.
+    tree.annotated_iter_walk(BlockHeightFilter(0))?
+        .into_iter()
+        .enumerate()
+        .for_each(|(idx, l)| {
+            if l.is_ok() {
+                leaf_count += 1
+            }
+            // Check that the heights are the expected ones
+            let leaf_height: BlockHeight = *l.unwrap().key();
+            assert_eq!(leaf_height, BlockHeight(idx as u64));
+        });
+    assert_eq!(leaf_count, 18);
 
-        let mut leaf_count = 0;
-        // For a block_height of 0, the custom walker should iterate over all the leaves.
-        tree.annotated_iter_walk(BlockHeightFilter(0))?
-            .into_iter()
-            .enumerate()
-            .for_each(|(idx, l)| {
-                if l.is_ok() {
-                    leaf_count += 1
-                }
+    // For a block_height of 20, we should fail to get an iterator over the tree as no leaf
+    // satisfies the criteria.
+    assert!(tree.annotated_iter_walk(BlockHeightFilter(20)).is_err());
+
+    leaf_count = 0;
+    // For a block_height of 15, the custom walker should iterate over the last two subtrees which means from
+    // leaves [12, 13, 14, 15] & [16, 17, _, _].
+    tree.annotated_iter_walk(BlockHeightFilter(15))?
+        .into_iter()
+        .enumerate()
+        .for_each(|(idx, l)| {
+            if l.is_ok() {
+                leaf_count += 1;
                 // Check that the heights are the expected ones
                 let leaf_height: BlockHeight = *l.unwrap().key();
-                assert_eq!(leaf_height, BlockHeight(idx as u64));
-            });
-        assert_eq!(leaf_count, 18);
-
-        // For a block_height of 20, we should fail to get an iterator over the tree as no leaf
-        // satisfies the criteria.
-        assert!(tree.annotated_iter_walk(BlockHeightFilter(20)).is_err());
-
-        leaf_count = 0;
-        // For a block_height of 15, the custom walker should iterate over the last two subtrees which means from
-        // leaves [12, 13, 14, 15] & [16, 17, _, _].
-        tree.annotated_iter_walk(BlockHeightFilter(15))?
-            .into_iter()
-            .enumerate()
-            .for_each(|(idx, l)| {
-                if l.is_ok() {
-                    leaf_count += 1;
-                    // Check that the heights are the expected ones
-                    let leaf_height: BlockHeight = *l.unwrap().key();
-                    assert_eq!(leaf_height, BlockHeight(idx as u64 + 12));
-                }
-            });
-        assert_eq!(leaf_count, 6);
-        Ok(())
-    }
+                assert_eq!(leaf_height, BlockHeight(idx as u64 + 12));
+            }
+        });
+    assert_eq!(leaf_count, 6);
+    Ok(())
 }

@@ -4,19 +4,18 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::tree::{
-    PoseidonAnnotation, PoseidonLeaf, PoseidonMaxAnnotation, PoseidonTree,
-};
+#![cfg(feature = "canon")]
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
+use dusk_poseidon::tree::{
+    PoseidonAnnotation, PoseidonLeaf, PoseidonMaxAnnotation, PoseidonTree,
+};
 use microkelvin::Keyed;
 use rand_core::{CryptoRng, RngCore};
 
-#[derive(
-    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
-)]
+#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
 pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,
