@@ -15,7 +15,9 @@ use dusk_poseidon::tree::{
 use microkelvin::Keyed;
 use rand_core::{CryptoRng, RngCore};
 
-#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
+)]
 pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,
@@ -49,12 +51,12 @@ impl From<u64> for MockLeaf {
 }
 
 impl PoseidonLeaf for MockLeaf {
-    fn poseidon_hash(&self) -> BlsScalar {
-        self.s
+    fn poseidon_hash(&self) -> &BlsScalar {
+        &self.s
     }
 
-    fn pos(&self) -> u64 {
-        self.pos
+    fn pos(&self) -> &u64 {
+        &self.pos
     }
 
     fn set_pos(&mut self, pos: u64) {
@@ -114,7 +116,7 @@ fn tree_max_walk() {
         .map(|l| l.unwrap())
         .enumerate()
         .for_each(|(i, leaf)| {
-            assert_eq!(pos + i as u64, leaf.pos());
+            assert_eq!(pos + i as u64, *leaf.pos());
         });
 
     assert!(tree.iter_walk((MAX + 1) as u64).is_err());
@@ -147,7 +149,7 @@ fn tree_max_walk_non_continuous() {
             if pos % 4 == 0 {
                 //pos += 1;
             }
-            assert_eq!(pos, leaf.pos());
+            assert_eq!(pos, *leaf.pos());
             pos += 1;
         });
 
@@ -212,7 +214,7 @@ fn tree_branch_depth() {
 
     let mut perm_base = [BlsScalar::zero(); dusk_hades::WIDTH];
     perm_base[0] = BlsScalar::one();
-    perm_base[1] = leaf.poseidon_hash();
+    perm_base[1] = *leaf.poseidon_hash();
 
     let mut perm = perm_base;
     for _ in 0..17 {

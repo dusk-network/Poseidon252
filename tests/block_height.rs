@@ -17,7 +17,9 @@ use microkelvin::{
     Walk, Walker,
 };
 
-#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
+)]
 pub struct TestLeaf {
     hash: BlsScalar,
     pos: u64,
@@ -41,12 +43,12 @@ impl Keyed<BlockHeight> for TestLeaf {
 }
 
 impl PoseidonLeaf for TestLeaf {
-    fn poseidon_hash(&self) -> BlsScalar {
-        self.hash
+    fn poseidon_hash(&self) -> &BlsScalar {
+        &self.hash
     }
 
-    fn pos(&self) -> u64 {
-        self.pos
+    fn pos(&self) -> &u64 {
+        &self.pos
     }
 
     fn set_pos(&mut self, pos: u64) {
@@ -60,7 +62,9 @@ impl Borrow<u64> for TestLeaf {
     }
 }
 
-#[derive(Copy, Clone, Default, Debug, Canon, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(
+    Copy, Clone, Default, Debug, Canon, Ord, PartialOrd, Eq, PartialEq,
+)]
 pub struct BlockHeight(pub(crate) u64);
 
 #[derive(Clone, Debug, Default, Canon)]
