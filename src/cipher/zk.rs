@@ -113,7 +113,6 @@ mod tests {
     use crate::cipher::{decrypt, encrypt, PoseidonCipher};
     use dusk_bls12_381::BlsScalar;
     use dusk_jubjub::{dhke, JubJubExtended, GENERATOR_EXTENDED};
-    use dusk_plonk::constraint_system::ecc::scalar_mul::variable_base::variable_base_scalar_mul;
     use dusk_plonk::prelude::*;
     use rand_core::OsRng;
 
@@ -157,7 +156,7 @@ mod tests {
             let secret = composer.add_input((secret).into());
             let public = composer.add_affine(public.into());
 
-            let shared = variable_base_scalar_mul(composer, secret, public);
+            let shared = composer.variable_base_scalar_mul(secret, public);
 
             let mut message_circuit = [zero; PoseidonCipher::capacity()];
             message.iter().zip(message_circuit.iter_mut()).for_each(

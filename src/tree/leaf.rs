@@ -7,7 +7,7 @@
 use canonical::Canon;
 use dusk_bls12_381::BlsScalar;
 
-/// A struct that will be used as a poseidon tree leaf must implement this trait
+/// A struct that will be used as a poseidon tree leaf must implement this trait.
 ///
 /// After `PoseidonTree::push`, `tree_pos_mut` will be called to set the
 /// index of the leaf on the tree
@@ -15,10 +15,10 @@ pub trait PoseidonLeaf: Canon + Clone {
     /// Poseidon hash implementation of the leaf structure.
     ///
     /// The result of this function will be used as opening for the merkle tree.
-    fn poseidon_hash(&self) -> BlsScalar;
+    fn poseidon_hash(&self) -> &BlsScalar;
 
     /// Index of the leaf structure on the merkle tree.
-    fn pos(&self) -> u64;
+    fn pos(&self) -> &u64;
 
     /// Index of the leaf structure on the merkle tree.
     ///

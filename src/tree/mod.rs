@@ -40,13 +40,13 @@
 //! // Any leaf of the poseidon tree must implement `PoseidonLeaf`
 //! impl PoseidonLeaf for DataLeaf {
 //!     // Cryptographic hash of the data leaf
-//!     fn poseidon_hash(&self) -> BlsScalar {
-//!         self.data
+//!     fn poseidon_hash(&self) -> &BlsScalar {
+//!         &self.data
 //!     }
 //!
 //!     // Position on the tree
-//!     fn pos(&self) -> u64 {
-//!         self.pos
+//!     fn pos(&self) -> &u64 {
+//!         &self.pos
 //!     }
 //!
 //!     // Method used to set the position on the tree after the `PoseidonTree::push` call

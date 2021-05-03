@@ -128,7 +128,7 @@ where
                         .for_each(|(leaf, l)| {
                             if let Some(leaf) = leaf {
                                 mask |= flag;
-                                *l = leaf.poseidon_hash();
+                                *l = *leaf.poseidon_hash();
                             }
 
                             flag <<= 1;

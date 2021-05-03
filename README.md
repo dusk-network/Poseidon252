@@ -99,13 +99,13 @@ impl From<u64> for DataLeaf {
 // Any leaf of the poseidon tree must implement `PoseidonLeaf`
 impl PoseidonLeaf for DataLeaf {
     // Cryptographic hash of the data leaf
-    fn poseidon_hash(&self) -> BlsScalar {
-        self.data
+    fn poseidon_hash(&self) -> &BlsScalar {
+        &self.data
     }
 
     // Position on the tree
-    fn pos(&self) -> u64 {
-        self.pos
+    fn pos(&self) -> &u64 {
+        &self.pos
     }
 
     // Method used to set the position on the tree after the `PoseidonTree::push` call
@@ -168,11 +168,10 @@ fn main() -> Result<(), Error> {
 
 The canonical implementations aim to make available a single representation of the Merkle tree to constrained (referred to as "hosted") and unconstrained (referred to as "host") environments.
 
-For that, we rely on the features `canon` and `canon_host`.
+For that, we rely on the feature `canon`.
 
 `canon` feature will require all the crates needed for the Merkle tree to function.
 
-`canon_host` feature will require `canon`, with the addition of the host environment implementations.
 
 ## Documentation
 

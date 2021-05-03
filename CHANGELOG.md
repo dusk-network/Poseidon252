@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change trait bound system for `PoseidonTree` [#125](https://github.com/dusk-network/poseidon252/issues/125)
 - Update `PoseidonTreeAnnotation` to be an autotrait [#125](https://github.com/dusk-network/poseidon252/issues/125)
 - Update feature system for the crate [#138](https://github.com/dusk-network/poseidon252/issues/138)
+- Change `PoseidonLeaf` getter methods to return refs [#143](https://github.com/dusk-network/poseidon252/issues/143)
 
 ### Removed
 - Remove `anyhow` and `thiserror` from deps [#132](https://github.com/dusk-network/poseidon252/issues/132)
