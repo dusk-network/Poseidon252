@@ -42,7 +42,7 @@ impl PoseidonAnnotation {
             match child {
                 IterChild::Leaf(l) => {
                     mask |= flag;
-                    perm[i + 1] = *l.poseidon_hash();
+                    perm[i + 1] = l.poseidon_hash();
 
                     flag <<= 1;
                 }
@@ -90,7 +90,7 @@ where
 {
     fn from_leaf(leaf: &L) -> Self {
         let cardinality = Cardinality::from_leaf(leaf);
-        let poseidon_root = *leaf.poseidon_hash();
+        let poseidon_root = leaf.poseidon_hash();
 
         Self {
             cardinality,

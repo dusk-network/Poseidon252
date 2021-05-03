@@ -41,8 +41,8 @@ impl Keyed<BlockHeight> for TestLeaf {
 }
 
 impl PoseidonLeaf for TestLeaf {
-    fn poseidon_hash(&self) -> &BlsScalar {
-        &self.hash
+    fn poseidon_hash(&self) -> BlsScalar {
+        self.hash
     }
 
     fn pos(&self) -> &u64 {

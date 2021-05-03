@@ -99,8 +99,8 @@ impl From<u64> for DataLeaf {
 // Any leaf of the poseidon tree must implement `PoseidonLeaf`
 impl PoseidonLeaf for DataLeaf {
     // Cryptographic hash of the data leaf
-    fn poseidon_hash(&self) -> &BlsScalar {
-        &self.data
+    fn poseidon_hash(&self) -> BlsScalar {
+        self.data
     }
 
     // Position on the tree

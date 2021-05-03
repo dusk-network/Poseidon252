@@ -49,8 +49,8 @@ impl From<u64> for MockLeaf {
 }
 
 impl PoseidonLeaf for MockLeaf {
-    fn poseidon_hash(&self) -> &BlsScalar {
-        &self.s
+    fn poseidon_hash(&self) -> BlsScalar {
+        self.s
     }
 
     fn pos(&self) -> &u64 {
@@ -212,7 +212,7 @@ fn tree_branch_depth() {
 
     let mut perm_base = [BlsScalar::zero(); dusk_hades::WIDTH];
     perm_base[0] = BlsScalar::one();
-    perm_base[1] = *leaf.poseidon_hash();
+    perm_base[1] = leaf.poseidon_hash();
 
     let mut perm = perm_base;
     for _ in 0..17 {
