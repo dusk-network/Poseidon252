@@ -8,13 +8,10 @@
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use dusk_poseidon::tree::{
-    PoseidonAnnotation, PoseidonLeaf, PoseidonTree, PoseidonTreeAnnotation,
-};
+use dusk_poseidon::tree::{PoseidonLeaf, PoseidonMaxAnnotation, PoseidonTree};
 use dusk_poseidon::Error;
 use microkelvin::{
-    Annotation, Cardinality, Child, Combine, Compound, Keyed, MaxKey, Step,
-    Walk, Walker,
+    Child, Combine, Compound, Keyed, MaxKey, Step, Walk, Walker,
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
@@ -63,61 +60,6 @@ impl Borrow<u64> for TestLeaf {
 #[derive(Copy, Clone, Default, Debug, Canon, Ord, PartialOrd, Eq, PartialEq)]
 pub struct BlockHeight(pub(crate) u64);
 
-#[derive(Clone, Debug, Default, Canon)]
-pub struct TestAnnotation {
-    ann: PoseidonAnnotation,
-    block_height: MaxKey<BlockHeight>,
-}
-
-impl Borrow<MaxKey<BlockHeight>> for TestAnnotation {
-    fn borrow(&self) -> &MaxKey<BlockHeight> {
-        &self.block_height
-    }
-}
-
-impl Borrow<Cardinality> for TestAnnotation {
-    fn borrow(&self) -> &Cardinality {
-        self.ann.borrow()
-    }
-}
-
-impl Borrow<BlsScalar> for TestAnnotation {
-    fn borrow(&self) -> &BlsScalar {
-        self.ann.borrow()
-    }
-}
-
-impl<L> Annotation<L> for TestAnnotation
-where
-    L: PoseidonLeaf,
-    L: Borrow<u64>,
-    L: Keyed<BlockHeight>,
-{
-    fn from_leaf(leaf: &L) -> Self {
-        let ann = PoseidonAnnotation::from_leaf(leaf);
-        let block_height = MaxKey::from_leaf(leaf);
-
-        Self { ann, block_height }
-    }
-}
-
-impl<C, A> Combine<C, A> for TestAnnotation
-where
-    C: Compound<A>,
-    C::Leaf: PoseidonLeaf + Keyed<BlockHeight> + Borrow<u64>,
-    A: Annotation<C::Leaf>
-        + PoseidonTreeAnnotation<C::Leaf>
-        + Borrow<Cardinality>
-        + Borrow<MaxKey<BlockHeight>>,
-{
-    fn combine(node: &C) -> Self {
-        TestAnnotation {
-            ann: PoseidonAnnotation::combine(node),
-            block_height: MaxKey::combine(node),
-        }
-    }
-}
-
 // Walker method to find the elements that are avobe a certain a block height.
 pub struct BlockHeightFilter(u64);
 
@@ -159,7 +101,8 @@ where
 
 #[test]
 fn custom_walker_iter() -> Result<(), Error> {
-    let mut tree = PoseidonTree::<TestLeaf, TestAnnotation, 17>::new();
+    let mut tree =
+        PoseidonTree::<TestLeaf, PoseidonMaxAnnotation<BlockHeight>, 17>::new();
 
     // Fill the tree with different leafs with different block heights.
     for i in 0..18 {

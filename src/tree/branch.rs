@@ -13,7 +13,6 @@ use core::ops::Deref;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
 use microkelvin::Branch;
-use microkelvin::Combine;
 use nstack::NStack;
 
 /// Represents a level of a branch on a given depth
@@ -104,7 +103,6 @@ impl<L, A, const DEPTH: usize> From<&Branch<'_, NStack<L, A>, A>>
 where
     L: PoseidonLeaf,
     A: PoseidonTreeAnnotation<L>,
-    A: Combine<NStack<L, A>, A>,
 {
     fn from(b: &Branch<'_, NStack<L, A>, A>) -> Self {
         let mut branch = PoseidonBranch::default();

@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove `PoseidonWalkableIterator` and `PoseidonWalkableAnnotation` [#125](https://github.com/dusk-network/poseidon252/issues/125)
 - Remove `canon_host` feature checks from CI [#136](https://github.com/dusk-network/poseidon252/issues/136)
 - Remove `anyhow` and `thiserror` usage [#132](https://github.com/dusk-network/poseidon252/issues/132)
+- Remove `microkelvin` requirements from Tree [#146](https://github.com/dusk-network/Poseidon252/issues/146)
 
 ## [0.20.0] - 2021-04-06
 

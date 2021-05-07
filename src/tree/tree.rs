@@ -9,7 +9,7 @@ use crate::Error;
 use canonical::CanonError;
 use canonical_derive::Canon;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Annotation, Branch, Cardinality, Combine, Nth, Walker};
+use microkelvin::{Branch, Cardinality, Combine, Nth, Walker};
 use nstack::NStack;
 
 /// Represents a Merkle Tree with a given depth that will be calculated using
@@ -19,7 +19,6 @@ pub struct PoseidonTree<L, A, const DEPTH: usize>
 where
     L: PoseidonLeaf,
     A: PoseidonTreeAnnotation<L>,
-    A: Annotation<L>,
 {
     inner: NStack<L, A>,
 }
@@ -28,7 +27,6 @@ impl<L, A, const DEPTH: usize> AsRef<NStack<L, A>> for PoseidonTree<L, A, DEPTH>
 where
     L: PoseidonLeaf,
     A: PoseidonTreeAnnotation<L>,
-    A: Annotation<L> + Combine<NStack<L, A>, A>,
 {
     fn as_ref(&self) -> &NStack<L, A> {
         &self.inner
@@ -39,7 +37,6 @@ impl<L, A, const DEPTH: usize> AsMut<NStack<L, A>> for PoseidonTree<L, A, DEPTH>
 where
     L: PoseidonLeaf,
     A: PoseidonTreeAnnotation<L>,
-    A: Annotation<L> + Combine<NStack<L, A>, A>,
 {
     fn as_mut(&mut self) -> &mut NStack<L, A> {
         &mut self.inner
@@ -50,7 +47,6 @@ impl<L, A, const DEPTH: usize> Default for PoseidonTree<L, A, DEPTH>
 where
     L: PoseidonLeaf,
     A: PoseidonTreeAnnotation<L>,
-    A: Annotation<L> + Combine<NStack<L, A>, A>,
 {
     fn default() -> Self {
         PoseidonTree::new()
@@ -61,7 +57,6 @@ impl<L, A, const DEPTH: usize> PoseidonTree<L, A, DEPTH>
 where
     L: PoseidonLeaf,
     A: PoseidonTreeAnnotation<L>,
-    A: Annotation<L> + Combine<NStack<L, A>, A>,
 {
     /// Creates a new poseidon tree
     pub fn new() -> Self {
