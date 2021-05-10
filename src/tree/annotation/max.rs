@@ -6,6 +6,7 @@
 
 use super::{PoseidonAnnotation, PoseidonTreeAnnotation};
 use crate::tree::PoseidonLeaf;
+use canonical::Canon;
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
@@ -16,51 +17,65 @@ use microkelvin::{Annotation, Cardinality, Combine, Compound, Keyed, MaxKey};
 ///
 /// This maximum value is representes as `u64`, and the tree is iterable over it
 #[derive(Debug, Clone, Canon, Default)]
-pub struct PoseidonMaxAnnotation {
+pub struct PoseidonMaxAnnotation<K>
+where
+    K: Canon + Default + Clone + Ord,
+{
     poseidon: PoseidonAnnotation,
-    max: MaxKey<u64>,
+    max: MaxKey<K>,
 }
 
-impl Borrow<Cardinality> for PoseidonMaxAnnotation {
+impl<K> Borrow<Cardinality> for PoseidonMaxAnnotation<K>
+where
+    K: Canon + Default + Clone + Ord,
+{
     fn borrow(&self) -> &Cardinality {
         self.poseidon.borrow()
     }
 }
 
-impl Borrow<BlsScalar> for PoseidonMaxAnnotation {
+impl<K> Borrow<BlsScalar> for PoseidonMaxAnnotation<K>
+where
+    K: Canon + Default + Clone + Ord,
+{
     fn borrow(&self) -> &BlsScalar {
         self.poseidon.borrow()
     }
 }
 
-impl Borrow<MaxKey<u64>> for PoseidonMaxAnnotation {
-    fn borrow(&self) -> &MaxKey<u64> {
+impl<K> Borrow<MaxKey<K>> for PoseidonMaxAnnotation<K>
+where
+    K: Canon + Default + Clone + Ord,
+{
+    fn borrow(&self) -> &MaxKey<K> {
         &self.max
     }
 }
 
-impl<L> Annotation<L> for PoseidonMaxAnnotation
+impl<L, K> Annotation<L> for PoseidonMaxAnnotation<K>
 where
     L: PoseidonLeaf,
     L: Borrow<u64>,
-    L: Keyed<u64>,
+    L: Keyed<K>,
+    K: Canon + Default + Clone + Ord,
 {
     fn from_leaf(leaf: &L) -> Self {
         let poseidon = PoseidonAnnotation::from_leaf(leaf);
-        let max = <MaxKey<u64> as Annotation<L>>::from_leaf(leaf);
+        let max = <MaxKey<K> as Annotation<L>>::from_leaf(leaf);
 
         Self { poseidon, max }
     }
 }
 
-impl<C, A> Combine<C, A> for PoseidonMaxAnnotation
+impl<C, A, K> Combine<C, A> for PoseidonMaxAnnotation<K>
 where
     C: Compound<A>,
-    C::Leaf: PoseidonLeaf + Keyed<u64> + Borrow<u64>,
+    C::Leaf: PoseidonLeaf + Keyed<K> + Borrow<u64>,
     A: Annotation<C::Leaf>
         + PoseidonTreeAnnotation<C::Leaf>
         + Borrow<Cardinality>
-        + Borrow<MaxKey<u64>>,
+        + Borrow<MaxKey<K>>,
+    K: Canon + Default + Clone + Ord,
 {
     fn combine(node: &C) -> Self {
         PoseidonMaxAnnotation {
@@ -68,4 +83,11 @@ where
             max: MaxKey::combine(node),
         }
     }
+}
+
+impl<L, K> PoseidonTreeAnnotation<L> for PoseidonMaxAnnotation<K>
+where
+    L: PoseidonLeaf + Borrow<u64> + Keyed<K>,
+    K: Canon + Default + Clone + Ord,
+{
 }

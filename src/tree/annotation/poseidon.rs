@@ -24,48 +24,6 @@ pub struct PoseidonAnnotation {
 }
 
 impl PoseidonAnnotation {
-    /// Create a new poseidon annotation from a generic node implementation
-    pub fn from_generic_node<C, A>(node: &C) -> Self
-    where
-        C::Leaf: PoseidonLeaf,
-        A: PoseidonTreeAnnotation<C::Leaf>,
-        A: Annotation<C::Leaf>,
-        C: Compound<A>,
-    {
-        let cardinality = Cardinality::combine(node);
-
-        let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
-        let mut flag = 1;
-        let mut mask = 0;
-
-        for (i, child) in node.children().enumerate() {
-            match child {
-                IterChild::Leaf(l) => {
-                    mask |= flag;
-                    perm[i + 1] = l.poseidon_hash();
-
-                    flag <<= 1;
-                }
-
-                IterChild::Node(n) => {
-                    mask |= flag;
-                    perm[i + 1] = *n.annotation().borrow();
-
-                    flag <<= 1;
-                }
-            }
-        }
-
-        perm[0] = BlsScalar::from(mask);
-        ScalarStrategy::new().perm(&mut perm);
-        let poseidon_root = perm[1];
-
-        Self {
-            cardinality,
-            poseidon_root,
-        }
-    }
-
     /// Return the scalar representation of the root of the annotated subtree
     pub fn poseidon_root(&self) -> &BlsScalar {
         &self.poseidon_root
@@ -108,6 +66,39 @@ where
         + Borrow<Cardinality>,
 {
     fn combine(node: &C) -> Self {
-        PoseidonAnnotation::from_generic_node(node)
+        let cardinality = Cardinality::combine(node);
+
+        let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
+        let mut flag = 1;
+        let mut mask = 0;
+
+        for (i, child) in node.children().enumerate() {
+            match child {
+                IterChild::Leaf(l) => {
+                    mask |= flag;
+                    perm[i + 1] = l.poseidon_hash();
+
+                    flag <<= 1;
+                }
+
+                IterChild::Node(n) => {
+                    mask |= flag;
+                    perm[i + 1] = *n.annotation().borrow();
+
+                    flag <<= 1;
+                }
+            }
+        }
+
+        perm[0] = BlsScalar::from(mask);
+        ScalarStrategy::new().perm(&mut perm);
+        let poseidon_root = perm[1];
+
+        Self {
+            cardinality,
+            poseidon_root,
+        }
     }
 }
+
+impl<L> PoseidonTreeAnnotation<L> for PoseidonAnnotation where L: PoseidonLeaf {}

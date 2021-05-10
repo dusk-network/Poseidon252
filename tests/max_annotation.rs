@@ -98,7 +98,7 @@ fn tree_append_fetch() {
 fn tree_max_walk() {
     const MAX: u64 = 1025;
 
-    let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation, 17> =
+    let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation<u64>, 17> =
         PoseidonTree::new();
     for i in 0..MAX {
         let s = MockLeaf::from(i as u64);
@@ -124,7 +124,7 @@ fn tree_max_walk() {
 fn tree_max_walk_non_continuous() {
     const MAX: u64 = 1025u64;
 
-    let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation, 17> =
+    let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation<u64>, 17> =
         PoseidonTree::new();
 
     for i in 0..MAX {
