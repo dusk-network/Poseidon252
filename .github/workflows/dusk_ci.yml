@@ -12,7 +12,6 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: install
@@ -30,7 +29,6 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: check
@@ -44,7 +42,6 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -59,7 +56,6 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -74,7 +70,6 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -89,7 +84,6 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -103,8 +97,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2020-10-25
-          override: true
       - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
         with:
