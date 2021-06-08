@@ -14,7 +14,9 @@ use microkelvin::{
     Child, Combine, Compound, Keyed, MaxKey, Step, Walk, Walker,
 };
 
-#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
+)]
 pub struct TestLeaf {
     hash: BlsScalar,
     pos: u64,
@@ -57,7 +59,9 @@ impl Borrow<u64> for TestLeaf {
     }
 }
 
-#[derive(Copy, Clone, Default, Debug, Canon, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(
+    Copy, Clone, Default, Debug, Canon, Ord, PartialOrd, Eq, PartialEq,
+)]
 pub struct BlockHeight(pub(crate) u64);
 
 // Walker method to find the elements that are avobe a certain a block height.

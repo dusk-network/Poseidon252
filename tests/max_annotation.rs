@@ -15,7 +15,9 @@ use dusk_poseidon::tree::{
 use microkelvin::Keyed;
 use rand_core::{CryptoRng, RngCore};
 
-#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
+)]
 pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,
