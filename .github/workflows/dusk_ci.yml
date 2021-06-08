@@ -11,7 +11,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
       - uses: actions-rs/cargo@v1
         with:
           command: install
@@ -28,7 +27,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
       - uses: actions-rs/cargo@v1
         with:
           command: check
@@ -41,7 +39,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -55,7 +52,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -69,7 +65,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -83,7 +78,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
       - uses: actions-rs/cargo@v1
         with:
           command: test
