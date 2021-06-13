@@ -10,7 +10,9 @@ use canonical::Canon;
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Annotation, Cardinality, Combine, Compound, Keyed, MaxKey};
+use microkelvin::{
+    AnnoIter, Annotation, Cardinality, Combine, Compound, Keyed, MaxKey,
+};
 
 /// Extends the standard [`PoseidonAnnotation`] with an annotation that holds an agnostic maximum
 /// value
@@ -31,6 +33,15 @@ where
 {
     fn borrow(&self) -> &Cardinality {
         self.poseidon.borrow()
+    }
+}
+
+impl<K> Borrow<PoseidonAnnotation> for PoseidonMaxAnnotation<K>
+where
+    K: Canon + Default + Clone + Ord,
+{
+    fn borrow(&self) -> &PoseidonAnnotation {
+        &self.poseidon
     }
 }
 
@@ -67,20 +78,22 @@ where
     }
 }
 
-impl<C, A, K> Combine<C, A> for PoseidonMaxAnnotation<K>
+impl<A, K> Combine<A> for PoseidonMaxAnnotation<K>
 where
-    C: Compound<A>,
-    C::Leaf: PoseidonLeaf + Keyed<K> + Borrow<u64>,
-    A: Annotation<C::Leaf>
-        + PoseidonTreeAnnotation<C::Leaf>
-        + Borrow<Cardinality>
-        + Borrow<MaxKey<K>>,
+    A: Borrow<Cardinality>
+        + Borrow<MaxKey<K>>
+        + Borrow<PoseidonAnnotation>
+        + Borrow<BlsScalar>,
     K: Canon + Default + Clone + Ord,
 {
-    fn combine(node: &C) -> Self {
+    fn combine<C>(iter: AnnoIter<C, A>) -> Self
+    where
+        C: Compound<A>,
+        A: Annotation<C::Leaf>,
+    {
         PoseidonMaxAnnotation {
-            poseidon: PoseidonAnnotation::combine(node),
-            max: MaxKey::combine(node),
+            poseidon: PoseidonAnnotation::combine(iter.clone()),
+            max: MaxKey::combine(iter),
         }
     }
 }

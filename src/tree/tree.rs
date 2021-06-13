@@ -9,7 +9,7 @@ use crate::Error;
 use canonical::CanonError;
 use canonical_derive::Canon;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Branch, Cardinality, Combine, Nth, Walker};
+use microkelvin::{Branch, Cardinality, Combine, Compound, Nth, Walker};
 use nstack::NStack;
 
 /// Represents a Merkle Tree with a given depth that will be calculated using
@@ -67,7 +67,7 @@ where
 
     /// Append a leaf to the tree. Return the index of the appended leaf.
     pub fn push(&mut self, mut leaf: L) -> Result<u64, Error> {
-        let size = Cardinality::combine(&self.inner).into();
+        let size = Cardinality::combine(self.inner.annotations()).into();
 
         leaf.set_pos(size);
         self.inner.push(leaf).map_err(|_| Error::TreePushFailed)?;

@@ -10,7 +10,7 @@ use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
-use microkelvin::{Annotation, Cardinality, Combine, Compound, IterChild};
+use microkelvin::{AnnoIter, Annotation, Cardinality, Combine, Compound};
 
 /// A microkelvin annotation with the minimum data for a functional poseidon tree
 ///
@@ -57,37 +57,26 @@ where
     }
 }
 
-impl<C, A> Combine<C, A> for PoseidonAnnotation
+impl<A> Combine<A> for PoseidonAnnotation
 where
-    C: Compound<A>,
-    C::Leaf: PoseidonLeaf,
-    A: Annotation<C::Leaf>
-        + PoseidonTreeAnnotation<C::Leaf>
-        + Borrow<Cardinality>,
+    A: Borrow<Cardinality> + Borrow<Self> + Borrow<BlsScalar>,
 {
-    fn combine(node: &C) -> Self {
-        let cardinality = Cardinality::combine(node);
+    fn combine<C>(iter: AnnoIter<C, A>) -> Self
+    where
+        C: Compound<A>,
+        A: Annotation<C::Leaf>,
+    {
+        let cardinality = Cardinality::combine(iter.clone());
 
         let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
         let mut flag = 1;
         let mut mask = 0;
 
-        for (i, child) in node.children().enumerate() {
-            match child {
-                IterChild::Leaf(l) => {
-                    mask |= flag;
-                    perm[i + 1] = l.poseidon_hash();
+        for (i, anno) in iter.enumerate() {
+            mask |= flag;
+            perm[i + 1] = *(*anno).borrow();
 
-                    flag <<= 1;
-                }
-
-                IterChild::Node(n) => {
-                    mask |= flag;
-                    perm[i + 1] = *n.annotation().borrow();
-
-                    flag <<= 1;
-                }
-            }
+            flag <<= 1;
         }
 
         perm[0] = BlsScalar::from(mask);

@@ -18,7 +18,7 @@ dusk-bytes = "0.1"
 dusk-hades = "0.16.0-rc"
 canonical = {version = "0.6", optional = true}
 canonical_derive = {version = "0.6", optional = true}
-microkelvin = {version = "0.7", optional = true}
+microkelvin = {version = "0.8", optional = true}
 nstack = {version = "0.8", optional = true}
 dusk-plonk = {version="0.8", default-features = false, features = ["alloc"]}
 
@@ -63,3 +63,6 @@ lto = true
 incremental = false
 codegen-units = 1
 
+[patch.crates-io]
+microkelvin = { path = "../microkelvin" }
+nstack = { path = "../nstack" }
