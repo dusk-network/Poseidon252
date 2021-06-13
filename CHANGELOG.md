@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Changed the tree logic to be compatible with `microkelvin` 0.8
 - Changed toolchain-file version to nightly-2021-06-06 [#149](https://github.com/dusk-network/poseidon252/issues/149)
 - Change featureset config for the crate [#138](https://github.com/dusk-network/poseidon252/issues/138)
 - Update `error` module to be no_std compatible [#132](https://github.com/dusk-network/poseidon252/issues/132)
