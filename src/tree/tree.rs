@@ -104,8 +104,8 @@ where
     /// Return the current root/state of the tree.
     pub fn root(&self) -> Result<BlsScalar, Error> {
         self.branch(0)
-            .map(|b| b.unwrap_or_default().root().clone())
-            .map_err(|_| Error::TreeBranchFailed)
+            .map(|b| *b.unwrap_or_default().root())
+            .or(Err(Error::TreeBranchFailed))
     }
 
     /// Provides an iterator over the leaves of the tree from a provided starting point.

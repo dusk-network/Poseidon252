@@ -123,7 +123,7 @@ mod tests {
 
         // Generate a secret and a public key for Alice
         let alice_secret = JubJubScalar::random(&mut OsRng);
-        let alice_public = GENERATOR_EXTENDED * &alice_secret;
+        let alice_public = GENERATOR_EXTENDED * alice_secret;
 
         // Generate a shared secret
         let shared_secret = dhke(&bob_secret, &alice_public);

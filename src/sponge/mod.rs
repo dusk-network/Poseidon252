@@ -9,5 +9,3 @@ pub mod truncated;
 
 pub use sponge::sponge_gadget as gadget;
 pub use sponge::sponge_hash as hash;
-pub use truncated::gadget as truncated_gadget;
-pub use truncated::hash as truncated_hash;
