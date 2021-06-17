@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add integration tests with examples of custom walker iterators [#134](https://github.com/dusk-network/poseidon252/issues/134)
+- Add `truncated` module in sponge to deal with scalar conversions [#153](https://github.com/dusk-network/poseidon252/issues/153)
 
 ### Changed
 

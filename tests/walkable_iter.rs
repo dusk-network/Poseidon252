@@ -143,10 +143,10 @@ fn custom_walker_iter() -> Result<(), Error> {
         .into_iter()
         .enumerate()
         .for_each(|(idx, l)| {
-            if l.is_ok() {
+            if let Ok(leaf) = l {
                 leaf_count += 1;
                 // Check that the heights are the expected ones
-                let leaf_height: BlockHeight = *l.unwrap().key();
+                let leaf_height: BlockHeight = *leaf.key();
                 assert_eq!(leaf_height, BlockHeight(idx as u64 + 12));
             }
         });
