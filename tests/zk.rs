@@ -30,9 +30,7 @@ impl MerkleOpeningCircuit {
         tree: &mut Tree,
     ) -> Self {
         let leaf = MockLeaf::random(rng);
-        let pos = tree
-            .push(leaf.clone())
-            .expect("Failed to append to the tree");
+        let pos = tree.push(leaf).expect("Failed to append to the tree");
 
         let branch = tree
             .branch(pos)
