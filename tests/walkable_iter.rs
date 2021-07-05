@@ -11,7 +11,7 @@ use dusk_bls12_381::BlsScalar;
 use dusk_poseidon::tree::{PoseidonLeaf, PoseidonMaxAnnotation, PoseidonTree};
 use dusk_poseidon::Error;
 use microkelvin::{
-    Child, Combine, Compound, Keyed, MaxKey, Step, Walk, Walker,
+    Annotation, Child, Compound, Keyed, MaxKey, Step, Walk, Walker,
 };
 
 #[derive(
@@ -71,7 +71,7 @@ impl<C, A> Walker<C, A> for BlockHeightFilter
 where
     C: Compound<A>,
     C::Leaf: Keyed<BlockHeight>,
-    A: Combine<C, A> + Borrow<MaxKey<BlockHeight>>,
+    A: Annotation<C::Leaf> + Borrow<MaxKey<BlockHeight>>,
 {
     fn walk(&mut self, walk: Walk<C, A>) -> Step {
         for i in 0.. {
@@ -84,12 +84,12 @@ where
                     }
                 }
                 Child::Node(n) => {
-                    let max_node_block_height: u64 =
-                        match n.annotation().borrow() {
+                    let max_node_block_height: BlockHeight =
+                        match *(*n.annotation()).borrow() {
                             MaxKey::NegativeInfinity => return Step::Abort,
-                            MaxKey::Maximum(value) => value.0,
+                            MaxKey::Maximum(value) => value,
                         };
-                    if max_node_block_height >= self.0 {
+                    if max_node_block_height.0 >= self.0 {
                         return Step::Into(i);
                     } else {
                         self.0 -= 1

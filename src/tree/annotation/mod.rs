@@ -8,8 +8,7 @@ use crate::tree::PoseidonLeaf;
 use canonical::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use microkelvin::{Annotation, Cardinality, Combine};
-use nstack::NStack;
+use microkelvin::{Annotation, Cardinality};
 
 mod max;
 mod poseidon;
@@ -20,12 +19,7 @@ pub use poseidon::PoseidonAnnotation;
 /// Any structure that implements this trait is guaranteed to be compatible
 /// as a poseidon tree annotation
 pub trait PoseidonTreeAnnotation<L>:
-    Default
-    + Canon
-    + Annotation<L>
-    + Borrow<Cardinality>
-    + Borrow<BlsScalar>
-    + Combine<NStack<L, Self>, Self>
+    Default + Canon + Annotation<L> + Borrow<Cardinality> + Borrow<BlsScalar>
 where
     L: PoseidonLeaf,
 {
