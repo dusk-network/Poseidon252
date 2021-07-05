@@ -7,7 +7,6 @@
 use super::{PoseidonLeaf, PoseidonTreeAnnotation};
 
 use alloc::vec::Vec;
-use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::iter;
 use core::ops::Deref;
@@ -99,14 +98,13 @@ impl<const DEPTH: usize> AsRef<[PoseidonLevel]> for PoseidonBranch<DEPTH> {
     }
 }
 
-impl<L, A, S, const DEPTH: usize> From<&Branch<'_, NStack<L, A, S>, S>>
+impl<L, A, const DEPTH: usize> From<&Branch<'_, NStack<L, A>, A>>
     for PoseidonBranch<DEPTH>
 where
-    L: PoseidonLeaf<S>,
-    A: PoseidonTreeAnnotation<L, S>,
-    S: Store,
+    L: PoseidonLeaf,
+    A: PoseidonTreeAnnotation<L>,
 {
-    fn from(b: &Branch<'_, NStack<L, A, S>, S>) -> Self {
+    fn from(b: &Branch<'_, NStack<L, A>, A>) -> Self {
         let mut branch = PoseidonBranch::default();
         let mut depth = 0;
 

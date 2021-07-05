@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2021-07-05
+### Added
+
+- Add integration tests with examples of custom walker iterators [#134](https://github.com/dusk-network/poseidon252/issues/134)
+- Add `persistance` feature to the crate [#151](https://github.com/dusk-network/poseidon252/issues/151)
+- Add `truncated` module in sponge to deal with scalar conversions [#153](https://github.com/dusk-network/poseidon252/issues/153)
+
+### Changed
+
+- Change the tree logic to be compatible with `microkelvin v0.9` [#151](https://github.com/dusk-network/poseidon252/issues/151)
+- Changed toolchain-file version to nightly-2021-06-06 [#149](https://github.com/dusk-network/poseidon252/issues/149)
+- Change featureset config for the crate [#138](https://github.com/dusk-network/poseidon252/issues/138)
+- Update `error` module to be no_std compatible [#132](https://github.com/dusk-network/poseidon252/issues/132)
+- Update to latest `dusk-poseidon`, `dusk-bls12_381` and `dusk-jubjub` [#126](https://github.com/dusk-network/poseidon252/issues/126)
+- Update to latest `microkelvin v0.9`, `nstack v0.9` and `canonical v0.6` [#125](https://github.com/dusk-network/poseidon252/issues/125)
+- Update randomness provider to `rand_core` [#127](https://github.com/dusk-network/poseidon252/issues/127)
+- Change trait bound system for `PoseidonTree` [#125](https://github.com/dusk-network/poseidon252/issues/125)
+- Update `PoseidonTreeAnnotation` to be an autotrait [#125](https://github.com/dusk-network/poseidon252/issues/125)
+- Update feature system for the crate [#138](https://github.com/dusk-network/poseidon252/issues/138)
+- Change `PoseidonLeaf` getter methods to return refs [#143](https://github.com/dusk-network/poseidon252/issues/143)
+
+### Removed
+- Remove `anyhow` and `thiserror` from deps [#132](https://github.com/dusk-network/poseidon252/issues/132)
+- Remove `PoseidonWalkableIterator` and `PoseidonWalkableAnnotation` [#125](https://github.com/dusk-network/poseidon252/issues/125)
+- Remove `canon_host` feature checks from CI [#136](https://github.com/dusk-network/poseidon252/issues/136)
+- Remove `anyhow` and `thiserror` usage [#132](https://github.com/dusk-network/poseidon252/issues/132)
+- Remove `microkelvin` requirements from Tree [#146](https://github.com/dusk-network/Poseidon252/issues/146)
+
+### Fixed
+
+- Fix Readme.md import from lib.rs [#148](https://github.com/dusk-network/poseidon252/issues/148)
+
 ## [0.20.0] - 2021-04-06
 
 ### Changed

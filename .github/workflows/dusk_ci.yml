@@ -11,8 +11,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: install
@@ -29,8 +27,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: check
@@ -43,12 +39,11 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
           args: --release
+
   test_nightly_no_std:
     name: Nightly tests no_std
     runs-on: ubuntu-latest
@@ -57,12 +52,11 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
           args: --release --no-default-features
+
   test_nightly_canon_std:
     name: Nightly tests canon std
     runs-on: ubuntu-latest
@@ -71,8 +65,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -86,50 +78,10 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
-          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
           args: --release --no-default-features --features canon
-          
-  test_nightly_canon_host_std:
-    name: Nightly tests canon_host std
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --features canon_host
-      - uses: actions-rs/cargo@v1
-        with:
-          comand: test
-          args: --release --features canon_host
-
-  test_nightly_canon_host_no_std:
-    name: Nightly tests canon_host no_std
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --features canon_host
-      - uses: actions-rs/cargo@v1
-        with:
-          comand: test
-          args: --release --no-default-features --features canon_host
 
   fmt:
     name: Rustfmt
@@ -139,8 +91,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2020-10-25
-          override: true
       - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
         with:

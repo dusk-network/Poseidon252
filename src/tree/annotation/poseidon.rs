@@ -6,74 +6,24 @@
 
 use super::PoseidonTreeAnnotation;
 use crate::tree::PoseidonLeaf;
-use canonical::{Canon, Store};
 use canonical_derive::Canon;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
-use microkelvin::{Annotation, Cardinality};
-use nstack::NStack;
+use microkelvin::{AnnoIter, Annotation, Cardinality, Combine, Compound};
 
 /// A microkelvin annotation with the minimum data for a functional poseidon tree
 ///
 /// The recommended usage for extended annotations for poseidon trees is to have
 /// this structure as attribute of the concrete annotation, and reflect the borrows
 /// of the cardinality and scalar to the poseidon annotation implementation.
-#[derive(Debug, Clone, Canon)]
+#[derive(Debug, Clone, Canon, Default)]
 pub struct PoseidonAnnotation {
     cardinality: Cardinality,
     poseidon_root: BlsScalar,
 }
 
 impl PoseidonAnnotation {
-    /// Create a new poseidon annotation from a generic node implementation
-    pub fn from_generic_node<L, A, S>(node: &NStack<L, A, S>) -> Self
-    where
-        L: PoseidonLeaf<S>,
-        A: PoseidonTreeAnnotation<L, S>,
-        S: Store,
-    {
-        let cardinality =
-            <Cardinality as Annotation<NStack<L, A, S>, S>>::from_node(node);
-
-        let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
-        let mut flag = 1;
-        let mut mask = 0;
-
-        match node {
-            NStack::Leaf(l) => {
-                l.iter().zip(perm.iter_mut().skip(1)).for_each(|(l, p)| {
-                    if let Some(l) = l {
-                        mask |= flag;
-                        *p = l.poseidon_hash();
-                    }
-
-                    flag <<= 1;
-                });
-            }
-
-            NStack::Node(n) => {
-                n.iter().zip(perm.iter_mut().skip(1)).for_each(|(n, p)| {
-                    if let Some(n) = n {
-                        mask |= flag;
-                        *p = *n.annotation().borrow();
-                    }
-
-                    flag <<= 1;
-                });
-            }
-        }
-
-        perm[0] = BlsScalar::from(mask);
-        ScalarStrategy::new().perm(&mut perm);
-        let poseidon_root = perm[1];
-
-        Self {
-            cardinality,
-            poseidon_root,
-        }
-    }
-
     /// Return the scalar representation of the root of the annotated subtree
     pub fn poseidon_root(&self) -> &BlsScalar {
         &self.poseidon_root
@@ -92,30 +42,12 @@ impl Borrow<BlsScalar> for PoseidonAnnotation {
     }
 }
 
-impl<L, S> Annotation<NStack<L, PoseidonAnnotation, S>, S>
-    for PoseidonAnnotation
+impl<L> Annotation<L> for PoseidonAnnotation
 where
-    L: PoseidonLeaf<S>,
-    S: Store,
+    L: PoseidonLeaf,
 {
-    fn identity() -> Self {
-        let cardinality = <Cardinality as Annotation<
-            NStack<L, PoseidonAnnotation, S>,
-            S,
-        >>::identity();
-        let poseidon_root = BlsScalar::zero();
-
-        Self {
-            cardinality,
-            poseidon_root,
-        }
-    }
-
     fn from_leaf(leaf: &L) -> Self {
-        let cardinality = <Cardinality as Annotation<
-            NStack<L, PoseidonAnnotation, S>,
-            S,
-        >>::from_leaf(leaf);
+        let cardinality = Cardinality::from_leaf(leaf);
         let poseidon_root = leaf.poseidon_hash();
 
         Self {
@@ -123,15 +55,39 @@ where
             poseidon_root,
         }
     }
+}
 
-    fn from_node(node: &NStack<L, PoseidonAnnotation, S>) -> Self {
-        Self::from_generic_node(node)
+impl<A> Combine<A> for PoseidonAnnotation
+where
+    A: Borrow<Cardinality> + Borrow<Self> + Borrow<BlsScalar>,
+{
+    fn combine<C>(iter: AnnoIter<C, A>) -> Self
+    where
+        C: Compound<A>,
+        A: Annotation<C::Leaf>,
+    {
+        let cardinality = Cardinality::combine(iter.clone());
+
+        let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
+        let mut flag = 1;
+        let mut mask = 0;
+
+        for (i, anno) in iter.enumerate() {
+            mask |= flag;
+            perm[i + 1] = *(*anno).borrow();
+
+            flag <<= 1;
+        }
+
+        perm[0] = BlsScalar::from(mask);
+        ScalarStrategy::new().perm(&mut perm);
+        let poseidon_root = perm[1];
+
+        Self {
+            cardinality,
+            poseidon_root,
+        }
     }
 }
 
-impl<L, S> PoseidonTreeAnnotation<L, S> for PoseidonAnnotation
-where
-    L: PoseidonLeaf<S>,
-    S: Store,
-{
-}
+impl<L> PoseidonTreeAnnotation<L> for PoseidonAnnotation where L: PoseidonLeaf {}

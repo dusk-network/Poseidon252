@@ -4,22 +4,30 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::tree::{
-    PoseidonAnnotation, PoseidonLeaf, PoseidonMaxAnnotation, PoseidonTree,
-};
-use canonical::Canon;
+#![cfg(feature = "canon")]
 use canonical_derive::Canon;
-use canonical_host::MemStore;
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
-use rand::{CryptoRng, RngCore};
+use dusk_poseidon::tree::{
+    PoseidonAnnotation, PoseidonLeaf, PoseidonMaxAnnotation, PoseidonTree,
+};
+use microkelvin::Keyed;
+use rand_core::{CryptoRng, RngCore};
 
-#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
+)]
 pub struct MockLeaf {
     s: BlsScalar,
     pub pos: u64,
     pub expiration: u64,
+}
+
+impl Keyed<u64> for MockLeaf {
+    fn key(&self) -> &u64 {
+        &self.pos
+    }
 }
 
 impl MockLeaf {
@@ -42,13 +50,13 @@ impl From<u64> for MockLeaf {
     }
 }
 
-impl PoseidonLeaf<MemStore> for MockLeaf {
+impl PoseidonLeaf for MockLeaf {
     fn poseidon_hash(&self) -> BlsScalar {
         self.s
     }
 
-    fn pos(&self) -> u64 {
-        self.pos
+    fn pos(&self) -> &u64 {
+        &self.pos
     }
 
     fn set_pos(&mut self, pos: u64) {
@@ -64,21 +72,21 @@ impl Borrow<u64> for MockLeaf {
 
 #[test]
 fn tree_append_fetch() {
-    const MAX: usize = 4097;
-    let mut v = [MockLeaf::default(); MAX];
+    const MAX: u64 = 4097;
+    let mut v = [MockLeaf::default(); MAX as usize];
 
-    let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, 17> =
+    let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, 17> =
         PoseidonTree::new();
     for i in 0..MAX {
-        let mut s = MockLeaf::from(i as u64);
+        let mut s = MockLeaf::from(i);
         let pos = tree.push(s).unwrap();
         assert_eq!(i, pos);
-        s.pos = i as u64;
-        v[i] = s;
+        s.pos = i;
+        v[i as usize] = s;
     }
 
     v.iter().enumerate().for_each(|(i, s)| {
-        let l = tree.get(i).unwrap().unwrap();
+        let l = tree.get(i as u64).unwrap().unwrap();
         assert_eq!(s, &l);
     });
 
@@ -90,38 +98,35 @@ fn tree_append_fetch() {
 
 #[test]
 fn tree_max_walk() {
-    const MAX: usize = 1025;
-    let mut v = [MockLeaf::default(); MAX];
+    const MAX: u64 = 1025;
 
-    let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation, MemStore, 17> =
+    let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation<u64>, 17> =
         PoseidonTree::new();
     for i in 0..MAX {
-        let mut s = MockLeaf::from(i as u64);
+        let s = MockLeaf::from(i as u64);
         let pos = tree.push(s).unwrap();
         assert_eq!(i, pos);
-        s.pos = i as u64;
-        v[i] = s;
     }
 
     let w = 170;
     let pos = w * 3;
-    tree.iter_walk(w)
+    tree.iter_walk(pos)
         .unwrap()
+        .into_iter()
         .map(|l| l.unwrap())
         .enumerate()
         .for_each(|(i, leaf)| {
-            assert_eq!(pos + i as u64, leaf.pos());
+            assert_eq!(pos + i as u64, *leaf.pos());
         });
 
-    assert!(tree.iter_walk((MAX + 1) as u64).unwrap().next().is_none());
+    assert!(tree.iter_walk((MAX + 1) as u64).is_err());
 }
 
 #[test]
 fn tree_max_walk_non_continuous() {
-    const MAX: usize = 1025;
-    let mut v = [MockLeaf::default(); MAX];
+    const MAX: u64 = 1025u64;
 
-    let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation, MemStore, 17> =
+    let mut tree: PoseidonTree<MockLeaf, PoseidonMaxAnnotation<u64>, 17> =
         PoseidonTree::new();
 
     for i in 0..MAX {
@@ -130,27 +135,25 @@ fn tree_max_walk_non_continuous() {
         if i % 4 == 0 {
             s.expiration = 0;
         }
-
         let pos = tree.push(s).unwrap();
         assert_eq!(i, pos);
-        s.pos = i as u64;
-        v[i] = s;
     }
 
     let w = 170;
     let mut pos = w * 3;
-    tree.iter_walk(w)
+    tree.iter_walk(pos)
         .unwrap()
+        .into_iter()
         .map(|l| l.unwrap())
         .for_each(|leaf| {
             if pos % 4 == 0 {
-                pos += 1;
+                //pos += 1;
             }
-            assert_eq!(pos, leaf.pos());
+            assert_eq!(pos, *leaf.pos());
             pos += 1;
         });
 
-    assert!(tree.iter_walk((MAX + 1) as u64).unwrap().next().is_none());
+    assert!(tree.iter_walk((MAX + 1) as u64).is_err());
 }
 
 #[test]
@@ -168,12 +171,8 @@ fn tree_branch_leaf() {
     .for_each(|w| {
         let w = *w;
 
-        let mut tree: PoseidonTree<
-            MockLeaf,
-            PoseidonAnnotation,
-            MemStore,
-            DEPTH,
-        > = PoseidonTree::new();
+        let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, DEPTH> =
+            PoseidonTree::new();
 
         for i in 0..w {
             let l = MockLeaf::from(i as u64);
@@ -207,7 +206,7 @@ fn tree_branch_leaf() {
 #[test]
 fn tree_branch_depth() {
     let mut h = ScalarStrategy::new();
-    let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, MemStore, 17> =
+    let mut tree: PoseidonTree<MockLeaf, PoseidonAnnotation, 17> =
         PoseidonTree::new();
 
     let leaf = MockLeaf::from(1);

@@ -7,8 +7,6 @@
 use crate::Error;
 
 #[cfg(feature = "canon")]
-use canonical::Canon;
-#[cfg(feature = "canon")]
 use canonical_derive::Canon;
 
 use dusk_bls12_381::BlsScalar;
@@ -140,7 +138,7 @@ impl PoseidonCipher {
         &self,
         secret: &JubJubAffine,
         nonce: &BlsScalar,
-    ) -> Result<[BlsScalar; MESSAGE_CAPACITY], Error<()>> {
+    ) -> Result<[BlsScalar; MESSAGE_CAPACITY], Error> {
         let zero = BlsScalar::zero();
         let mut strategy = ScalarStrategy::new();
 

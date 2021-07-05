@@ -1,6 +1,6 @@
 [package]
 name = "dusk-poseidon"
-version = "0.20.0"
+version = "0.21.0"
 authors = [
   "zer0 <matteo@dusk.network>", "vlopes11 <victor@dusk.network>", "CPerezz <carlos@dusk.network>", "Kristoffer Ström <kristoffer@dusk.network>"
 ]
@@ -12,34 +12,28 @@ license = "MPL-2.0"
 repository = "https://github.com/dusk-network/poseidon252"
 
 [dependencies]
-dusk-bls12_381 = {version = "0.6", default-features = false}
-dusk-jubjub = {version = "0.8", default-features = false}
+dusk-bls12_381 = {version = "0.8", default-features = false}
+dusk-jubjub = {version = "0.10", default-features = false}
 dusk-bytes = "0.1"
-dusk-hades = { version = "0.15", default-features = false }
-canonical = {version = "0.5", optional = true}
-canonical_derive = {version = "0.5", optional = true}
-microkelvin = {version = "0.6", optional = true}
-nstack = {version = "0.7", optional = true}
-
-dusk-plonk = {version="0.7", default-features = false, optional = true}
-anyhow = { version = "1.0", optional = true }
-thiserror = { version = "1.0", optional = true }
+dusk-hades = "0.16"
+canonical = {version = "0.6", optional = true}
+canonical_derive = {version = "0.6", optional = true}
+microkelvin = {version = "0.9", optional = true}
+nstack = {version = "0.9", optional = true}
+dusk-plonk = {version="0.8", default-features = false, features = ["alloc"]}
 
 [dev-dependencies]
-canonical_host = "0.5"
-rand = "0.7"
+rand_core = {version="0.6", default-features=false}
 criterion = "0.3"
 
 [features]
-default = ["std"]
+default = ["std", "canon"]
 alloc = []
 std = [
-    "dusk-hades/default",
+    "dusk-plonk/default",
+    "dusk-hades/plonk-std",
     "dusk-bls12_381/default",
     "dusk-jubjub/std",
-    "dusk-plonk",
-    "anyhow",
-    "thiserror"
 ]
 canon = [
     "dusk-bls12_381/canon",
@@ -50,10 +44,7 @@ canon = [
     "nstack",
     "alloc"
 ]
-canon_host = [
-    "canon",
-    "canonical/host"
-]
+persistance = ["microkelvin/persistance"]
 
 [profile.dev]
 opt-level = 3
