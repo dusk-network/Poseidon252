@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Update `microkelvin` from `0.6` to `0.10.0-rc` #158
+- Update `nstack` from `0.9` to `0.10.0-rc` #158
+
 ## [0.21.0] - 2021-07-05
 ### Added
 
