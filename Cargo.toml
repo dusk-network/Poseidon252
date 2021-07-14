@@ -1,6 +1,6 @@
 [package]
 name = "dusk-poseidon"
-version = "0.21.0"
+version = "0.22.0-rc.0"
 authors = [
   "zer0 <matteo@dusk.network>", "vlopes11 <victor@dusk.network>", "CPerezz <carlos@dusk.network>", "Kristoffer Ström <kristoffer@dusk.network>"
 ]
