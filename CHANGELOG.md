@@ -7,49 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2021-07-27
+
 ### Changed
 
-- Update `microkelvin` from `0.6` to `0.10.0-rc` #158
-- Update `nstack` from `0.9` to `0.10.0-rc` #158
+- Update `microkelvin` from `0.6` to `0.10` [#158]
+- Update `nstack` from `0.9` to `0.10` [#158]
 
 ## [0.21.0] - 2021-07-05
+
 ### Added
 
-- Add integration tests with examples of custom walker iterators [#134](https://github.com/dusk-network/poseidon252/issues/134)
-- Add `persistance` feature to the crate [#151](https://github.com/dusk-network/poseidon252/issues/151)
-- Add `truncated` module in sponge to deal with scalar conversions [#153](https://github.com/dusk-network/poseidon252/issues/153)
+- Add integration tests with examples of custom walker iterators [#134]
+- Add `persistance` feature to the crate [#151]
+- Add `truncated` module in sponge to deal with scalar conversions [#153]
 
 ### Changed
 
-- Change the tree logic to be compatible with `microkelvin v0.9` [#151](https://github.com/dusk-network/poseidon252/issues/151)
-- Changed toolchain-file version to nightly-2021-06-06 [#149](https://github.com/dusk-network/poseidon252/issues/149)
-- Change featureset config for the crate [#138](https://github.com/dusk-network/poseidon252/issues/138)
-- Update `error` module to be no_std compatible [#132](https://github.com/dusk-network/poseidon252/issues/132)
-- Update to latest `dusk-poseidon`, `dusk-bls12_381` and `dusk-jubjub` [#126](https://github.com/dusk-network/poseidon252/issues/126)
-- Update to latest `microkelvin v0.9`, `nstack v0.9` and `canonical v0.6` [#125](https://github.com/dusk-network/poseidon252/issues/125)
-- Update randomness provider to `rand_core` [#127](https://github.com/dusk-network/poseidon252/issues/127)
-- Change trait bound system for `PoseidonTree` [#125](https://github.com/dusk-network/poseidon252/issues/125)
-- Update `PoseidonTreeAnnotation` to be an autotrait [#125](https://github.com/dusk-network/poseidon252/issues/125)
-- Update feature system for the crate [#138](https://github.com/dusk-network/poseidon252/issues/138)
-- Change `PoseidonLeaf` getter methods to return refs [#143](https://github.com/dusk-network/poseidon252/issues/143)
+- Change the tree logic to be compatible with `microkelvin v0.9` [#151]
+- Changed toolchain-file version to nightly-2021-06-06 [#149]
+- Change featureset config for the crate [#138]
+- Update `error` module to be no_std compatible [#132]
+- Update to latest `dusk-poseidon`, `dusk-bls12_381` and `dusk-jubjub` [#126]
+- Update to latest `microkelvin v0.9`, `nstack v0.9` and `canonical v0.6` [#125]
+- Update randomness provider to `rand_core` [#127]
+- Change trait bound system for `PoseidonTree` [#125]
+- Update `PoseidonTreeAnnotation` to be an autotrait [#125]
+- Update feature system for the crate [#138]
+- Change `PoseidonLeaf` getter methods to return refs [#143]
 
 ### Removed
-- Remove `anyhow` and `thiserror` from deps [#132](https://github.com/dusk-network/poseidon252/issues/132)
-- Remove `PoseidonWalkableIterator` and `PoseidonWalkableAnnotation` [#125](https://github.com/dusk-network/poseidon252/issues/125)
-- Remove `canon_host` feature checks from CI [#136](https://github.com/dusk-network/poseidon252/issues/136)
-- Remove `anyhow` and `thiserror` usage [#132](https://github.com/dusk-network/poseidon252/issues/132)
-- Remove `microkelvin` requirements from Tree [#146](https://github.com/dusk-network/Poseidon252/issues/146)
+- Remove `anyhow` and `thiserror` from deps [#132]
+- Remove `PoseidonWalkableIterator` and `PoseidonWalkableAnnotation` [#125]
+- Remove `canon_host` feature checks from CI [#136]
+- Remove `anyhow` and `thiserror` usage [#132]
+- Remove `microkelvin` requirements from Tree [#146]
 
 ### Fixed
 
-- Fix Readme.md import from lib.rs [#148](https://github.com/dusk-network/poseidon252/issues/148)
+- Fix Readme.md import from lib.rs [#148]
 
 ## [0.20.0] - 2021-04-06
 
 ### Changed
 
-- Update `dusk-plonk` from `0.6` to `0.7` #119
-- Update `dusk-hades` from `0.14` to `0.15` #119
+- Update `dusk-plonk` from `0.6` to `0.7` [#119]
+- Update `dusk-hades` from `0.14` to `0.15` [#119]
 
 ### Fixed
 
@@ -59,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update `dusk-plonk` from `0.5` to `0.6` #117
+- Update `dusk-plonk` from `0.5` to `0.6` [#117]
 - Update `dusk-hades` from `0.13` to `0.14`
 
 ## [0.18.0] - 2021-02-11
@@ -77,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- PoseidonBranch minimum depth fixed. [#112](https://github.com/dusk-network/poseidon252/issues/112)
+- PoseidonBranch minimum depth fixed. [#112]
 
 ## [0.16.0] - 2021-01-27
 
@@ -274,3 +277,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Poseidon252 Sponge-hash impl with BulletProofs.
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
+
+[#158]: https://github.com/dusk-network/poseidon252/issues/158
+[#153]: https://github.com/dusk-network/poseidon252/issues/153
+[#151]: https://github.com/dusk-network/poseidon252/issues/151
+[#149]: https://github.com/dusk-network/poseidon252/issues/149
+[#148]: https://github.com/dusk-network/poseidon252/issues/148
+[#146]: https://github.com/dusk-network/poseidon252/issues/146
+[#143]: https://github.com/dusk-network/poseidon252/issues/143
+[#138]: https://github.com/dusk-network/poseidon252/issues/138
+[#136]: https://github.com/dusk-network/poseidon252/issues/136
+[#134]: https://github.com/dusk-network/poseidon252/issues/134
+[#132]: https://github.com/dusk-network/poseidon252/issues/132
+[#127]: https://github.com/dusk-network/poseidon252/issues/127
+[#126]: https://github.com/dusk-network/poseidon252/issues/126
+[#125]: https://github.com/dusk-network/poseidon252/issues/125
+[#122]: https://github.com/dusk-network/poseidon252/issues/122
+[#119]: https://github.com/dusk-network/poseidon252/issues/119
+[#117]: https://github.com/dusk-network/poseidon252/issues/117
+[#112]: https://github.com/dusk-network/poseidon252/issues/112
+[unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.22.0...HEAD
+[0.22.0]: https://github.com/dusk-network/poseidon252/compare/v0.20.0...v0.22.0
+[0.20.0]: https://github.com/dusk-network/poseidon252/compare/v0.19.0...v0.20.0
+[0.19.0]: https://github.com/dusk-network/poseidon252/compare/v0.18.0...v0.19.0
+[0.18.0]: https://github.com/dusk-network/poseidon252/compare/v0.17.0...v0.18.0
+[0.17.0]: https://github.com/dusk-network/poseidon252/compare/v0.15.0...v0.17.0
+[0.15.0]: https://github.com/dusk-network/poseidon252/compare/v0.14.1...v0.15.0
+[0.14.1]: https://github.com/dusk-network/poseidon252/compare/v0.14.0...v0.14.1
+[0.14.0]: https://github.com/dusk-network/poseidon252/compare/v0.13.2...v0.14.0
+[0.13.2]: https://github.com/dusk-network/poseidon252/compare/v0.13.1...v0.13.2
+[0.13.1]: https://github.com/dusk-network/poseidon252/compare/v0.13.0...v0.13.1
+[0.13.0]: https://github.com/dusk-network/poseidon252/compare/v0.12.0...v0.13.0
+[0.12.0]: https://github.com/dusk-network/poseidon252/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/dusk-network/poseidon252/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/dusk-network/poseidon252/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/dusk-network/poseidon252/compare/v0.8.1...v0.9.0
+[0.8.1]: https://github.com/dusk-network/poseidon252/compare/v0.8.0...v0.8.1
+[0.8.0]: https://github.com/dusk-network/poseidon252/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/dusk-network/poseidon252/compare/v0.6.4...v0.7.0
+[0.6.4]: https://github.com/dusk-network/poseidon252/compare/v0.6.3...v0.6.4
+[0.6.3]: https://github.com/dusk-network/poseidon252/compare/v0.6.2...v0.6.3
+[0.6.2]: https://github.com/dusk-network/poseidon252/compare/v0.6.1...v0.6.2
+[0.6.1]: https://github.com/dusk-network/poseidon252/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/dusk-network/poseidon252/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/dusk-network/poseidon252/releases/tag/v0.5.0
