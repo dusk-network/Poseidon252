@@ -12,9 +12,12 @@ use dusk_plonk::prelude::*;
 pub fn merkle_opening<const DEPTH: usize>(
     composer: &mut StandardComposer,
     branch: &PoseidonBranch<DEPTH>,
+    leaf: Variable,
 ) -> Variable {
     // Generate and constraint zero.
     let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
+
+    let mut base = true;
     let mut root = zero;
 
     // Generate a permutation container
@@ -43,7 +46,13 @@ pub fn merkle_opening<const DEPTH: usize>(
         });
         composer.constrain_to_constant(sum, BlsScalar::one(), None);
 
-        let leaf = composer.add_input(**level);
+        let needle = composer.add_input(**level);
+
+        if base {
+            composer.assert_equal(leaf, needle);
+            base = false;
+        }
+
         level
             .as_ref()
             .iter()
@@ -66,7 +75,7 @@ pub fn merkle_opening<const DEPTH: usize>(
                     let b = composer.mul(
                         BlsScalar::one(),
                         b,
-                        leaf,
+                        needle,
                         BlsScalar::zero(),
                         None,
                     );

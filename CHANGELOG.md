@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Change merkle opening to constrain leaf [#162]
+
 ## [0.22.0] - 2021-07-27
 
 ### Changed
@@ -278,6 +280,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Poseidon252 Sponge-hash impl with BulletProofs.
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
+[#162]: https://github.com/dusk-network/poseidon252/issues/162
 [#158]: https://github.com/dusk-network/poseidon252/issues/158
 [#153]: https://github.com/dusk-network/poseidon252/issues/153
 [#151]: https://github.com/dusk-network/poseidon252/issues/151
