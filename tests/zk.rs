@@ -54,8 +54,15 @@ impl Circuit for MerkleOpeningCircuit {
         &mut self,
         composer: &mut StandardComposer,
     ) -> Result<(), PlonkError> {
+        use std::ops::Deref;
+
+        let leaf: BlsScalar = *self.branch.deref();
         let root = self.branch.root();
-        let root_p = tree::merkle_opening::<DEPTH>(composer, &self.branch);
+
+        let leaf = composer.add_input(leaf);
+
+        let root_p =
+            tree::merkle_opening::<DEPTH>(composer, &self.branch, leaf);
 
         composer.constrain_to_constant(root_p, BlsScalar::zero(), Some(-root));
 

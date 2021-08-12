@@ -27,6 +27,12 @@
 //!     pos: u64,
 //! }
 //!
+//! impl DataLeaf {
+//!     pub const fn data(&self) -> &BlsScalar {
+//!         &self.data
+//!     }
+//! }
+//!
 //! // Example helper
 //! impl From<u64> for DataLeaf {
 //!     fn from(n: u64) -> DataLeaf {
@@ -73,10 +79,13 @@
 //!     let gadget_tester = |composer: &mut StandardComposer,
 //!                          tree: &PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH>,
 //!                          n: usize| {
+//!         let leaf = tree.get(n as u64).unwrap().unwrap();
+//!         let leaf = composer.add_input(*leaf.data());
+//!
 //!         let branch = tree.branch(n as u64).unwrap().unwrap();
 //!         let root = tree.root().unwrap();
 //!
-//!         let root_p = merkle_opening::<DEPTH>(composer, &branch);
+//!         let root_p = merkle_opening::<DEPTH>(composer, &branch, leaf);
 //!         composer.constrain_to_constant(root_p, BlsScalar::zero(), Some(-root));
 //!     };
 //!
