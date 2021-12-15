@@ -86,10 +86,10 @@
 //! ```
 
 mod cipher;
-
-#[cfg(test)]
-mod tests;
-
-mod zk;
 pub use cipher::PoseidonCipher;
+
+#[cfg(feature = "alloc")]
+mod zk;
+
+#[cfg(feature = "alloc")]
 pub use zk::{decrypt, encrypt};
