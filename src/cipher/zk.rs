@@ -5,25 +5,24 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::cipher::PoseidonCipher;
-use dusk_bls12_381::BlsScalar;
-use dusk_hades::strategies::{GadgetStrategy, Strategy};
-use dusk_plonk::constraint_system::ecc::Point;
+use dusk_hades::GadgetStrategy;
+
 use dusk_plonk::prelude::*;
 
 impl PoseidonCipher {
     /// Returns the initial state of the encryption within a composer circuit
     pub fn initial_state_circuit(
-        composer: &mut StandardComposer,
-        ks0: Variable,
-        ks1: Variable,
-        nonce: Variable,
-    ) -> [Variable; dusk_hades::WIDTH] {
+        composer: &mut TurboComposer,
+        ks0: Witness,
+        ks1: Witness,
+        nonce: Witness,
+    ) -> [Witness; dusk_hades::WIDTH] {
         let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
-        let domain = composer.add_witness_to_circuit_description(domain);
+        let domain = composer.append_constant(domain);
 
         let length =
             BlsScalar::from_raw([PoseidonCipher::capacity() as u64, 0, 0, 0]);
-        let length = composer.add_witness_to_circuit_description(length);
+        let length = composer.append_constant(length);
 
         [domain, length, ks0, ks1, nonce]
     }
@@ -34,36 +33,35 @@ impl PoseidonCipher {
 ///
 /// The returned set of variables is the cipher text
 pub fn encrypt(
-    composer: &mut StandardComposer,
-    shared_secret: &Point,
-    nonce: Variable,
-    message: &[Variable],
-) -> [Variable; PoseidonCipher::cipher_size()] {
-    let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
+    composer: &mut TurboComposer,
+    shared_secret: &WitnessPoint,
+    nonce: Witness,
+    message: &[Witness],
+) -> [Witness; PoseidonCipher::cipher_size()] {
+    let zero = TurboComposer::constant_zero();
 
     let ks0 = *shared_secret.x();
     let ks1 = *shared_secret.y();
 
     let mut cipher = [zero; PoseidonCipher::cipher_size()];
+
     let mut state =
         PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 
-    GadgetStrategy::new(composer).perm(&mut state);
+    GadgetStrategy::gadget(composer, &mut state);
 
     (0..PoseidonCipher::capacity()).for_each(|i| {
         let x = if i < message.len() { message[i] } else { zero };
 
-        state[i + 1] = composer.add(
-            (BlsScalar::one(), state[i + 1]),
-            (BlsScalar::one(), x),
-            BlsScalar::zero(),
-            None,
-        );
+        let constraint =
+            Constraint::new().left(1).a(state[i + 1]).right(1).b(x);
+
+        state[i + 1] = composer.gate_add(constraint);
 
         cipher[i] = state[i + 1];
     });
 
-    GadgetStrategy::new(composer).perm(&mut state);
+    GadgetStrategy::gadget(composer, &mut state);
     cipher[PoseidonCipher::capacity()] = state[1];
 
     cipher
@@ -74,12 +72,12 @@ pub fn encrypt(
 ///
 /// The returned set of variables is the original message
 pub fn decrypt(
-    composer: &mut StandardComposer,
-    shared_secret: &Point,
-    nonce: Variable,
-    cipher: &[Variable],
-) -> [Variable; PoseidonCipher::capacity()] {
-    let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
+    composer: &mut TurboComposer,
+    shared_secret: &WitnessPoint,
+    nonce: Witness,
+    cipher: &[Witness],
+) -> [Witness; PoseidonCipher::capacity()] {
+    let zero = TurboComposer::constant_zero();
 
     let ks0 = *shared_secret.x();
     let ks1 = *shared_secret.y();
@@ -88,129 +86,23 @@ pub fn decrypt(
     let mut state =
         PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 
-    GadgetStrategy::new(composer).perm(&mut state);
+    GadgetStrategy::gadget(composer, &mut state);
 
     (0..PoseidonCipher::capacity()).for_each(|i| {
-        message[i] = composer.add(
-            (BlsScalar::one(), cipher[i]),
-            (-BlsScalar::one(), state[i + 1]),
-            BlsScalar::zero(),
-            None,
-        );
+        let constraint = Constraint::new()
+            .left(1)
+            .a(cipher[i])
+            .right(-BlsScalar::one())
+            .b(state[i + 1]);
+
+        message[i] = composer.gate_add(constraint);
 
         state[i + 1] = cipher[i];
     });
 
-    GadgetStrategy::new(composer).perm(&mut state);
+    GadgetStrategy::gadget(composer, &mut state);
 
     composer.assert_equal(cipher[PoseidonCipher::capacity()], state[1]);
 
     message
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::cipher::{decrypt, encrypt, PoseidonCipher};
-    use dusk_bls12_381::BlsScalar;
-    use dusk_jubjub::{dhke, JubJubExtended, GENERATOR_EXTENDED};
-    use dusk_plonk::prelude::*;
-    use rand_core::OsRng;
-
-    #[test]
-    fn gadget() -> Result<(), Error> {
-        // Generate a secret and a public key for Bob
-        let bob_secret = JubJubScalar::random(&mut OsRng);
-
-        // Generate a secret and a public key for Alice
-        let alice_secret = JubJubScalar::random(&mut OsRng);
-        let alice_public = GENERATOR_EXTENDED * alice_secret;
-
-        // Generate a shared secret
-        let shared_secret = dhke(&bob_secret, &alice_public);
-
-        // Generate a secret message
-        let a = BlsScalar::random(&mut OsRng);
-        let b = BlsScalar::random(&mut OsRng);
-        let message = [a, b];
-
-        // Perform the encryption
-        let nonce = BlsScalar::random(&mut OsRng);
-        let cipher = PoseidonCipher::encrypt(&message, &shared_secret, &nonce);
-
-        let size = 13;
-        let pp = PublicParameters::setup(1 << size, &mut OsRng)?;
-        let (ck, vk) = pp.trim(1 << size)?;
-
-        let label = b"poseidon-cipher";
-
-        let circuit = |composer: &mut StandardComposer,
-                       secret: JubJubScalar,
-                       public: JubJubExtended,
-                       nonce: BlsScalar,
-                       message: &[BlsScalar],
-                       cipher: &[BlsScalar]| {
-            let zero =
-                composer.add_witness_to_circuit_description(BlsScalar::zero());
-            let nonce = composer.add_input(nonce);
-
-            let secret = composer.add_input((secret).into());
-            let public = composer.add_affine(public.into());
-
-            let shared = composer.variable_base_scalar_mul(secret, public);
-
-            let mut message_circuit = [zero; PoseidonCipher::capacity()];
-            message.iter().zip(message_circuit.iter_mut()).for_each(
-                |(m, v)| {
-                    *v = composer.add_input(*m);
-                },
-            );
-
-            let cipher_gadget =
-                encrypt(composer, &shared, nonce, &message_circuit);
-
-            cipher.iter().zip(cipher_gadget.iter()).for_each(|(c, g)| {
-                let x = composer.add_input(*c);
-                composer.assert_equal(x, *g);
-            });
-
-            let message_gadget =
-                decrypt(composer, &shared, nonce, &cipher_gadget);
-
-            message
-                .iter()
-                .zip(message_gadget.iter())
-                .for_each(|(m, g)| {
-                    let x = composer.add_input(*m);
-                    composer.assert_equal(x, *g);
-                });
-        };
-
-        let mut prover = Prover::new(label);
-        circuit(
-            prover.mut_cs(),
-            bob_secret,
-            alice_public,
-            nonce,
-            &message,
-            cipher.cipher(),
-        );
-        prover.preprocess(&ck)?;
-        let proof = prover.prove(&ck)?;
-
-        let mut verifier = Verifier::new(label);
-
-        circuit(
-            verifier.mut_cs(),
-            JubJubScalar::zero(),
-            GENERATOR_EXTENDED,
-            nonce,
-            &[BlsScalar::zero(); PoseidonCipher::capacity()],
-            cipher.cipher(),
-        );
-        verifier.preprocess(&ck)?;
-
-        assert!(verifier.verify(&proof, &vk, &[BlsScalar::zero()]).is_ok());
-
-        Ok(())
-    }
 }

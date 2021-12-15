@@ -13,14 +13,16 @@ extern crate alloc;
 
 /// Encryption and decryption implementation over a Poseidon cipher
 pub mod cipher;
+
 /// Module containing a fixed-length Poseidon hash implementation
 pub mod perm_uses;
+
 /// Reference implementation for the Poseidon Sponge hash function
 pub mod sponge;
+
+mod error;
 /// The module handling posedion-trees.
 #[cfg(feature = "canon")]
 pub mod tree;
-
-mod error;
 
 pub use error::Error;

@@ -5,17 +5,17 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use super::PoseidonBranch;
-use dusk_hades::{GadgetStrategy, Strategy};
+use dusk_hades::GadgetStrategy;
+
 use dusk_plonk::prelude::*;
 
 /// Perform a merkle opening for a given branch and return the calculated root
 pub fn merkle_opening<const DEPTH: usize>(
-    composer: &mut StandardComposer,
+    composer: &mut TurboComposer,
     branch: &PoseidonBranch<DEPTH>,
-    leaf: Variable,
-) -> Variable {
-    // Generate and constraint zero.
-    let zero = composer.add_witness_to_circuit_description(BlsScalar::zero());
+    leaf: Witness,
+) -> Witness {
+    let zero = TurboComposer::constant_zero();
 
     let mut base = true;
     let mut root = zero;
@@ -29,25 +29,22 @@ pub fn merkle_opening<const DEPTH: usize>(
     branch.as_ref().iter().for_each(|level| {
         // Create the bits representation of the offset as witness
         let offset_flag = level.offset_flag();
+
         let mut sum = zero;
         let mut offset_bits = [zero; dusk_hades::WIDTH - 1];
         offset_bits.iter_mut().fold(1, |mask, bit| {
-            *bit = composer
-                .add_input(BlsScalar::from((offset_flag & mask).min(1)));
+            let b = BlsScalar::from((offset_flag & mask).min(1));
+            *bit = composer.append_witness(b);
 
-            sum = composer.add(
-                (BlsScalar::one(), sum),
-                (BlsScalar::one(), *bit),
-                BlsScalar::zero(),
-                None,
-            );
+            let constraint = Constraint::new().left(1).a(sum).right(1).b(*bit);
+            sum = composer.gate_add(constraint);
 
             mask << 1
         });
-        composer.constrain_to_constant(sum, BlsScalar::one(), None);
 
-        let needle = composer.add_input(**level);
+        composer.assert_equal_constant(sum, BlsScalar::one(), None);
 
+        let needle = composer.append_witness(**level);
         if base {
             composer.assert_equal(leaf, needle);
             base = false;
@@ -59,34 +56,23 @@ pub fn merkle_opening<const DEPTH: usize>(
             .zip(perm.iter_mut())
             .enumerate()
             .for_each(|(i, (l, p))| {
-                *p = composer.add_input(*l);
+                *p = composer.append_witness(*l);
 
                 if i > 0 {
                     let b = offset_bits[i - 1];
 
-                    let a = composer.mul(
-                        BlsScalar::one(),
-                        b,
-                        *p,
-                        BlsScalar::zero(),
-                        None,
-                    );
+                    let constraint = Constraint::new().mult(1).a(b).b(*p);
+                    let a = composer.gate_mul(constraint);
 
-                    let b = composer.mul(
-                        BlsScalar::one(),
-                        b,
-                        needle,
-                        BlsScalar::zero(),
-                        None,
-                    );
+                    let constraint = Constraint::new().mult(1).a(b).b(needle);
+                    let b = composer.gate_mul(constraint);
 
                     composer.assert_equal(a, b);
                 }
             });
 
         root = perm[1];
-        let mut h = GadgetStrategy::new(composer);
-        h.perm(&mut perm);
+        GadgetStrategy::gadget(composer, &mut perm);
     });
 
     root

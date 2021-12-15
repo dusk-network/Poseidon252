@@ -7,7 +7,7 @@
 //! The `pad` module implements the padding algorithm on the Poseidon hash.
 
 use dusk_bls12_381::BlsScalar;
-use dusk_hades::strategies::{ScalarStrategy, Strategy};
+use dusk_hades::{ScalarStrategy, Strategy};
 
 /// Takes in one BlsScalar and outputs 2.
 /// This function is fixed.

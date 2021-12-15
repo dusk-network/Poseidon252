@@ -6,8 +6,9 @@
 
 //! Sponge hash and gadget definition
 
-use super::sponge::*;
+use crate::sponge;
 use dusk_bls12_381::BlsScalar;
+
 use dusk_plonk::prelude::*;
 
 /// The constant represents the bitmask used to truncate the hashing results of a sponge application
@@ -34,7 +35,7 @@ const TRUNCATION_LIMIT: BlsScalar = BlsScalar([
 /// inside a `JubJubScalar.`
 pub fn hash(messages: &[BlsScalar]) -> JubJubScalar {
     JubJubScalar::from_raw(
-        (sponge_hash(messages) & TRUNCATION_LIMIT).reduce().0,
+        (sponge::hash(messages) & TRUNCATION_LIMIT).reduce().0,
     )
 }
 
@@ -50,10 +51,12 @@ pub fn hash(messages: &[BlsScalar]) -> JubJubScalar {
 ///
 /// The returned value is the hashed witness data computed as a variable and truncated
 /// to fit inside of a [`JubJubScalar`].
-pub fn gadget(
-    composer: &mut StandardComposer,
-    messages: &[Variable],
-) -> Variable {
-    let hash_res = sponge_gadget(composer, messages);
-    composer.xor_gate(hash_res, composer.zero_var(), 250)
+pub fn gadget(composer: &mut TurboComposer, message: &[Witness]) -> Witness {
+    let zero = TurboComposer::constant_zero();
+    let h = sponge::gadget(composer, message);
+
+    // Truncate to 250 bits
+    let h = composer.component_xor(h, zero, 250);
+
+    h
 }
