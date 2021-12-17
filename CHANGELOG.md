@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Change merkle opening to constrain leaf [#162]
 - Update to `dusk-plonk` 0.9 [#165]
+- Export `sponge::truncated::hash` regardless of `alloc` feature [#167]
 
 ## [0.22.0] - 2021-07-27
 
@@ -283,6 +284,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Poseidon252 Sponge-hash impl with BulletProofs.
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
+[#167]: https://github.com/dusk-network/poseidon252/issues/167
 [#165]: https://github.com/dusk-network/poseidon252/issues/165
 [#162]: https://github.com/dusk-network/poseidon252/issues/162
 [#158]: https://github.com/dusk-network/poseidon252/issues/158
