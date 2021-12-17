@@ -9,13 +9,9 @@ mod hash;
 #[cfg(feature = "alloc")]
 mod gadget;
 
-#[cfg(feature = "alloc")]
-mod truncated;
+pub mod truncated;
 
 pub use hash::hash;
 
 #[cfg(feature = "alloc")]
 pub use gadget::gadget;
-
-#[cfg(feature = "alloc")]
-pub use truncated::{gadget as truncated_gadget, hash as truncated_hash};

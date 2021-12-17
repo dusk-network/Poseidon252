@@ -51,6 +51,7 @@ pub fn hash(messages: &[BlsScalar]) -> JubJubScalar {
 ///
 /// The returned value is the hashed witness data computed as a variable and truncated
 /// to fit inside of a [`JubJubScalar`].
+#[cfg(feature = "alloc")]
 pub fn gadget(composer: &mut TurboComposer, message: &[Witness]) -> Witness {
     let zero = TurboComposer::constant_zero();
     let h = sponge::gadget(composer, message);

@@ -188,7 +188,7 @@ impl Circuit for TestTruncatedCircuit {
         &mut self,
         composer: &mut TurboComposer,
     ) -> Result<(), PlonkError> {
-        let h = sponge::truncated_hash(self.input.as_slice());
+        let h = sponge::truncated::hash(self.input.as_slice());
         let p = JubJubAffine::from(dusk_jubjub::GENERATOR_EXTENDED * h);
         let p = composer.append_point(p);
 
@@ -200,7 +200,7 @@ impl Circuit for TestTruncatedCircuit {
 
         let o = composer.append_witness(self.output);
 
-        let t = sponge::truncated_gadget(composer, i.as_slice());
+        let t = sponge::truncated::gadget(composer, i.as_slice());
         let p_p = composer
             .component_mul_generator(t, dusk_jubjub::GENERATOR_EXTENDED);
 
@@ -239,7 +239,7 @@ fn truncated_sponge() -> Result<(), PlonkError> {
         .compile(&pp)?;
 
         let i = (&input[..w]).to_vec();
-        let o = sponge::truncated_hash(i.as_slice());
+        let o = sponge::truncated::hash(i.as_slice());
         let proof = TestTruncatedCircuit::new(i, o).prove(&pp, &pk, label)?;
 
         TestTruncatedCircuit::verify(&pp, &vd, &proof, &[], label)?;
