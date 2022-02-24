@@ -4,8 +4,14 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-pub mod sponge;
+mod hash;
+
+#[cfg(feature = "alloc")]
+mod gadget;
+
 pub mod truncated;
 
-pub use sponge::sponge_gadget as gadget;
-pub use sponge::sponge_hash as hash;
+pub use hash::hash;
+
+#[cfg(feature = "alloc")]
+pub use gadget::gadget;

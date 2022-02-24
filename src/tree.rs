@@ -4,7 +4,20 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use super::{PoseidonBranch, PoseidonLeaf, PoseidonTreeAnnotation};
+//! Implementation of a Merkle Tree with a Dusk-Poseidon backend and zero-knowledge opening proof powered by PLONK.
+
+mod annotation;
+mod branch;
+mod leaf;
+mod zk;
+
+pub use annotation::{
+    PoseidonAnnotation, PoseidonMaxAnnotation, PoseidonTreeAnnotation,
+};
+pub use branch::{PoseidonBranch, PoseidonLevel};
+pub use leaf::PoseidonLeaf;
+pub use zk::merkle_opening;
+
 use crate::Error;
 use canonical::CanonError;
 use canonical_derive::Canon;

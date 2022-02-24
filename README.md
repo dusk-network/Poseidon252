@@ -37,7 +37,7 @@ The module provides two sponge hash implementations:
 - Sponge hash using `Scalar` as backend. Which hashes the inputed `Scalar`s and returns a single
   `Scalar`.
 
-- Sponge hash gadget using `dusk_plonk::Variable` as a backend. This techniqe is used/required
+- Sponge hash gadget using `dusk_plonk::Witness` as a backend. This techniqe is used/required
   when you want to proof pre-images of unconstrained data inside of Zero-Knowledge PLONK circuits.
 
 ## Merkle Hash
@@ -61,7 +61,7 @@ majority of the configurations that the user may need:
   One of them computes the bitflags item while the other assumes that it has already been
   computed and placed in the first Level position.
 
-- `dusk_plonk::Variable` backend for hashing Merkle Tree levels inside of ZK-Circuits,
+- `dusk_plonk::Witness` backend for hashing Merkle Tree levels inside of ZK-Circuits,
   specifically, PLONK circuits. This implementation comes also whith two variants;
   One of them computes the bitflags item while the other assumes that it has already been
   computed and placed in the first Level position.
@@ -72,18 +72,39 @@ majority of the configurations that the user may need:
 #[cfg(feature = "canon")]
 {
 use canonical_derive::Canon;
-use dusk_plonk::prelude::*;
-use dusk_poseidon::tree::{PoseidonAnnotation, PoseidonLeaf, PoseidonTree, merkle_opening};
-use rand_core::OsRng;
+use dusk_plonk::error::Error as PlonkError;
+use dusk_poseidon::tree::{
+    self, PoseidonAnnotation, PoseidonBranch, PoseidonLeaf, PoseidonTree,
+};
+use rand_core::{CryptoRng, OsRng, RngCore};
 
-// Constant depth of the merkle tree
+use dusk_plonk::prelude::*;
+
+// Capacity of the circuit
+const CAPACITY: usize = 15;
+
+// Depth of the merkle tree
 const DEPTH: usize = 17;
 
+// Alias for the default tree implementation
+type Tree = PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH>;
+
 // Leaf representation
-#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon)]
+#[derive(
+    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
+)]
 struct DataLeaf {
     data: BlsScalar,
     pos: u64,
+}
+
+impl DataLeaf {
+    pub fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
+        let data = BlsScalar::random(rng);
+        let pos = 0;
+
+        Self { data, pos }
+    }
 }
 
 // Example helper
@@ -114,53 +135,90 @@ impl PoseidonLeaf for DataLeaf {
     }
 }
 
-fn main() -> Result<(), Error> {
-    // Create the ZK keys
-    let pub_params = PublicParameters::setup(1 << 15, &mut OsRng)?;
-    let (ck, ok) = pub_params.trim(1 << 15)?;
-
-    // Instantiate a new tree
-    let mut tree: PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH> =
-        PoseidonTree::new();
-
-    // Append 1024 elements to the tree
-    for i in 0..1024 {
-        let l = DataLeaf::from(i as u64);
-        tree.push(l).unwrap();
-    }
-
-    // Create a merkle opening tester gadget
-    let gadget_tester =
-        |composer: &mut StandardComposer,
-         tree: &PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH>,
-         n: usize| {
-            let branch = tree.branch(n as u64).unwrap().unwrap();
-            let root = tree.root().unwrap();
-
-            let root_p = merkle_opening::<DEPTH>(composer, &branch);
-            composer.constrain_to_constant(root_p, BlsScalar::zero(), Some(-root));
-        };
-
-    // Define the transcript initializer for the ZK backend
-    let label = b"opening_gadget";
-    let pos = 0;
-
-    // Create a merkle opening ZK proof
-    let mut prover = Prover::new(label);
-    gadget_tester(prover.mut_cs(), &tree, pos);
-    prover.preprocess(&ck)?;
-    let proof = prover.prove(&ck)?;
-
-    // Verify the merkle opening proof
-    let mut verifier = Verifier::new(label);
-    gadget_tester(verifier.mut_cs(), &tree, pos);
-    verifier.preprocess(&ck)?;
-    let pi = verifier.mut_cs().construct_dense_pi_vec();
-    verifier.verify(&proof, &ok, &pi).unwrap();
-
-    Ok(())
+struct MerkleOpeningCircuit {
+    branch: PoseidonBranch<DEPTH>,
 }
 
+impl MerkleOpeningCircuit {
+    /// Generate a random leaf and append it to the tree
+    pub fn random<R: RngCore + CryptoRng>(
+        rng: &mut R,
+        tree: &mut Tree,
+    ) -> Self {
+        let leaf = DataLeaf::random(rng);
+        let pos = tree.push(leaf).expect("Failed to append to the tree");
+
+        let branch = tree
+            .branch(pos)
+            .expect("Failed to read the tree for the branch")
+            .expect(
+                "Failed to fetch the branch of the created leaf from the tree",
+            );
+
+        Self { branch }
+    }
+}
+
+impl Circuit for MerkleOpeningCircuit {
+    const CIRCUIT_ID: [u8; 32] = [0xff; 32];
+
+    fn gadget(
+        &mut self,
+        composer: &mut TurboComposer,
+    ) -> Result<(), PlonkError> {
+        use std::ops::Deref;
+
+        let leaf: BlsScalar = *self.branch.deref();
+        let leaf = composer.append_witness(leaf);
+
+        let root = self.branch.root();
+        let root = composer.append_witness(*root);
+
+        let root_p =
+            tree::merkle_opening::<DEPTH>(composer, &self.branch, leaf);
+
+        composer.assert_equal(root_p, root);
+
+        Ok(())
+    }
+
+    fn public_inputs(&self) -> Vec<PublicInputValue> {
+        vec![]
+    }
+
+    fn padded_gates(&self) -> usize {
+        1 << CAPACITY
+    }
+}
+
+// Create the ZK keys
+let label = b"dusk-network";
+let pp = PublicParameters::setup(1 << CAPACITY, &mut OsRng)
+    .expect("Failed generating the public parameters.");
+
+let mut tree = Tree::default();
+let mut circuit = MerkleOpeningCircuit::random(&mut OsRng, &mut tree);
+let (pk, vd) = circuit.compile(&pp).expect("Failed to compile circuit");
+
+// Instantiate a new tree
+let mut tree: PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH> =
+    PoseidonTree::new();
+
+// Append 1024 elements to the tree
+for i in 0..1024 {
+    let l = DataLeaf::from(i as u64);
+
+    tree.push(l).expect("Failed appending to the tree");
+}
+
+// Generate a ZK opening proof
+let proof = circuit
+    .prove(&pp, &pk, label)
+    .expect("Failed to generate proof");
+
+// Verify the proof
+MerkleOpeningCircuit::verify(&pp, &vd, &proof, &[], label)
+    .expect("Proof verification failed");
 }
 ```
 

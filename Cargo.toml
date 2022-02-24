@@ -1,10 +1,13 @@
 [package]
 name = "dusk-poseidon"
-version = "0.22.0"
+version = "0.25.0-rc.0"
 authors = [
-  "zer0 <matteo@dusk.network>", "vlopes11 <victor@dusk.network>", "CPerezz <carlos@dusk.network>", "Kristoffer Ström <kristoffer@dusk.network>"
+  "zer0 <matteo@dusk.network>",
+  "vlopes11 <victor@dusk.network>",
+  "CPerezz <carlos@dusk.network>",
+  "Kristoffer Ström <kristoffer@dusk.network>"
 ]
-edition = "2018"
+edition = "2021"
 description ="Implementation of Poseidon hash algorithm over the Bls12-381 Scalar field."
 categories = ["algorithms", "cryptography", "no-std", "wasm"]
 keywords = ["cryptography", "zero-knowledge", "crypto"]
@@ -12,26 +15,25 @@ license = "MPL-2.0"
 repository = "https://github.com/dusk-network/poseidon252"
 
 [dependencies]
-dusk-bls12_381 = {version = "0.8", default-features = false}
-dusk-jubjub = {version = "0.10", default-features = false}
+dusk-bls12_381 = {version = "0.9", default-features = false}
+dusk-jubjub = {version = "0.11", default-features = false}
 dusk-bytes = "0.1"
-dusk-hades = "0.16"
-canonical = {version = "0.6", optional = true}
-canonical_derive = {version = "0.6", optional = true}
-microkelvin = {version = "0.10", optional = true}
-nstack = {version = "0.10", optional = true}
-dusk-plonk = {version="0.8", default-features = false, features = ["alloc"]}
+dusk-hades = "0.18.0-rc"
+canonical = {version = "0.7", optional = true}
+canonical_derive = {version = "0.7", optional = true}
+microkelvin = {version = "0.15.0-rc", optional = true}
+nstack = {version = "0.14.0-rc", optional = true}
+dusk-plonk = {version="0.10", default-features = false, features = ["alloc"]}
 
 [dev-dependencies]
-rand_core = {version="0.6", default-features=false}
+rand_core = {version="0.6", default-features=false, features = ["getrandom"]}
 criterion = "0.3"
 
 [features]
 default = ["std", "canon"]
-alloc = []
+alloc = ["dusk-hades/plonk"]
 std = [
-    "dusk-plonk/default",
-    "dusk-hades/plonk-std",
+    "dusk-hades/plonk",
     "dusk-bls12_381/default",
     "dusk-jubjub/std",
 ]
@@ -63,3 +65,13 @@ panic = 'abort'
 lto = true
 incremental = false
 codegen-units = 1
+
+[[test]]
+name = "test-cipher"
+path = "tests/cipher.rs"
+required-features = ["alloc"]
+
+[[test]]
+name = "test-sponge"
+path = "tests/sponge.rs"
+required-features = ["alloc"]
