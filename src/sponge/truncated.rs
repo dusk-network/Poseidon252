@@ -57,7 +57,5 @@ pub fn gadget(composer: &mut TurboComposer, message: &[Witness]) -> Witness {
     let h = sponge::gadget(composer, message);
 
     // Truncate to 250 bits
-    let h = composer.component_xor(h, zero, 250);
-
-    h
+    composer.component_xor(h, zero, 250)
 }
