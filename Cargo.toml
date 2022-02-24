@@ -2,7 +2,10 @@
 name = "dusk-poseidon"
 version = "0.24.0-rc.0"
 authors = [
-  "zer0 <matteo@dusk.network>", "vlopes11 <victor@dusk.network>", "CPerezz <carlos@dusk.network>", "Kristoffer Ström <kristoffer@dusk.network>"
+  "zer0 <matteo@dusk.network>",
+  "vlopes11 <victor@dusk.network>",
+  "CPerezz <carlos@dusk.network>",
+  "Kristoffer Ström <kristoffer@dusk.network>"
 ]
 edition = "2021"
 description ="Implementation of Poseidon hash algorithm over the Bls12-381 Scalar field."
@@ -12,15 +15,15 @@ license = "MPL-2.0"
 repository = "https://github.com/dusk-network/poseidon252"
 
 [dependencies]
-dusk-bls12_381 = {version = "0.8", default-features = false}
-dusk-jubjub = {version = "0.10", default-features = false}
+dusk-bls12_381 = {version = "0.9", default-features = false}
+dusk-jubjub = {version = "0.11", default-features = false}
 dusk-bytes = "0.1"
-dusk-hades = "0.17.0-rc"
-canonical = {version = "0.6", optional = true}
-canonical_derive = {version = "0.6", optional = true}
-microkelvin = {version = "0.14", optional = true}
-nstack = {version = "0.13", optional = true}
-dusk-plonk = {version="0.9", default-features = false, features = ["alloc"]}
+dusk-hades = "0.18.0-rc"
+canonical = {version = "0.7", optional = true}
+canonical_derive = {version = "0.7", optional = true}
+microkelvin = {version = "0.15.0-rc", optional = true}
+nstack = {version = "0.14.0-rc", optional = true}
+dusk-plonk = {version="0.10", default-features = false, features = ["alloc"]}
 
 [dev-dependencies]
 rand_core = {version="0.6", default-features=false, features = ["getrandom"]}
