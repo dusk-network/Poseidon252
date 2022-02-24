@@ -9,9 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Update `dusk-bls12_381` from `0.8` to `0.9`
+- Update `dusk-jubjub` from `0.10` to `0.11`
+- Update `dusk-hades` from `0.17.0-rc` to `0.18.0-rc`
+- Update `canonical` from `0.6` to `0.7`
+- Update `canonical_derive` from `0.6` to `0.7`
+- Update `microkelvin` from `0.14` to `0.15`
+- Update `nstack` from `0.13` to `0.14.0-rc`
+- Update `dusk-plonk` from `0.9` to `0.10`
 - Change merkle opening to constrain leaf [#162]
-- Update to `dusk-plonk` 0.9 [#165]
 - Export `sponge::truncated::hash` regardless of `alloc` feature [#167]
+- Remove useless `let` in `sponge::truncated`
+
+### Fixed
+
+- Fix module injection for `tree` and `cipher` modules
 
 ## [0.22.0] - 2021-07-27
 
@@ -43,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change `PoseidonLeaf` getter methods to return refs [#143]
 
 ### Removed
+
 - Remove `anyhow` and `thiserror` from deps [#132]
 - Remove `PoseidonWalkableIterator` and `PoseidonWalkableAnnotation` [#125]
 - Remove `canon_host` feature checks from CI [#136]
@@ -285,7 +298,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 [#167]: https://github.com/dusk-network/poseidon252/issues/167
-[#165]: https://github.com/dusk-network/poseidon252/issues/165
 [#162]: https://github.com/dusk-network/poseidon252/issues/162
 [#158]: https://github.com/dusk-network/poseidon252/issues/158
 [#153]: https://github.com/dusk-network/poseidon252/issues/153
