@@ -95,7 +95,7 @@ use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
 use dusk_hades::{ScalarStrategy, Strategy};
 use dusk_jubjub::JubJubAffine;
 
-const MESSAGE_CAPACITY: usize = 2;
+const MESSAGE_CAPACITY: usize = 15;
 const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * BlsScalar::SIZE;
 
@@ -191,19 +191,30 @@ impl PoseidonCipher {
         let zero = BlsScalar::zero();
         let mut strategy = ScalarStrategy::new();
 
+        let mut count= MESSAGE_CAPACITY / 4;
+        let do_ceil = MESSAGE_CAPACITY % 4 > 0;
+        
+        match do_ceil {
+            true => count = count + 1,
+            false => count = count,
+        } 
+
         let mut cipher = [zero; CIPHER_SIZE];
         let mut state = PoseidonCipher::initial_state(secret, *nonce);
 
-        strategy.perm(&mut state);
 
-        (0..MESSAGE_CAPACITY).for_each(|i| {
-            state[i + 1] += if i < message.len() {
-                message[i]
-            } else {
-                BlsScalar::zero()
-            };
+        (0..count).for_each(|i| {
 
-            cipher[i] = state[i + 1];
+            strategy.perm(&mut state);
+
+            (0..4).for_each(|j| {
+                state[j + 1] += if 4 * i + j < message.len() {
+                    message[4*i + j]
+                } else {
+                    BlsScalar::zero()
+                };
+                cipher[4*i + j] = state[j + 1];
+            });
         });
 
         strategy.perm(&mut state);
@@ -226,11 +237,24 @@ impl PoseidonCipher {
         let mut message = [zero; MESSAGE_CAPACITY];
         let mut state = PoseidonCipher::initial_state(secret, *nonce);
 
-        strategy.perm(&mut state);
+        let mut count= MESSAGE_CAPACITY / 4;
+        let do_ceil = MESSAGE_CAPACITY % 4 > 0;
+        
+        match do_ceil {
+            true => count = count + 1,
+            false => count = count,
+        } 
 
-        (0..MESSAGE_CAPACITY).for_each(|i| {
-            message[i] = self.cipher[i] - state[i + 1];
-            state[i + 1] = self.cipher[i];
+        (0..count).for_each(|i| {
+
+            strategy.perm(&mut state);
+
+            (0..4).for_each(|j| {
+                if 4*i + j < MESSAGE_CAPACITY {
+                    message[4*i + j] = self.cipher[4*i + j] - state[j + 1];
+                    state[j + 1] = self.cipher[4*i + j];
+                }
+            });
         });
 
         strategy.perm(&mut state);
