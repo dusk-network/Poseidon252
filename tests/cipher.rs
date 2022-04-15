@@ -218,7 +218,7 @@ impl<'a> Circuit for TestCipherCircuit<'a> {
     }
 
     fn padded_gates(&self) -> usize {
-        1 << 13
+        1 << 15
     }
 }
 
@@ -237,14 +237,14 @@ fn gadget() -> Result<(), PlonkError> {
     // Generate a secret message
     let a = BlsScalar::random(&mut OsRng);
     let b = BlsScalar::random(&mut OsRng);
-    let message = [a, b];
+    let message = [a, b, a, b, a, b];
 
     // Perform the encryption
     let nonce = BlsScalar::random(&mut OsRng);
     let cipher = PoseidonCipher::encrypt(&message, &shared_secret, &nonce);
 
     let label = b"poseidon-cipher";
-    let size = 13;
+    let size = 15;
 
     let pp = PublicParameters::setup(1 << size, &mut OsRng)?;
     let (pk, vd) = TestCipherCircuit::default().compile(&pp)?;
