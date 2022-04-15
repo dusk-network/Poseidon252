@@ -48,17 +48,23 @@ pub fn encrypt(
     let mut state =
         PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 
-    GadgetStrategy::gadget(composer, &mut state);
+    let count = (PoseidonCipher::capacity() + 3) / 4;
 
-    (0..PoseidonCipher::capacity()).for_each(|i| {
-        let x = if i < message.len() { message[i] } else { zero };
+    (0..count).for_each(|i| {
+        GadgetStrategy::gadget(composer, &mut state);
 
-        let constraint =
-            Constraint::new().left(1).a(state[i + 1]).right(1).b(x);
+        (0..4).for_each(|j| {
+            if 4*i + j < PoseidonCipher::capacity() {
+                let x = if 4*i + j < message.len() { message[4*i + j] } else { zero };
 
-        state[i + 1] = composer.gate_add(constraint);
+                let constraint =
+                    Constraint::new().left(1).a(state[j + 1]).right(1).b(x);
 
-        cipher[i] = state[i + 1];
+                state[j + 1] = composer.gate_add(constraint);
+
+                cipher[4*i + j] = state[j + 1];
+            }
+        });
     });
 
     GadgetStrategy::gadget(composer, &mut state);
@@ -86,18 +92,24 @@ pub fn decrypt(
     let mut state =
         PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 
-    GadgetStrategy::gadget(composer, &mut state);
+    let count = (PoseidonCipher::capacity() + 3) / 4;
 
-    (0..PoseidonCipher::capacity()).for_each(|i| {
-        let constraint = Constraint::new()
-            .left(1)
-            .a(cipher[i])
-            .right(-BlsScalar::one())
-            .b(state[i + 1]);
+    (0..count).for_each(|i| {
+        GadgetStrategy::gadget(composer, &mut state);
 
-        message[i] = composer.gate_add(constraint);
+        (0..4).for_each(|j| {
+            if 4 * i + j < PoseidonCipher::capacity() {
+                let constraint = Constraint::new()
+                    .left(1)
+                    .a(cipher[4 * i + j])
+                    .right(-BlsScalar::one())
+                    .b(state[j + 1]);
 
-        state[i + 1] = cipher[i];
+                message[4 * i + j] = composer.gate_add(constraint);
+
+                state[j + 1] = cipher[4 * i + j];
+            }
+        });
     });
 
     GadgetStrategy::gadget(composer, &mut state);
