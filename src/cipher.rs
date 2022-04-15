@@ -95,7 +95,7 @@ use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
 use dusk_hades::{ScalarStrategy, Strategy};
 use dusk_jubjub::JubJubAffine;
 
-const MESSAGE_CAPACITY: usize = 15;
+const MESSAGE_CAPACITY: usize = 9;
 const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * BlsScalar::SIZE;
 
@@ -208,12 +208,14 @@ impl PoseidonCipher {
             strategy.perm(&mut state);
 
             (0..4).for_each(|j| {
-                state[j + 1] += if 4 * i + j < message.len() {
-                    message[4*i + j]
-                } else {
-                    BlsScalar::zero()
-                };
-                cipher[4*i + j] = state[j + 1];
+                if 4*i + j < MESSAGE_CAPACITY {
+                    state[j + 1] += if 4 * i + j < message.len() {
+                        message[4*i + j]
+                    } else {
+                        BlsScalar::zero()
+                    };
+                    cipher[4*i + j] = state[j + 1];
+                }
             });
         });
 
