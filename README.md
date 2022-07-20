@@ -69,33 +69,34 @@ majority of the configurations that the user may need:
 ### Zero Knowledge Merkle Opening Proof example:
 
 ```rust
-#[cfg(feature = "canon")]
-{
-use canonical_derive::Canon;
 use dusk_plonk::error::Error as PlonkError;
-use dusk_poseidon::tree::{
-    self, PoseidonAnnotation, PoseidonBranch, PoseidonLeaf, PoseidonTree,
-};
+use dusk_poseidon::tree::{self, PoseidonBranch, PoseidonLeaf, PoseidonTree};
 use rand_core::{CryptoRng, OsRng, RngCore};
 
 use dusk_plonk::prelude::*;
-
-// Capacity of the circuit
-const CAPACITY: usize = 15;
+use nstack::annotation::Keyed;
 
 // Depth of the merkle tree
 const DEPTH: usize = 17;
 
+// Capacity of the circuit
+const CAPACITY: usize = 15;
+
 // Alias for the default tree implementation
-type Tree = PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH>;
+type Tree = PoseidonTree<DataLeaf, (), DEPTH>;
 
 // Leaf representation
-#[derive(
-    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
-)]
-struct DataLeaf {
+#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
+pub struct DataLeaf {
     data: BlsScalar,
     pos: u64,
+}
+
+// Keyed needs to be implemented for a leaf type and the tree key.
+impl Keyed<()> for DataLeaf {
+    fn key(&self) -> &() {
+        &()
+    }
 }
 
 impl DataLeaf {
@@ -104,16 +105,6 @@ impl DataLeaf {
         let pos = 0;
 
         Self { data, pos }
-    }
-}
-
-// Example helper
-impl From<u64> for DataLeaf {
-    fn from(n: u64) -> DataLeaf {
-        DataLeaf {
-            data: BlsScalar::from(n),
-            pos: n,
-        }
     }
 }
 
@@ -129,7 +120,8 @@ impl PoseidonLeaf for DataLeaf {
         &self.pos
     }
 
-    // Method used to set the position on the tree after the `PoseidonTree::push` call
+    // Method used to set the position on the tree after the
+    // `PoseidonTree::push` call.
     fn set_pos(&mut self, pos: u64) {
         self.pos = pos;
     }
@@ -140,20 +132,22 @@ struct MerkleOpeningCircuit {
 }
 
 impl MerkleOpeningCircuit {
-    /// Generate a random leaf and append it to the tree
+    /// Generate N random leaves and append them to the tree
     pub fn random<R: RngCore + CryptoRng>(
         rng: &mut R,
         tree: &mut Tree,
     ) -> Self {
-        let leaf = DataLeaf::random(rng);
-        let pos = tree.push(leaf).expect("Failed to append to the tree");
+        const N: u64 = 1024;
 
-        let branch = tree
-            .branch(pos)
-            .expect("Failed to read the tree for the branch")
-            .expect(
-                "Failed to fetch the branch of the created leaf from the tree",
-            );
+        // Append 1024 elements to the tree
+        for _ in 0..N {
+            let leaf = DataLeaf::random(rng);
+            tree.push(leaf);
+        }
+
+        let branch = tree.branch(N - 1).expect(
+            "Failed to fetch the branch of the created leaf from the tree",
+        );
 
         Self { branch }
     }
@@ -193,23 +187,12 @@ impl Circuit for MerkleOpeningCircuit {
 
 // Create the ZK keys
 let label = b"dusk-network";
-let pp = PublicParameters::setup(1 << CAPACITY, &mut OsRng)
-    .expect("Failed generating the public parameters.");
+let pp = PublicParameters::setup(1 << CAPACITY, &mut OsRng).unwrap();
 
+// Instantiate a new tree
 let mut tree = Tree::default();
 let mut circuit = MerkleOpeningCircuit::random(&mut OsRng, &mut tree);
 let (pk, vd) = circuit.compile(&pp).expect("Failed to compile circuit");
-
-// Instantiate a new tree
-let mut tree: PoseidonTree<DataLeaf, PoseidonAnnotation, DEPTH> =
-    PoseidonTree::new();
-
-// Append 1024 elements to the tree
-for i in 0..1024 {
-    let l = DataLeaf::from(i as u64);
-
-    tree.push(l).expect("Failed appending to the tree");
-}
 
 // Generate a ZK opening proof
 let proof = circuit
@@ -219,17 +202,7 @@ let proof = circuit
 // Verify the proof
 MerkleOpeningCircuit::verify(&pp, &vd, &proof, &[], label)
     .expect("Proof verification failed");
-}
 ```
-
-## Canonical
-
-The canonical implementations aim to make available a single representation of the Merkle tree to constrained (referred to as "hosted") and unconstrained (referred to as "host") environments.
-
-For that, we rely on the feature `canon`.
-
-`canon` feature will require all the crates needed for the Merkle tree to function.
-
 
 ## Documentation
 

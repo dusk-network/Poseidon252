@@ -10,7 +10,7 @@ use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
 
 /// The `hash` function takes an arbitrary number of Scalars and returns the
-/// hash, using the `Hades` ScalarStragegy.
+/// hash, using the `Hades` ScalarStrategy.
 ///
 /// As the paper definition, the capacity `c` is set to [`WIDTH`], and `r` is
 /// set to `c - 1`.

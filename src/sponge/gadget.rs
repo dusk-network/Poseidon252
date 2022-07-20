@@ -8,17 +8,19 @@ use dusk_hades::{GadgetStrategy, WIDTH};
 
 use dusk_plonk::prelude::*;
 
-/// Mirror the implementation of [`super::sponge_hash`] inside of a PLONK circuit.
+/// Mirror the implementation of [`hash`] inside of a PLONK circuit.
 ///
 /// The circuit will be defined by the length of `messages`. This means that a
 /// pre-computed circuit will not behave generically for different messages
 /// sizes.
 ///
-/// The expected usage is the length of the message to be known publically as
-/// the circuit definition. Hence, the padding value `1` will be appended as a
+/// The expected usage is the length of the message to be known publicly as the
+/// circuit definition. Hence, the padding value `1` will be appended as a
 /// circuit description.
 ///
 /// The returned value is the hashed witness data computed as a variable.
+///
+/// [`hash`]: crate::sponge::hash
 pub fn gadget(composer: &mut TurboComposer, messages: &[Witness]) -> Witness {
     let zero = TurboComposer::constant_zero();
     let mut state = [zero; WIDTH];

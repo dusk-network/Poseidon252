@@ -4,6 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#![cfg(feature = "alloc")]
+
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::ParseHexStr;
 use dusk_plonk::error::Error as PlonkError;

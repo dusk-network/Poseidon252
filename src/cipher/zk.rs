@@ -28,8 +28,8 @@ impl PoseidonCipher {
     }
 }
 
-/// Given a shared secret calculated using any key protocol compatible with bls and jubjub, perform
-/// the encryption of the message.
+/// Given a shared secret calculated using any key protocol compatible with bls
+/// and jubjub, perform the encryption of the message.
 ///
 /// The returned set of variables is the cipher text
 pub fn encrypt(
@@ -67,8 +67,8 @@ pub fn encrypt(
     cipher
 }
 
-/// Given a shared secret calculated using any key protocol compatible with bls and jubjub, perform
-/// the decryption of the cipher.
+/// Given a shared secret calculated using any key protocol compatible with bls
+/// and jubjub, perform the decryption of the cipher.
 ///
 /// The returned set of variables is the original message
 pub fn decrypt(

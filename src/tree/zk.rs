@@ -24,7 +24,7 @@ pub fn merkle_opening<const DEPTH: usize>(
     let mut perm = [zero; dusk_hades::WIDTH];
 
     // For every level, replace the level offset with needle,
-    // permutate the level and set the needle to the next level
+    // permute the level and set the needle to the next level
     // to the poseidon result of the permutation
     branch.as_ref().iter().for_each(|level| {
         // Create the bits representation of the offset as witness

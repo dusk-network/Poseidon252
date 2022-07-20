@@ -5,8 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![warn(missing_docs)]
-#![doc = include_str!("../README.md")]
+#![cfg_attr(feature = "alloc", warn(missing_docs), doc = include_str!("../README.md"))]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -20,9 +19,5 @@ pub mod perm_uses;
 /// Reference implementation for the Poseidon Sponge hash function
 pub mod sponge;
 
-mod error;
-/// The module handling posedion-trees.
-#[cfg(feature = "canon")]
+/// The module handling poseidon-trees.
 pub mod tree;
-
-pub use error::Error;

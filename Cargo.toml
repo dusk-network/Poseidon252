@@ -1,59 +1,53 @@
 [package]
 name = "dusk-poseidon"
 version = "0.26.0"
-authors = [
-  "zer0 <matteo@dusk.network>",
-  "vlopes11 <victor@dusk.network>",
-  "CPerezz <carlos@dusk.network>",
-  "Kristoffer Ström <kristoffer@dusk.network>"
-]
-edition = "2021"
-description ="Implementation of Poseidon hash algorithm over the Bls12-381 Scalar field."
+description = "Implementation of Poseidon hash algorithm over the Bls12-381 Scalar field."
 categories = ["algorithms", "cryptography", "no-std", "wasm"]
 keywords = ["cryptography", "zero-knowledge", "crypto"]
-license = "MPL-2.0"
+
 repository = "https://github.com/dusk-network/poseidon252"
+authors = [
+    "zer0 <matteo@dusk.network>",
+    "vlopes11 <victor@dusk.network>",
+    "CPerezz <carlos@dusk.network>",
+    "Kristoffer Ström <kristoffer@dusk.network>",
+    "Eduardo Leegwater Simões <eduardo@dusk.network>"
+]
+edition = "2021"
+license = "MPL-2.0"
 
 [dependencies]
-dusk-bls12_381 = {version = "0.11", default-features = false}
-dusk-jubjub = {version = "0.12", default-features = false}
+dusk-bls12_381 = { version = "0.11", default-features = false }
+dusk-jubjub = { version = "0.12", default-features = false }
 dusk-bytes = "0.1"
 dusk-hades = "0.19"
-canonical = {version = "0.7", optional = true}
-canonical_derive = {version = "0.7", optional = true}
-microkelvin = {version = "0.15.0-rc", optional = true}
-nstack = {version = "0.14.0-rc", optional = true}
-dusk-plonk = {version="0.12", default-features = false, features = ["alloc"]}
+microkelvin = { version = "0.17.0-rc", optional = true }
+nstack = { version = "0.16.0-rc", optional = true }
+ranno = { version = "0.1", optional = true }
+dusk-plonk = { version = "0.12", default-features = false, features = ["alloc"] }
 rkyv = { version = "0.7", optional = true, default-features = false }
 bytecheck = { version = "0.6", optional = true, default-features = false }
 
 [dev-dependencies]
-rand_core = {version="0.6", default-features=false, features = ["getrandom"]}
-criterion = "0.3"
+rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
 
 [features]
-default = ["std", "canon"]
-alloc = ["dusk-hades/plonk"]
-std = [
-    "dusk-hades/plonk",
-    "dusk-bls12_381/default",
+default = [
     "dusk-jubjub/std",
+    "dusk-bls12_381/default",
+    "alloc",
 ]
-canon = [
-    "dusk-bls12_381/canon",
-    "dusk-jubjub/canon",
-    "canonical",
-    "canonical_derive",
+alloc = [
     "microkelvin",
     "nstack",
-    "alloc"
+    "ranno",
+    "dusk-hades/plonk"
 ]
 rkyv-impl = [
     "dusk-bls12_381/rkyv-impl",
     "rkyv",
     "bytecheck"
 ]
-persistence = ["microkelvin/persistence"]
 
 [profile.dev]
 opt-level = 3
@@ -72,13 +66,3 @@ panic = 'abort'
 lto = true
 incremental = false
 codegen-units = 1
-
-[[test]]
-name = "test-cipher"
-path = "tests/cipher.rs"
-required-features = ["alloc"]
-
-[[test]]
-name = "test-sponge"
-path = "tests/sponge.rs"
-required-features = ["alloc"]
