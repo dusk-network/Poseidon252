@@ -21,8 +21,8 @@ use nstack::annotation::{Cardinality, Keyed, MaxKey};
 use nstack::NStack;
 use ranno::Annotation;
 
-/// Extends the standard [`PoseidonAnnotation`] with an annotation that holds an
-/// agnostic maximum value.
+/// Annotation holding the root, cardinality, and the maximum value of a generic
+/// key.
 #[derive(Debug, Clone, Default)]
 pub struct PoseidonAnnotation<K> {
     poseidon_root: BlsScalar,
