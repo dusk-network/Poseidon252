@@ -62,7 +62,7 @@ impl<L, K, const DEPTH: usize> AsMut<NStack<L, PoseidonAnnotation<K>>>
 
 impl<L, K, const DEPTH: usize> PoseidonTree<L, K, DEPTH> {
     /// Creates a new poseidon tree
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             inner: NStack::new(),
         }
