@@ -20,4 +20,5 @@ pub mod perm_uses;
 pub mod sponge;
 
 /// The module handling poseidon-trees.
+#[cfg(feature = "alloc")]
 pub mod tree;
