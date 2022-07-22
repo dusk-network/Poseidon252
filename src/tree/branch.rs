@@ -8,6 +8,8 @@ use super::PoseidonLeaf;
 
 use crate::tree::PoseidonAnnotation;
 
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
 use core::iter;
 use core::ops::Deref;
