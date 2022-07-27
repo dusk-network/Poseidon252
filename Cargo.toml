@@ -24,6 +24,7 @@ canonical_derive = {version = "0.7", optional = true}
 microkelvin = {version = "0.15.0-rc", optional = true}
 nstack = {version = "0.14.0-rc", optional = true}
 dusk-plonk = {version="0.12.0-rc", default-features = false, features = ["alloc"]}
+rkyv = { version = "0.7", optional = true }
 
 [dev-dependencies]
 rand_core = {version="0.6", default-features=false, features = ["getrandom"]}
@@ -45,6 +46,10 @@ canon = [
     "microkelvin",
     "nstack",
     "alloc"
+]
+rkyv-impl = [
+    "dusk-bls12_381/rkyv",
+    "rkyv"
 ]
 persistence = ["microkelvin/persistence"]
 

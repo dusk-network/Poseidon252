@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `rkyv` implementation behind feature gate [#175]
+
 ### Changed
 
 - Update `dusk-bls12_381` from `0.8` to `0.10`
@@ -297,6 +301,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Poseidon252 Sponge-hash impl with BulletProofs.
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
+[#175]: https://github.com/dusk-network/poseidon252/issues/175
 [#167]: https://github.com/dusk-network/poseidon252/issues/167
 [#162]: https://github.com/dusk-network/poseidon252/issues/162
 [#158]: https://github.com/dusk-network/poseidon252/issues/158
