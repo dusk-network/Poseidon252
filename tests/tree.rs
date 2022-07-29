@@ -90,7 +90,7 @@ fn tree_merkle_opening() {
     let mut circuit = MerkleOpeningCircuit::random(&mut OsRng, &mut tree);
 
     let proof = circuit
-        .prove(&pp, &pk, label)
+        .prove(&pp, &pk, label, &mut OsRng)
         .expect("Failed to generate proof");
 
     MerkleOpeningCircuit::verify(&pp, &vd, &proof, &[], label)
