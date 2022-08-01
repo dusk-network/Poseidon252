@@ -121,7 +121,8 @@ fn sponge_gadget() -> Result<(), Error> {
         .compile(&pp)?;
 
         let (i, o) = poseidon_sponge_params(w);
-        let proof = TestSpongeCircuit::new(i, o).prove(&pp, &pk, label)?;
+        let proof =
+            TestSpongeCircuit::new(i, o).prove(&pp, &pk, label, &mut OsRng)?;
 
         TestSpongeCircuit::verify(&pp, &vd, &proof, &[], label)?;
     }
@@ -240,7 +241,8 @@ fn truncated_sponge() -> Result<(), PlonkError> {
 
         let i = (&input[..w]).to_vec();
         let o = sponge::truncated::hash(i.as_slice());
-        let proof = TestTruncatedCircuit::new(i, o).prove(&pp, &pk, label)?;
+        let proof = TestTruncatedCircuit::new(i, o)
+            .prove(&pp, &pk, label, &mut OsRng)?;
 
         TestTruncatedCircuit::verify(&pp, &vd, &proof, &[], label)?;
     }

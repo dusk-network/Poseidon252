@@ -7,16 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `rkyv` implementation behind feature gate [#175]
+
 ### Changed
 
-- Update `dusk-bls12_381` from `0.8` to `0.9`
-- Update `dusk-jubjub` from `0.10` to `0.11`
-- Update `dusk-hades` from `0.17.0-rc` to `0.18.0-rc`
+- Update `dusk-bls12_381` from `0.8` to `0.10`
+- Update `dusk-jubjub` from `0.10` to `0.12`
+- Update `dusk-hades` from `0.17.0-rc` to `0.19`
 - Update `canonical` from `0.6` to `0.7`
 - Update `canonical_derive` from `0.6` to `0.7`
 - Update `microkelvin` from `0.14` to `0.15`
 - Update `nstack` from `0.13` to `0.14.0-rc`
-- Update `dusk-plonk` from `0.9` to `0.10`
+- Update `dusk-plonk` from `0.9` to `0.12`
 - Change merkle opening to constrain leaf [#162]
 - Export `sponge::truncated::hash` regardless of `alloc` feature [#167]
 - Remove useless `let` in `sponge::truncated`
@@ -297,6 +301,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Poseidon252 Sponge-hash impl with BulletProofs.
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
+[#175]: https://github.com/dusk-network/poseidon252/issues/175
 [#167]: https://github.com/dusk-network/poseidon252/issues/167
 [#162]: https://github.com/dusk-network/poseidon252/issues/162
 [#158]: https://github.com/dusk-network/poseidon252/issues/158

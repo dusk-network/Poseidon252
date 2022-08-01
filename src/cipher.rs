@@ -90,6 +90,9 @@ use crate::Error;
 #[cfg(feature = "canon")]
 use canonical_derive::Canon;
 
+#[cfg(feature = "rkyv")]
+use rkyv::{Archive, Deserialize, Serialize};
+
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
 use dusk_hades::{ScalarStrategy, Strategy};
@@ -99,9 +102,10 @@ const MESSAGE_CAPACITY: usize = 2;
 const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * BlsScalar::SIZE;
 
+/// Encapsulates an encrypted data
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Default)]
 #[cfg_attr(feature = "canon", derive(Canon))]
-/// Encapsulates an encrypted data
+#[cfg_attr(feature = "rkyv", derive(Archive, Deserialize, Serialize))]
 pub struct PoseidonCipher {
     cipher: [BlsScalar; CIPHER_SIZE],
 }

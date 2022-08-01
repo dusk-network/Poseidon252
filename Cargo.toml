@@ -1,6 +1,6 @@
 [package]
 name = "dusk-poseidon"
-version = "0.25.0-rc.0"
+version = "0.26.0-rc.0"
 authors = [
   "zer0 <matteo@dusk.network>",
   "vlopes11 <victor@dusk.network>",
@@ -15,15 +15,16 @@ license = "MPL-2.0"
 repository = "https://github.com/dusk-network/poseidon252"
 
 [dependencies]
-dusk-bls12_381 = {version = "0.9", default-features = false}
-dusk-jubjub = {version = "0.11", default-features = false}
+dusk-bls12_381 = {version = "0.10", default-features = false}
+dusk-jubjub = {version = "0.12.0-rc", default-features = false}
 dusk-bytes = "0.1"
-dusk-hades = "0.18.0-rc"
+dusk-hades = "0.19.0-rc"
 canonical = {version = "0.7", optional = true}
 canonical_derive = {version = "0.7", optional = true}
 microkelvin = {version = "0.15.0-rc", optional = true}
 nstack = {version = "0.14.0-rc", optional = true}
-dusk-plonk = {version="0.10", default-features = false, features = ["alloc"]}
+dusk-plonk = {version="0.12.0-rc", default-features = false, features = ["alloc"]}
+rkyv = { version = "0.7", optional = true }
 
 [dev-dependencies]
 rand_core = {version="0.6", default-features=false, features = ["getrandom"]}
@@ -45,6 +46,10 @@ canon = [
     "microkelvin",
     "nstack",
     "alloc"
+]
+rkyv-impl = [
+    "dusk-bls12_381/rkyv",
+    "rkyv"
 ]
 persistence = ["microkelvin/persistence"]
 

@@ -256,7 +256,7 @@ fn gadget() -> Result<(), PlonkError> {
         &message,
         cipher.cipher(),
     )
-    .prove(&pp, &pk, label)?;
+    .prove(&pp, &pk, label, &mut OsRng)?;
 
     TestCipherCircuit::verify(&pp, &vd, &proof, &[], label)?;
 

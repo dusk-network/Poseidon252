@@ -213,7 +213,7 @@ for i in 0..1024 {
 
 // Generate a ZK opening proof
 let proof = circuit
-    .prove(&pp, &pk, label)
+    .prove(&pp, &pk, label, &mut OsRng)
     .expect("Failed to generate proof");
 
 // Verify the proof
