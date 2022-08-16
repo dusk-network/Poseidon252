@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update `dusk-bls12_381` from `0.8` to `0.10`
+- Update `dusk-bls12_381` from `0.8` to `0.11`
 - Update `dusk-jubjub` from `0.10` to `0.12`
 - Update `dusk-hades` from `0.17.0-rc` to `0.19`
 - Update `canonical` from `0.6` to `0.7`
