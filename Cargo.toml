@@ -28,7 +28,7 @@ rkyv = { version = "0.7", optional = true }
 bytecheck = { version = "0.6", optional = true }
 
 [dev-dependencies]
-rand_core = {version="0.6", default-features=false, features = ["getrandom"]}
+rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
 criterion = "0.3"
 
 [features]
@@ -54,6 +54,7 @@ rkyv-impl = [
     "bytecheck"
 ]
 persistence = ["microkelvin/persistence"]
+parallel = ["dusk-plonk/std"]
 
 [profile.dev]
 opt-level = 3
@@ -82,3 +83,7 @@ required-features = ["alloc"]
 name = "test-sponge"
 path = "tests/sponge.rs"
 required-features = ["alloc"]
+
+[[bench]]
+name = "merkle"
+harness = false
