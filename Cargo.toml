@@ -11,7 +11,8 @@ authors = [
     "vlopes11 <victor@dusk.network>",
     "CPerezz <carlos@dusk.network>",
     "Kristoffer Ström <kristoffer@dusk.network>",
-    "Eduardo Leegwater Simões <eduardo@dusk.network>"
+    "Eduardo Leegwater Simões <eduardo@dusk.network>",
+	"Moana Marcello <moana@dusk.network>",
 ]
 edition = "2021"
 license = "MPL-2.0"

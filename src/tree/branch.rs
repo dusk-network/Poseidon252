@@ -33,7 +33,7 @@ use rkyv::{Archive, Deserialize, Serialize};
     archive_attr(derive(CheckBytes))
 )]
 pub struct PoseidonLevel {
-    level: [BlsScalar; dusk_hades::WIDTH],
+    pub(crate) level: [BlsScalar; dusk_hades::WIDTH],
     index: u64,
 }
 
@@ -79,7 +79,7 @@ impl AsRef<[BlsScalar]> for PoseidonLevel {
     archive_attr(derive(CheckBytes))
 )]
 pub struct PoseidonBranch<const DEPTH: usize> {
-    path: Vec<PoseidonLevel>,
+    pub(crate) path: Vec<PoseidonLevel>,
 }
 
 impl<const DEPTH: usize> PoseidonBranch<DEPTH> {

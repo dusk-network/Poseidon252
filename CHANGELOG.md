@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix module injection for `tree` and `cipher` modules
+- Fix merkle opening circuit [#181]
 
 ## [0.22.0] - 2021-07-27
 
@@ -308,7 +309,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PLONK as ZKP algorithm for the poseidon-hash
   functions.
 
-- Optimization on the Sponge hash fn to skip useless addition if the width of the messages is the appropiate one to do it. (WIDTH < HADES_WIDTH -1).
+- Optimization on the Sponge hash fn to skip useless addition if the width of the messages is the appropiate one to do it. (`WIDTH < HADES_WIDTH -1`).
 
 ### Changed
 
@@ -325,6 +326,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Poseidon252 Sponge-hash impl with BulletProofs.
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
+[#181]: https://github.com/dusk-network/poseidon252/issues/181
 [#180]: https://github.com/dusk-network/poseidon252/issues/180
 [#175]: https://github.com/dusk-network/poseidon252/issues/175
 [#167]: https://github.com/dusk-network/poseidon252/issues/167
