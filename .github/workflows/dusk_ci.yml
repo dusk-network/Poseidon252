@@ -1,4 +1,8 @@
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
 
 name: Continuous integration
 
@@ -11,6 +15,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          toolchain: stable
+          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: install
@@ -27,61 +33,41 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          toolchain: stable
+          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: check
 
-  test_nightly_std:
-    name: Nightly tests std
+  test_std:
+    name: Tests std
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          toolchain: stable
+          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
           args: --release
 
-  test_nightly_no_std:
-    name: Nightly tests no_std
+  test_no_std:
+    name: Tests no_std
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          toolchain: stable
+          override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
           args: --release --no-default-features
-
-  test_nightly_canon_std:
-    name: Nightly tests canon std
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --features canon
-      
-  test_nightly_canon_no_std:
-    name: Nightly tests canon no_std 
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --no-default-features --features canon
 
   fmt:
     name: Rustfmt
@@ -91,8 +77,28 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          toolchain: nightly
+          override: true
       - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install latest stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add clippy
+      - name: Run `cargo clippy`
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
