@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Change the tree logic to be compatible with `microkelvin v0.9` [#151]
 - Changed toolchain-file version to nightly-2021-06-06 [#149]
-- Change featureset config for the crate [#138]
+- Change feature set config for the crate [#138]
 - Update `error` module to be no_std compatible [#132]
 - Update to latest `dusk-poseidon`, `dusk-bls12_381` and `dusk-jubjub` [#126]
 - Update to latest `microkelvin v0.9`, `nstack v0.9` and `canonical v0.6` [#125]
@@ -313,7 +313,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Both the merkle-hash and the sponge-hash techniqes use now PLONK instead of Bulletproofs.
+- Both the merkle-hash and the sponge-hash techniques use now PLONK instead of Bulletproofs.
 
 ### Removed
 

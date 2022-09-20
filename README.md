@@ -22,23 +22,23 @@ designed & build by the [Dusk-Network team](https://dusk.network/).
 
 ## Sponge Hash
 
-The `Sponge` techniqe in Poseidon allows to hash an unlimited ammount of data
+The `Sponge` technique in Poseidon allows to hash an unlimited amount of data
 into a single `Scalar`.
-The sponge hash techniqe requires a padding to be applied before the data can
+The sponge hash technique requires a padding to be applied before the data can
 be hashed.
 
-This is done to avoid hash collitions as stated in the paper of the Poseidon Hash
+This is done to avoid hash collisions as stated in the paper of the Poseidon Hash
 algorithm. See: <https://eprint.iacr.org/2019/458.pdf>.
 The inputs of the `sponge_hash` are always `Scalar` or need to be capable of being represented
 as it.
 
 The module provides two sponge hash implementations:
 
-- Sponge hash using `Scalar` as backend. Which hashes the inputed `Scalar`s and returns a single
+- Sponge hash using `Scalar` as backend. Which hashes the inputted `Scalar`s and returns a single
   `Scalar`.
 
-- Sponge hash gadget using `dusk_plonk::Witness` as a backend. This techniqe is used/required
-  when you want to proof pre-images of unconstrained data inside of Zero-Knowledge PLONK circuits.
+- Sponge hash gadget using `dusk_plonk::Witness` as a backend. This technique is used/required
+  when you want to proof pre-images of unconstrained data inside Zero-Knowledge PLONK circuits.
 
 ## Merkle Hash
 
@@ -50,19 +50,19 @@ This technique allows us to perform hashes of an entire Merkle Tree using
 The technique requires the computation of a `bitflags` element which is always
 positioned as the first item of the level when we hash it, and it basically generated
 in respect of the presence or absence of a leaf in the tree level.
-This allows to prevent hashing collitions.
+This allows to prevent hashing collisions.
 
 At the moment, this library is designed and optimized to work only with trees of `ARITY`
 up to 4. **That means that trees with a bigger ARITY SHOULD NEVER be used with this lib.**
 The module contains the implementation of 4 variants of the same algorithm to support the
 majority of the configurations that the user may need:
 
-- Scalar backend for hashing Merkle Tree levels outside of ZK-Circuits whith two variants:
+- Scalar backend for hashing Merkle Tree levels outside ZK-Circuits with two variants:
   One of them computes the bitflags item while the other assumes that it has already been
   computed and placed in the first Level position.
 
-- `dusk_plonk::Witness` backend for hashing Merkle Tree levels inside of ZK-Circuits,
-  specifically, PLONK circuits. This implementation comes also whith two variants;
+- `dusk_plonk::Witness` backend for hashing Merkle Tree levels inside ZK-Circuits,
+  specifically, PLONK circuits. This implementation comes also with two variants;
   One of them computes the bitflags item while the other assumes that it has already been
   computed and placed in the first Level position.
 
@@ -206,7 +206,7 @@ MerkleOpeningCircuit::verify(&pp, &vd, &proof, &[], label)
 
 ## Documentation
 
-This crate contains info about all of the functions that the library provides as well as the
+This crate contains info about all the functions that the library provides as well as the
 documentation regarding the data structures that it exports. To check it, please feel free to go to
 the [documentation page](https://dusk-network.github.io/Poseidon252/poseidon252/index.html)
 
