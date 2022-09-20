@@ -4,14 +4,12 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![cfg(feature = "canon")]
+#![cfg(feature = "alloc")]
 
 mod max_annotation;
 
 use dusk_plonk::error::Error as PlonkError;
-use dusk_poseidon::tree::{
-    self, PoseidonAnnotation, PoseidonBranch, PoseidonTree,
-};
+use dusk_poseidon::tree::{self, PoseidonBranch, PoseidonTree};
 use max_annotation::MockLeaf;
 use rand_core::{CryptoRng, OsRng, RngCore};
 
@@ -19,7 +17,8 @@ use dusk_plonk::prelude::*;
 
 const DEPTH: usize = 17;
 const CAPACITY: usize = 15;
-type Tree = PoseidonTree<MockLeaf, PoseidonAnnotation, DEPTH>;
+
+type Tree = PoseidonTree<MockLeaf, u64, DEPTH>;
 
 struct MerkleOpeningCircuit {
     branch: PoseidonBranch<DEPTH>,
@@ -31,14 +30,11 @@ impl MerkleOpeningCircuit {
         tree: &mut Tree,
     ) -> Self {
         let leaf = MockLeaf::random(rng);
-        let pos = tree.push(leaf).expect("Failed to append to the tree");
+        let pos = tree.push(leaf);
 
-        let branch = tree
-            .branch(pos)
-            .expect("Failed to read the tree for the branch")
-            .expect(
-                "Failed to fetch the branch of the created leaf from the tree",
-            );
+        let branch = tree.branch(pos).expect(
+            "Failed to fetch the branch of the created leaf from the tree",
+        );
 
         Self { branch }
     }

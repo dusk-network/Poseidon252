@@ -75,7 +75,7 @@
 //! let message = [a, b];
 //!
 //! // Bob's view (sender)
-//! // The cipher and nonce are safe to be broadcasted publicly
+//! // The cipher and nonce are safe to broadcast publicly
 //! let (cipher, nonce) = sender(&bob_secret, &alice_public, &message);
 //!
 //! // Alice's view (receiver)
@@ -85,20 +85,15 @@
 //! assert_eq!(decrypted_message, message);
 //! ```
 
-use crate::Error;
-
-#[cfg(feature = "canon")]
-use canonical_derive::Canon;
+use dusk_bls12_381::BlsScalar;
+use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
+use dusk_hades::{ScalarStrategy, Strategy};
+use dusk_jubjub::JubJubAffine;
 
 #[cfg(feature = "rkyv-impl")]
 use bytecheck::CheckBytes;
 #[cfg(feature = "rkyv-impl")]
 use rkyv::{Archive, Deserialize, Serialize};
-
-use dusk_bls12_381::BlsScalar;
-use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
-use dusk_hades::{ScalarStrategy, Strategy};
-use dusk_jubjub::JubJubAffine;
 
 const MESSAGE_CAPACITY: usize = 2;
 const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
@@ -118,17 +113,6 @@ pub struct PoseidonCipher {
 
 impl Serializable<CIPHER_BYTES_SIZE> for PoseidonCipher {
     type Error = BytesError;
-    /// Convert the instance to a bytes representation
-    fn to_bytes(&self) -> [u8; Self::SIZE] {
-        let mut bytes = [0u8; Self::SIZE];
-
-        self.cipher.iter().enumerate().for_each(|(i, c)| {
-            let n = i * BlsScalar::SIZE;
-            bytes[n..n + BlsScalar::SIZE].copy_from_slice(&c.to_bytes());
-        });
-
-        bytes
-    }
 
     /// Create an instance from a previous `PoseidonCipher::to_bytes` function
     fn from_bytes(bytes: &[u8; Self::SIZE]) -> Result<Self, Self::Error> {
@@ -142,6 +126,18 @@ impl Serializable<CIPHER_BYTES_SIZE> for PoseidonCipher {
         }
 
         Ok(Self::new(cipher))
+    }
+
+    /// Convert the instance to a bytes representation
+    fn to_bytes(&self) -> [u8; Self::SIZE] {
+        let mut bytes = [0u8; Self::SIZE];
+
+        self.cipher.iter().enumerate().for_each(|(i, c)| {
+            let n = i * BlsScalar::SIZE;
+            bytes[n..n + BlsScalar::SIZE].copy_from_slice(&c.to_bytes());
+        });
+
+        bytes
     }
 }
 
@@ -229,7 +225,7 @@ impl PoseidonCipher {
         &self,
         secret: &JubJubAffine,
         nonce: &BlsScalar,
-    ) -> Result<[BlsScalar; MESSAGE_CAPACITY], Error> {
+    ) -> Option<[BlsScalar; MESSAGE_CAPACITY]> {
         let zero = BlsScalar::zero();
         let mut strategy = ScalarStrategy::new();
 
@@ -246,10 +242,10 @@ impl PoseidonCipher {
         strategy.perm(&mut state);
 
         if self.cipher[MESSAGE_CAPACITY] != state[1] {
-            return Err(Error::CipherDecryptionFailed);
+            return None;
         }
 
-        Ok(message)
+        Some(message)
     }
 }
 

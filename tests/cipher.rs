@@ -4,6 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#![cfg(feature = "alloc")]
+
 use core::ops::Mul;
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::Serializable;
@@ -13,7 +15,6 @@ use dusk_jubjub::{
 };
 use dusk_plonk::error::Error as PlonkError;
 use dusk_poseidon::cipher::{self, PoseidonCipher};
-use dusk_poseidon::Error;
 use rand_core::{OsRng, RngCore};
 
 use dusk_plonk::prelude::*;
@@ -57,42 +58,42 @@ fn sanity() {
 }
 
 #[test]
-fn encrypt() -> Result<(), Error> {
+fn encrypt() {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
-    let decrypt = cipher.decrypt(&secret, &nonce)?;
+    let decrypt = cipher
+        .decrypt(&secret, &nonce)
+        .expect("decryption should succeed");
 
     assert_eq!(message, decrypt);
-
-    Ok(())
 }
 
 #[test]
-fn single_bit() -> Result<(), Error> {
+fn single_bit() {
     let (_, secret, nonce) = gen();
     let message = BlsScalar::random(&mut OsRng);
 
     let cipher = PoseidonCipher::encrypt(&[message], &secret, &nonce);
-    let decrypt = cipher.decrypt(&secret, &nonce)?;
+    let decrypt = cipher
+        .decrypt(&secret, &nonce)
+        .expect("decryption should succeed");
 
     assert_eq!(message, decrypt[0]);
-
-    Ok(())
 }
 
 #[test]
-fn overflow() -> Result<(), Error> {
+fn overflow() {
     let (_, secret, nonce) = gen();
     let message =
         [BlsScalar::random(&mut OsRng); PoseidonCipher::capacity() + 1];
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
-    let decrypt = cipher.decrypt(&secret, &nonce)?;
+    let decrypt = cipher
+        .decrypt(&secret, &nonce)
+        .expect("decryption should succeed");
 
     assert_eq!(message[0..PoseidonCipher::capacity()], decrypt);
-
-    Ok(())
 }
 
 #[test]
@@ -101,11 +102,11 @@ fn wrong_key_fail() {
     let (_, wrong_secret, _) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
-    assert!(cipher.decrypt(&wrong_secret, &nonce).is_err());
+    assert!(cipher.decrypt(&wrong_secret, &nonce).is_none());
 }
 
 #[test]
-fn bytes() -> Result<(), Error> {
+fn bytes() {
     let (message, secret, nonce) = gen();
 
     let cipher = PoseidonCipher::encrypt(&message, &secret, &nonce);
@@ -115,11 +116,11 @@ fn bytes() -> Result<(), Error> {
 
     assert_eq!(cipher, restored_cipher);
 
-    let decrypt = restored_cipher.decrypt(&secret, &nonce)?;
+    let decrypt = restored_cipher
+        .decrypt(&secret, &nonce)
+        .expect("decryption should succeed");
 
     assert_eq!(message, decrypt);
-
-    Ok(())
 }
 
 #[derive(Debug)]

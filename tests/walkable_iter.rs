@@ -4,19 +4,16 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![cfg(feature = "canon")]
-use canonical_derive::Canon;
+#![cfg(feature = "alloc")]
+
 use core::borrow::Borrow;
 use dusk_bls12_381::BlsScalar;
-use dusk_poseidon::tree::{PoseidonLeaf, PoseidonMaxAnnotation, PoseidonTree};
-use dusk_poseidon::Error;
-use microkelvin::{
-    Annotation, Child, Compound, Keyed, MaxKey, Step, Walk, Walker,
-};
+use dusk_poseidon::tree::{PoseidonLeaf, PoseidonTree};
+use microkelvin::{Child, Compound, Step, Walk, Walker};
+use nstack::annotation::{Keyed, MaxKey};
+use ranno::Annotation;
 
-#[derive(
-    Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Canon,
-)]
+#[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 pub struct TestLeaf {
     hash: BlsScalar,
     pos: u64,
@@ -59,9 +56,7 @@ impl Borrow<u64> for TestLeaf {
     }
 }
 
-#[derive(
-    Copy, Clone, Default, Debug, Canon, Ord, PartialOrd, Eq, PartialEq,
-)]
+#[derive(Copy, Clone, Default, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct BlockHeight(pub(crate) u64);
 
 // Walker method to find the elements that are avobe a certain a block height.
@@ -71,7 +66,7 @@ impl<C, A> Walker<C, A> for BlockHeightFilter
 where
     C: Compound<A>,
     C::Leaf: Keyed<BlockHeight>,
-    A: Annotation<C::Leaf> + Borrow<MaxKey<BlockHeight>>,
+    A: Annotation<C> + Borrow<MaxKey<BlockHeight>>,
 {
     fn walk(&mut self, walk: Walk<C, A>) -> Step {
         for i in 0.. {
@@ -84,8 +79,10 @@ where
                     }
                 }
                 Child::Node(n) => {
+                    let anno = n.anno();
+
                     let max_node_block_height: BlockHeight =
-                        match *(*n.annotation()).borrow() {
+                        match *(*anno).borrow() {
                             MaxKey::NegativeInfinity => return Step::Abort,
                             MaxKey::Maximum(value) => value,
                         };
@@ -104,52 +101,50 @@ where
 }
 
 #[test]
-fn custom_walker_iter() -> Result<(), Error> {
-    let mut tree =
-        PoseidonTree::<TestLeaf, PoseidonMaxAnnotation<BlockHeight>, 17>::new();
+fn custom_walker_iter() {
+    let mut tree = PoseidonTree::<TestLeaf, BlockHeight, 17>::new();
 
     // Fill the tree with different leafs with different block heights.
     for i in 0..18 {
         let leaf = TestLeaf::new(i);
-        let pos = tree.push(leaf)?;
+        let pos = tree.push(leaf);
         assert_eq!(pos, i);
         let key: BlockHeight = *leaf.key();
         assert_eq!(key, BlockHeight(i as u64));
     }
 
     let mut leaf_count = 0;
-    // For a block_height of 0, the custom walker should iterate over all the leaves.
-    tree.annotated_iter_walk(BlockHeightFilter(0))?
+    // For a block_height of 0, the custom walker should iterate over all the
+    // leaves.
+    tree.annotated_iter_walk(BlockHeightFilter(0))
+        .expect("there should be a branch returned")
         .into_iter()
         .enumerate()
         .for_each(|(idx, l)| {
-            if l.is_ok() {
-                leaf_count += 1
-            }
+            leaf_count += 1;
             // Check that the heights are the expected ones
-            let leaf_height: BlockHeight = *l.unwrap().key();
+            let leaf_height: BlockHeight = *l.key();
             assert_eq!(leaf_height, BlockHeight(idx as u64));
         });
     assert_eq!(leaf_count, 18);
 
-    // For a block_height of 20, we should fail to get an iterator over the tree as no leaf
-    // satisfies the criteria.
-    assert!(tree.annotated_iter_walk(BlockHeightFilter(20)).is_err());
+    // For a block_height of 20, we should fail to get an iterator over the tree
+    // as no leaf satisfies the criteria.
+    assert!(tree.annotated_iter_walk(BlockHeightFilter(20)).is_none());
 
     leaf_count = 0;
-    // For a block_height of 15, the custom walker should iterate over the last two subtrees which means from
-    // leaves [12, 13, 14, 15] & [16, 17, _, _].
-    tree.annotated_iter_walk(BlockHeightFilter(15))?
+    // For a block_height of 15, the custom walker should iterate over the last
+    // two subtrees which means from leaves [12, 13, 14, 15] & [16, 17, _,
+    // _].
+    tree.annotated_iter_walk(BlockHeightFilter(15))
+        .expect("should return a branch")
         .into_iter()
         .enumerate()
         .for_each(|(idx, l)| {
-            if let Ok(leaf) = l {
-                leaf_count += 1;
-                // Check that the heights are the expected ones
-                let leaf_height: BlockHeight = *leaf.key();
-                assert_eq!(leaf_height, BlockHeight(idx as u64 + 12));
-            }
+            leaf_count += 1;
+            // Check that the heights are the expected ones
+            let leaf_height: BlockHeight = *l.key();
+            assert_eq!(leaf_height, BlockHeight(idx as u64 + 12));
         });
     assert_eq!(leaf_count, 6);
-    Ok(())
 }
