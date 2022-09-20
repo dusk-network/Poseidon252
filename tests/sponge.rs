@@ -241,7 +241,7 @@ fn truncated_sponge() -> Result<(), PlonkError> {
         )
         .compile(&pp)?;
 
-        let i = (&input[..w]).to_vec();
+        let i = input[..w].to_vec();
         let o = sponge::truncated::hash(i.as_slice());
         let proof = TestTruncatedCircuit::new(i, o)
             .prove(&pp, &pk, label, &mut OsRng)?;
