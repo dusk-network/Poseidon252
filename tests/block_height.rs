@@ -59,7 +59,7 @@ impl Borrow<u64> for TestLeaf {
 #[derive(Copy, Clone, Default, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct BlockHeight(pub(crate) u64);
 
-// Walker method to find the elements that are avobe a certain a block height.
+// Walker method to find the elements that are above a certain a block height.
 pub struct BlockHeightFilter(u64);
 
 impl<C, A> Walker<C, A> for BlockHeightFilter

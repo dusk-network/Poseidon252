@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![cfg_attr(feature = "alloc", warn(missing_docs), doc = include_str!("../README.md"))]
 
 #[cfg(feature = "alloc")]

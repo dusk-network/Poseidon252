@@ -7,19 +7,19 @@ If you have questions or comments, please feel free to email the
 authors listed [here](https://github.com/dusk-network/Poseidon252/blob/master/Cargo.toml#L4). 
 
 For feature requests, suggestions, and bug reports, please open an issue on
-[our Github](https://github.com/dusk-network/Poseidon252).  (Or, send us
-an email if you're opposed to using Github for whatever reason.)
+[our GitHub](https://github.com/dusk-network/Poseidon252).  (Or, send us
+an email if you're opposed to using GitHub for whatever reason.)
 
 Patches are welcomed as pull requests on
-[our Github](https://github.com/dusk-network/Poseidon252), as well as by
-email (preferably sent to all of the authors listed in `Cargo.toml`).
+[our GitHub](https://github.com/dusk-network/Poseidon252), as well as by
+email (preferably sent to all the authors listed in `Cargo.toml`).
 
-If you want to work on an issue, please let us know in the comments of it and
+If you want to work on an issue, please let us know in the comments and
 we will assign it to you.
 
-If you're new to this repository and you want to contribute, you can
+If you're new to this repository, and you want to contribute, you can
 look for the issues tagged the with `good first issue` label. We try to add this tag
-to the issues we belive are easy for newcomers.
+to the issues we believe are easy for newcomers.
 
 If you need any help regarding an issue feel free to ask the authors in the `Draft pull request`
 or the issue (or by email if you prefer it by any reason.)
@@ -66,5 +66,5 @@ a trade-off and numerous costs. There is seldom a right answer.
 
 * Private harassment is also unacceptable. No matter who you are, if you feel you have been or are being harassed or made uncomfortable by a community member, please contact one of the channel ops or any of the Rust moderation team immediately. Whether you’re a regular contributor or a newcomer, we care about making this community a safe place for you and we’ve got your back.
 
-* Likewise any spamming, trolling, flaming, baiting or other attention-stealing behavior is not welcome.
+* Likewise, any spamming, trolling, flaming, baiting or other attention-stealing behavior is not welcome.
 
