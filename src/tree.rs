@@ -13,7 +13,14 @@ mod leaf;
 mod zk;
 
 pub use annotation::PoseidonAnnotation;
+
+#[cfg(feature = "rkyv-impl")]
+pub use branch::{
+    ArchivedPoseidonBranch, ArchivedPoseidonLevel, PoseidonBranchResolver,
+    PoseidonLevelResolver,
+};
 pub use branch::{PoseidonBranch, PoseidonLevel};
+
 pub use leaf::PoseidonLeaf;
 pub use zk::merkle_opening;
 

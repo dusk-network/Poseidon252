@@ -20,8 +20,18 @@ use microkelvin::Branch;
 use nstack::annotation::Keyed;
 use nstack::NStack;
 
+#[cfg(feature = "rkyv-impl")]
+use bytecheck::CheckBytes;
+#[cfg(feature = "rkyv-impl")]
+use rkyv::{Archive, Deserialize, Serialize};
+
 /// Represents a level of a branch on a given depth
 #[derive(Debug, Default, Clone, Copy)]
+#[cfg_attr(
+    feature = "rkyv-impl",
+    derive(Archive, Deserialize, Serialize),
+    archive_attr(derive(CheckBytes))
+)]
 pub struct PoseidonLevel {
     level: [BlsScalar; dusk_hades::WIDTH],
     index: u64,
@@ -63,6 +73,11 @@ impl AsRef<[BlsScalar]> for PoseidonLevel {
 
 /// Represents a full path for a merkle opening
 #[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "rkyv-impl",
+    derive(Archive, Deserialize, Serialize),
+    archive_attr(derive(CheckBytes))
+)]
 pub struct PoseidonBranch<const DEPTH: usize> {
     path: Vec<PoseidonLevel>,
 }
