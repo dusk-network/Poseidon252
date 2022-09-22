@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Change `PoseidonTree` to build only with the `alloc` feature [#180]
-- Change `PoseidonTree` to take a generic `Keyed` over the leaf type [#180]
+- Change `PoseidonTree` to take a generic `Keyed` over the leaf type
   instead of a `PoseidonAnnotation` [#180]
 - Make `PoseidonTree::new` const [#180]
 - Update `microkelvin` from `0.15` to `0.17` [#180]
@@ -28,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove `Error` struct [#180]
 - Remove `canonical` and `canonical-derive` from dependencies [#180]
 - Remove `PoseidonMaxAnnotation` [#180]
+
+### Fixed
+
+- Fix merkle opening circuit [#181]
+- Fix CHANGELOG version links [#191]
 
 ## [0.26.0] - 2022-08-17
 
@@ -52,7 +57,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix module injection for `tree` and `cipher` modules
-- Fix merkle opening circuit [#181]
 
 ## [0.22.0] - 2021-07-27
 
@@ -160,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - No-Std compatibility.
+
+## [0.13.2] - 2020-11-11
+
+### Changed
+
+- Update Hades version and libraries dependent on BLS and JubJub
 
 ## [0.13.1] - 2020-11-06
 
@@ -326,6 +336,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Poseidon252 Sponge-hash impl with BulletProofs.
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
+<!-- ISSUES -->
 [#181]: https://github.com/dusk-network/poseidon252/issues/181
 [#180]: https://github.com/dusk-network/poseidon252/issues/180
 [#175]: https://github.com/dusk-network/poseidon252/issues/175
@@ -349,13 +360,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#119]: https://github.com/dusk-network/poseidon252/issues/119
 [#117]: https://github.com/dusk-network/poseidon252/issues/117
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
+
+<!-- VERSIONS -->
 [unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.26.0...HEAD
 [0.26.0]: https://github.com/dusk-network/poseidon252/compare/v0.22.0...v0.26.0
-[0.22.0]: https://github.com/dusk-network/poseidon252/compare/v0.20.0...v0.22.0
+[0.22.0]: https://github.com/dusk-network/poseidon252/compare/v0.21.0...v0.22.0
+[0.21.0]: https://github.com/dusk-network/poseidon252/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/dusk-network/poseidon252/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/dusk-network/poseidon252/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/dusk-network/poseidon252/compare/v0.17.0...v0.18.0
-[0.17.0]: https://github.com/dusk-network/poseidon252/compare/v0.15.0...v0.17.0
+[0.17.0]: https://github.com/dusk-network/poseidon252/compare/v0.16.0...v0.17.0
+[0.16.0]: https://github.com/dusk-network/poseidon252/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/dusk-network/poseidon252/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/dusk-network/poseidon252/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/dusk-network/poseidon252/compare/v0.13.2...v0.14.0
@@ -374,4 +389,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.6.2]: https://github.com/dusk-network/poseidon252/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/dusk-network/poseidon252/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/dusk-network/poseidon252/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/dusk-network/poseidon252/releases/tag/v0.5.0
+[0.5.0]: https://github.com/dusk-network/poseidon252/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/dusk-network/poseidon252/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/dusk-network/poseidon252/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/dusk-network/poseidon252/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/dusk-network/poseidon252/releases/tag/v0.1.0
