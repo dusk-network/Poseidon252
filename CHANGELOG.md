@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Change `PoseidonBranch` to have two fields - `root` and `path`. The path is
+  now a fixed length array. [#189]
 - Change `PoseidonTree` to build only with the `alloc` feature [#180]
 - Change `PoseidonTree` to take a generic `Keyed` over the leaf type
   instead of a `PoseidonAnnotation` [#180]
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Remove `PoseidonBranch` `Default` implementation [#189]
 - Remove `std` feature [#180]
 - Remove `canon` and `persistence` features [#180]
 - Remove `Error` struct [#180]
@@ -337,6 +340,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#189]: https://github.com/dusk-network/poseidon252/issues/189
 [#181]: https://github.com/dusk-network/poseidon252/issues/181
 [#180]: https://github.com/dusk-network/poseidon252/issues/180
 [#175]: https://github.com/dusk-network/poseidon252/issues/175

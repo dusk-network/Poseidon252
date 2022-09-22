@@ -213,7 +213,7 @@ mod tests {
         let label = b"dusk-network";
         let (pk, _, pp, mut circuit) = init_valid_opening_setup();
 
-        circuit.branch.path[10].level[3] = BlsScalar::random(&mut OsRng);
+        circuit.branch.path[3].level[3] = BlsScalar::random(&mut OsRng);
 
         // With an incorrect path we can not generate a valid proof
         circuit
@@ -226,7 +226,7 @@ mod tests {
         let label = b"dusk-network";
         let (pk, _, pp, mut circuit) = init_valid_opening_setup();
 
-        for depth in 0..DEPTH + 1 {
+        for depth in 0..DEPTH {
             for offset in 1..dusk_hades::WIDTH {
                 circuit.branch.path[depth].level[offset] =
                     BlsScalar::random(&mut OsRng);
