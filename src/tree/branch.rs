@@ -8,10 +8,7 @@ use super::PoseidonLeaf;
 
 use crate::tree::PoseidonAnnotation;
 
-use alloc::vec::Vec;
-
 use core::borrow::Borrow;
-use core::iter;
 use core::ops::Deref;
 
 use dusk_bls12_381::BlsScalar;
@@ -79,7 +76,8 @@ impl AsRef<[BlsScalar]> for PoseidonLevel {
     archive_attr(derive(CheckBytes))
 )]
 pub struct PoseidonBranch<const DEPTH: usize> {
-    pub(crate) path: Vec<PoseidonLevel>,
+    pub(crate) path: [PoseidonLevel; DEPTH],
+    root: BlsScalar,
 }
 
 impl<const DEPTH: usize> PoseidonBranch<DEPTH> {
@@ -88,10 +86,7 @@ impl<const DEPTH: usize> PoseidonBranch<DEPTH> {
 
     /// Represents the root for a given path of an opening over a subtree
     pub fn root(&self) -> &BlsScalar {
-        self.path
-            .last()
-            .map(|l| l.deref())
-            .unwrap_or(&Self::NULL_ROOT)
+        &self.root
     }
 }
 
@@ -100,16 +95,6 @@ impl<const DEPTH: usize> Deref for PoseidonBranch<DEPTH> {
 
     fn deref(&self) -> &Self::Target {
         self.path[0].deref()
-    }
-}
-
-impl<const DEPTH: usize> Default for PoseidonBranch<DEPTH> {
-    fn default() -> Self {
-        let path = iter::repeat(PoseidonLevel::default())
-            .take(DEPTH + 1)
-            .collect();
-
-        Self { path }
     }
 }
 
@@ -129,24 +114,19 @@ where
     fn from(
         b: &Branch<'_, NStack<L, PoseidonAnnotation<K>>, PoseidonAnnotation<K>>,
     ) -> Self {
-        let mut branch = PoseidonBranch::default();
-        let mut depth = 0;
+        let mut path = [PoseidonLevel::default(); DEPTH];
 
-        b.levels()
-            .iter()
-            .rev()
-            .zip(branch.path.iter_mut())
-            .for_each(|(l, b)| {
-                depth += 1;
-                b.index = l.index() as u64 + 1;
+        b.levels().iter().rev().zip(path.iter_mut()).for_each(
+            |(nstack_level, poseidon_level)| {
+                poseidon_level.index = nstack_level.index() as u64 + 1;
 
                 let mut flag = 1;
                 let mut mask = 0;
 
-                match &**l {
+                match &**nstack_level {
                     NStack::Leaf(l) => l
                         .iter()
-                        .zip(b.level.iter_mut().skip(1))
+                        .zip(poseidon_level.level.iter_mut().skip(1))
                         .for_each(|(leaf, l)| {
                             if let Some(leaf) = leaf {
                                 mask |= flag;
@@ -157,7 +137,7 @@ where
                         }),
                     NStack::Node(n) => n
                         .iter()
-                        .zip(b.level.iter_mut().skip(1))
+                        .zip(poseidon_level.level.iter_mut().skip(1))
                         .for_each(|(node, l)| {
                             if let Some(annotated) = node {
                                 let anno = annotated.anno();
@@ -172,29 +152,47 @@ where
                         }),
                 }
 
-                b.level[0] = BlsScalar::from(mask);
-            });
+                poseidon_level.level[0] = BlsScalar::from(mask);
+            },
+        );
 
-        if depth >= DEPTH {
-            return branch;
+        // If the nstack is smaller than the poseidon tree then the we need to
+        // populate the remaining levels of the tree.
+        let nstack_depth = b.levels().len();
+        let flag = BlsScalar::one();
+
+        if nstack_depth < DEPTH {
+            let level = path[nstack_depth - 1].level;
+            let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
+
+            let mut h = ScalarStrategy::new();
+
+            path.iter_mut().skip(nstack_depth).fold(level, |l, b| {
+                perm.copy_from_slice(&l);
+                h.perm(&mut perm);
+
+                b.index = 1;
+                b.level[0] = flag;
+                b.level[1] = perm[1];
+
+                b.level
+            });
         }
 
-        let flag = BlsScalar::one();
-        let level = branch.path[depth - 1].level;
+        // TODO: The amount of repetition here hints at the fact that hashing
+        //  should be more ergonomic.
+
+        // Calculate the root
         let mut perm = [BlsScalar::zero(); dusk_hades::WIDTH];
-
         let mut h = ScalarStrategy::new();
-        branch.path.iter_mut().skip(depth).fold(level, |l, b| {
-            perm.copy_from_slice(&l);
-            h.perm(&mut perm);
 
-            b.index = 1;
-            b.level[0] = flag;
-            b.level[1] = perm[1];
+        perm.copy_from_slice(&path[DEPTH - 1].level);
+        perm[0] = flag;
+        h.perm(&mut perm);
 
-            b.level
-        });
-
-        branch
+        PoseidonBranch {
+            path,
+            root: perm[1],
+        }
     }
 }
