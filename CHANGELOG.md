@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.1] - 2022-10-19
+
 ### Added
 
 - Add support for `rkyv-impl` under `no_std`
@@ -366,7 +368,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
 
 <!-- VERSIONS -->
-[unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.26.0...HEAD
+[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.26.1...HEAD
+[0.26.1]: https://github.com/dusk-network/poseidon252/compare/v0.26.0...v0.26.1
 [0.26.0]: https://github.com/dusk-network/poseidon252/compare/v0.22.0...v0.26.0
 [0.22.0]: https://github.com/dusk-network/poseidon252/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/dusk-network/poseidon252/compare/v0.20.0...v0.21.0
