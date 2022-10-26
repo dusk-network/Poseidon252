@@ -11,7 +11,7 @@ use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy};
 use dusk_poseidon::tree::{PoseidonLeaf, PoseidonTree};
 use nstack::annotation::Keyed;
-use rand_core::{CryptoRng, RngCore};
+use rand::{CryptoRng, RngCore};
 
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 pub struct MockLeaf {

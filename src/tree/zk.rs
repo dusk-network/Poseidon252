@@ -10,13 +10,16 @@ use dusk_hades::GadgetStrategy;
 use dusk_plonk::prelude::*;
 
 /// Perform a merkle opening for a given branch and return the calculated root
-pub fn merkle_opening<const DEPTH: usize>(
-    composer: &mut TurboComposer,
+pub fn merkle_opening<C, const DEPTH: usize>(
+    composer: &mut C,
     branch: &PoseidonBranch<DEPTH>,
     leaf: Witness,
-) -> Witness {
+) -> Witness
+where
+    C: Composer,
+{
     // Generate a permutation container
-    let mut container = [TurboComposer::constant_zero(); dusk_hades::WIDTH];
+    let mut container = [C::ZERO; dusk_hades::WIDTH];
 
     // Recalculate the root for the given branch
     (0..DEPTH).fold(leaf, |root, depth| {
@@ -25,9 +28,8 @@ pub fn merkle_opening<const DEPTH: usize>(
         // Create the bits representation of the offset as witness
         // and make sure that offset points to a hash in the level
         let offset_flag = level.offset_flag();
-        let mut sum = TurboComposer::constant_zero();
-        let mut offset_bits =
-            [TurboComposer::constant_zero(); dusk_hades::WIDTH - 1];
+        let mut sum = C::ZERO;
+        let mut offset_bits = [C::ZERO; dusk_hades::WIDTH - 1];
         offset_bits.iter_mut().fold(1, |mask, bit| {
             let bit_bls = BlsScalar::from((offset_flag & mask).min(1));
             *bit = composer.append_witness(bit_bls);
@@ -72,10 +74,11 @@ pub fn merkle_opening<const DEPTH: usize>(
 mod tests {
     use super::*;
 
-    use alloc::vec::Vec;
     use dusk_plonk::error::Error as PlonkError;
     use nstack::annotation::Keyed;
-    use rand_core::{CryptoRng, OsRng, RngCore};
+    use rand::rngs::OsRng;
+    use rand::rngs::StdRng;
+    use rand::{CryptoRng, RngCore, SeedableRng};
 
     use crate::tree::{self, PoseidonLeaf, PoseidonTree};
 
@@ -127,6 +130,7 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
     struct MerkleOpeningCircuit {
         pub branch: PoseidonBranch<DEPTH>,
     }
@@ -148,12 +152,10 @@ mod tests {
     }
 
     impl Circuit for MerkleOpeningCircuit {
-        const CIRCUIT_ID: [u8; 32] = [0xff; 32];
-
-        fn gadget(
-            &mut self,
-            composer: &mut TurboComposer,
-        ) -> Result<(), PlonkError> {
+        fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError>
+        where
+            C: Composer,
+        {
             let leaf: BlsScalar = *self.branch;
             let leaf = composer.append_witness(leaf);
 
@@ -161,70 +163,62 @@ mod tests {
             let root = composer.append_witness(*root);
 
             let root_p =
-                tree::merkle_opening::<DEPTH>(composer, &self.branch, leaf);
+                tree::merkle_opening::<C, DEPTH>(composer, &self.branch, leaf);
 
             composer.assert_equal(root_p, root);
 
             Ok(())
         }
-
-        fn public_inputs(&self) -> Vec<PublicInputValue> {
-            Vec::new()
-        }
-
-        fn padded_gates(&self) -> usize {
-            1 << CAPACITY
-        }
     }
 
     fn init_valid_opening_setup() -> (
-        ProverKey,
-        VerifierData,
-        PublicParameters,
+        Prover<MerkleOpeningCircuit>,
+        Verifier<MerkleOpeningCircuit>,
         MerkleOpeningCircuit,
     ) {
+        let label = b"dusk-network";
         let pp = PublicParameters::setup(1 << CAPACITY, &mut OsRng).unwrap();
 
-        let mut tree = Tree::default();
-        let mut circuit = MerkleOpeningCircuit::random(&mut OsRng, &mut tree);
-
-        let (pk, vd) = circuit.compile(&pp).expect("Failed to compile circuit");
+        let (prover, verifier) =
+            Compiler::compile(&pp, label).expect("failed to compile circuit");
 
         let mut tree = Tree::default();
         let circuit = MerkleOpeningCircuit::random(&mut OsRng, &mut tree);
-        (pk, vd, pp, circuit)
+
+        (prover, verifier, circuit)
     }
 
     #[test]
     fn merkle_opening() {
-        let label = b"dusk-network";
-        let (pk, vd, pp, mut circuit) = init_valid_opening_setup();
+        let (prover, verifier, circuit) = init_valid_opening_setup();
+        let mut rng = StdRng::seed_from_u64(0xbeef);
 
-        let proof = circuit
-            .prove(&pp, &pk, label, &mut OsRng)
-            .expect("Failed to generate proof");
+        let (proof, public_inputs) = prover
+            .prove(&mut rng, &circuit)
+            .expect("proving the circuit should succeed");
 
-        MerkleOpeningCircuit::verify(&pp, &vd, &proof, &[], label)
-            .expect("Proof verification failed");
+        verifier
+            .verify(&proof, &public_inputs)
+            .expect("verifying the proof should succeed");
     }
 
     #[test]
     fn merkle_opening_invalid_hash() {
-        let label = b"dusk-network";
-        let (pk, _, pp, mut circuit) = init_valid_opening_setup();
+        let (prover, _, mut circuit) = init_valid_opening_setup();
+        let mut rng = StdRng::seed_from_u64(0xfeeb);
 
         circuit.branch.path[3].level[3] = BlsScalar::random(&mut OsRng);
 
         // With an incorrect path we can not generate a valid proof
-        circuit
-            .prove(&pp, &pk, label, &mut OsRng)
+        prover
+            .prove(&mut rng, &circuit)
             .expect_err("Proof generation should fail");
     }
 
     #[test]
     fn merkle_opening_invalid_path() {
-        let label = b"dusk-network";
-        let (pk, _, pp, mut circuit) = init_valid_opening_setup();
+        let (prover, _, mut circuit) = init_valid_opening_setup();
+        let mut rng = StdRng::seed_from_u64(0xfeeb);
 
         for depth in 0..DEPTH {
             for offset in 1..dusk_hades::WIDTH {
@@ -234,8 +228,8 @@ mod tests {
         }
 
         // With an incorrect path we can not generate a valid proof
-        circuit
-            .prove(&pp, &pk, label, &mut OsRng)
+        prover
+            .prove(&mut rng, &circuit)
             .expect_err("Proof generation should fail");
     }
 }

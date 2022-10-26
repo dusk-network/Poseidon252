@@ -25,7 +25,7 @@
 //! use dusk_bls12_381::BlsScalar;
 //! use dusk_jubjub::{dhke, JubJubExtended, JubJubScalar, GENERATOR};
 //! use dusk_poseidon::cipher::PoseidonCipher;
-//! use rand_core::OsRng;
+//! use rand::rngs::OsRng;
 //!
 //! fn sender(
 //!     sender_secret: &JubJubScalar,
