@@ -11,7 +11,8 @@ mod max_annotation;
 use dusk_plonk::error::Error as PlonkError;
 use dusk_poseidon::tree::{self, PoseidonBranch, PoseidonTree};
 use max_annotation::MockLeaf;
-use rand_core::{CryptoRng, OsRng, RngCore};
+use rand::rngs::{OsRng, StdRng};
+use rand::{CryptoRng, RngCore, SeedableRng};
 
 use dusk_plonk::prelude::*;
 
@@ -20,6 +21,7 @@ const CAPACITY: usize = 15;
 
 type Tree = PoseidonTree<MockLeaf, u64, DEPTH>;
 
+#[derive(Default)]
 struct MerkleOpeningCircuit {
     branch: PoseidonBranch<DEPTH>,
 }
@@ -41,12 +43,10 @@ impl MerkleOpeningCircuit {
 }
 
 impl Circuit for MerkleOpeningCircuit {
-    const CIRCUIT_ID: [u8; 32] = [0xff; 32];
-
-    fn gadget(
-        &mut self,
-        composer: &mut TurboComposer,
-    ) -> Result<(), PlonkError> {
+    fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError>
+    where
+        C: Composer,
+    {
         use std::ops::Deref;
 
         let leaf: BlsScalar = *self.branch.deref();
@@ -56,19 +56,11 @@ impl Circuit for MerkleOpeningCircuit {
         let root = composer.append_witness(*root);
 
         let root_p =
-            tree::merkle_opening::<DEPTH>(composer, &self.branch, leaf);
+            tree::merkle_opening::<C, DEPTH>(composer, &self.branch, leaf);
 
         composer.assert_equal(root_p, root);
 
         Ok(())
-    }
-
-    fn public_inputs(&self) -> Vec<PublicInputValue> {
-        vec![]
-    }
-
-    fn padded_gates(&self) -> usize {
-        1 << CAPACITY
     }
 }
 
@@ -76,19 +68,20 @@ impl Circuit for MerkleOpeningCircuit {
 fn tree_merkle_opening() {
     let label = b"dusk-network";
     let pp = PublicParameters::setup(1 << CAPACITY, &mut OsRng).unwrap();
+    let mut rng = StdRng::seed_from_u64(0xbeef);
+
+    let (prover, verifier) =
+        Compiler::compile::<MerkleOpeningCircuit>(&pp, label)
+            .expect("Circuit should compile successfully");
 
     let mut tree = Tree::default();
+    let circuit = MerkleOpeningCircuit::random(&mut rng, &mut tree);
 
-    let mut circuit = MerkleOpeningCircuit::random(&mut OsRng, &mut tree);
-    let (pk, vd) = circuit.compile(&pp).expect("Failed to compile circuit");
+    let (proof, public_inputs) = prover
+        .prove(&mut rng, &circuit)
+        .expect("Proving the circuit should succeed");
 
-    let mut tree = Tree::default();
-    let mut circuit = MerkleOpeningCircuit::random(&mut OsRng, &mut tree);
-
-    let proof = circuit
-        .prove(&pp, &pk, label, &mut OsRng)
-        .expect("Failed to generate proof");
-
-    MerkleOpeningCircuit::verify(&pp, &vd, &proof, &[], label)
-        .expect("Proof verification failed");
+    verifier
+        .verify(&proof, &public_inputs)
+        .expect("Proof verification should succeed");
 }

@@ -15,7 +15,8 @@ use dusk_jubjub::{
 };
 use dusk_plonk::error::Error as PlonkError;
 use dusk_poseidon::cipher::{self, PoseidonCipher};
-use rand_core::{OsRng, RngCore};
+use rand::rngs::{OsRng, StdRng};
+use rand::{RngCore, SeedableRng};
 
 use dusk_plonk::prelude::*;
 
@@ -166,13 +167,10 @@ impl<'a> Default for TestCipherCircuit<'a> {
 }
 
 impl<'a> Circuit for TestCipherCircuit<'a> {
-    const CIRCUIT_ID: [u8; 32] = [0xff; 32];
-
-    fn gadget(
-        &mut self,
-        composer: &mut TurboComposer,
-    ) -> Result<(), PlonkError> {
-        let zero = TurboComposer::constant_zero();
+    fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError>
+    where
+        C: Composer,
+    {
         let nonce = composer.append_witness(self.nonce);
 
         let secret = composer.append_witness(self.secret);
@@ -180,7 +178,7 @@ impl<'a> Circuit for TestCipherCircuit<'a> {
 
         let shared = composer.component_mul_point(secret, public);
 
-        let mut message_circuit = [zero; PoseidonCipher::capacity()];
+        let mut message_circuit = [C::ZERO; PoseidonCipher::capacity()];
 
         self.message
             .iter()
@@ -213,14 +211,6 @@ impl<'a> Circuit for TestCipherCircuit<'a> {
 
         Ok(())
     }
-
-    fn public_inputs(&self) -> Vec<PublicInputValue> {
-        vec![]
-    }
-
-    fn padded_gates(&self) -> usize {
-        1 << 13
-    }
 }
 
 #[test]
@@ -248,18 +238,19 @@ fn gadget() -> Result<(), PlonkError> {
     let size = 13;
 
     let pp = PublicParameters::setup(1 << size, &mut OsRng)?;
-    let (pk, vd) = TestCipherCircuit::default().compile(&pp)?;
+    let (prover, verifier) =
+        Compiler::compile::<TestCipherCircuit>(&pp, label)?;
+    let mut rng = StdRng::seed_from_u64(0xbeef);
 
-    let proof = TestCipherCircuit::new(
+    let circuit = TestCipherCircuit::new(
         bob_secret,
         alice_public,
         nonce,
         &message,
         cipher.cipher(),
-    )
-    .prove(&pp, &pk, label, &mut OsRng)?;
+    );
 
-    TestCipherCircuit::verify(&pp, &vd, &proof, &[], label)?;
+    let (proof, public_inputs) = prover.prove(&mut rng, &circuit)?;
 
-    Ok(())
+    verifier.verify(&proof, &public_inputs)
 }

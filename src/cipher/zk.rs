@@ -11,12 +11,15 @@ use dusk_plonk::prelude::*;
 
 impl PoseidonCipher {
     /// Returns the initial state of the encryption within a composer circuit
-    pub fn initial_state_circuit(
-        composer: &mut TurboComposer,
+    pub fn initial_state_circuit<C>(
+        composer: &mut C,
         ks0: Witness,
         ks1: Witness,
         nonce: Witness,
-    ) -> [Witness; dusk_hades::WIDTH] {
+    ) -> [Witness; dusk_hades::WIDTH]
+    where
+        C: Composer,
+    {
         let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
         let domain = composer.append_constant(domain);
 
@@ -32,18 +35,19 @@ impl PoseidonCipher {
 /// and jubjub, perform the encryption of the message.
 ///
 /// The returned set of variables is the cipher text
-pub fn encrypt(
-    composer: &mut TurboComposer,
+pub fn encrypt<C>(
+    composer: &mut C,
     shared_secret: &WitnessPoint,
     nonce: Witness,
     message: &[Witness],
-) -> [Witness; PoseidonCipher::cipher_size()] {
-    let zero = TurboComposer::constant_zero();
-
+) -> [Witness; PoseidonCipher::cipher_size()]
+where
+    C: Composer,
+{
     let ks0 = *shared_secret.x();
     let ks1 = *shared_secret.y();
 
-    let mut cipher = [zero; PoseidonCipher::cipher_size()];
+    let mut cipher = [C::ZERO; PoseidonCipher::cipher_size()];
 
     let mut state =
         PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
@@ -51,7 +55,11 @@ pub fn encrypt(
     GadgetStrategy::gadget(composer, &mut state);
 
     (0..PoseidonCipher::capacity()).for_each(|i| {
-        let x = if i < message.len() { message[i] } else { zero };
+        let x = if i < message.len() {
+            message[i]
+        } else {
+            C::ZERO
+        };
 
         let constraint =
             Constraint::new().left(1).a(state[i + 1]).right(1).b(x);
@@ -71,18 +79,19 @@ pub fn encrypt(
 /// and jubjub, perform the decryption of the cipher.
 ///
 /// The returned set of variables is the original message
-pub fn decrypt(
-    composer: &mut TurboComposer,
+pub fn decrypt<C>(
+    composer: &mut C,
     shared_secret: &WitnessPoint,
     nonce: Witness,
     cipher: &[Witness],
-) -> [Witness; PoseidonCipher::capacity()] {
-    let zero = TurboComposer::constant_zero();
-
+) -> [Witness; PoseidonCipher::capacity()]
+where
+    C: Composer,
+{
     let ks0 = *shared_secret.x();
     let ks1 = *shared_secret.y();
 
-    let mut message = [zero; PoseidonCipher::capacity()];
+    let mut message = [C::ZERO; PoseidonCipher::capacity()];
     let mut state =
         PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 

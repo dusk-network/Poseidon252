@@ -57,10 +57,12 @@ pub fn hash(messages: &[BlsScalar]) -> JubJubScalar {
 ///
 /// [`hash`]: crate::sponge::hash
 #[cfg(feature = "alloc")]
-pub fn gadget(composer: &mut TurboComposer, message: &[Witness]) -> Witness {
-    let zero = TurboComposer::constant_zero();
+pub fn gadget<C>(composer: &mut C, message: &[Witness]) -> Witness
+where
+    C: Composer,
+{
     let h = sponge::gadget(composer, message);
 
     // Truncate to 250 bits
-    composer.component_xor(h, zero, 250)
+    composer.append_logic_xor(h, C::ZERO, 250)
 }

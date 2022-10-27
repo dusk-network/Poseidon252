@@ -21,9 +21,11 @@ use dusk_plonk::prelude::*;
 /// The returned value is the hashed witness data computed as a variable.
 ///
 /// [`hash`]: crate::sponge::hash
-pub fn gadget(composer: &mut TurboComposer, messages: &[Witness]) -> Witness {
-    let zero = TurboComposer::constant_zero();
-    let mut state = [zero; WIDTH];
+pub fn gadget<C>(composer: &mut C, messages: &[Witness]) -> Witness
+where
+    C: Composer,
+{
+    let mut state = [C::ZERO; WIDTH];
 
     let l = messages.len();
     let m = l / (WIDTH - 1);

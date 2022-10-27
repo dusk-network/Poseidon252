@@ -30,7 +30,7 @@ pub fn two_outputs(message: BlsScalar) -> [BlsScalar; 2] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand_core::OsRng;
+    use rand::rngs::OsRng;
 
     #[test]
     fn hash_two_outputs() {

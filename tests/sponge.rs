@@ -10,7 +10,8 @@ use dusk_bls12_381::BlsScalar;
 use dusk_bytes::ParseHexStr;
 use dusk_plonk::error::Error as PlonkError;
 use dusk_poseidon::sponge;
-use rand_core::OsRng;
+use rand::rngs::{OsRng, StdRng};
+use rand::SeedableRng;
 
 use dusk_plonk::prelude::*;
 
@@ -63,7 +64,7 @@ fn poseidon_sponge_params(n: usize) -> (Vec<BlsScalar>, BlsScalar) {
     (input, output)
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct TestSpongeCircuit {
     input: Vec<BlsScalar>,
     output: BlsScalar,
@@ -76,15 +77,11 @@ impl TestSpongeCircuit {
 }
 
 impl Circuit for TestSpongeCircuit {
-    const CIRCUIT_ID: [u8; 32] = [0xff; 32];
-
-    fn gadget(
-        &mut self,
-        composer: &mut TurboComposer,
-    ) -> Result<(), PlonkError> {
-        let zero = TurboComposer::constant_zero();
-
-        let mut i_var = vec![zero; self.input.len()];
+    fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError>
+    where
+        C: Composer,
+    {
+        let mut i_var = vec![C::ZERO; self.input.len()];
         self.input.iter().zip(i_var.iter_mut()).for_each(|(i, v)| {
             *v = composer.append_witness(*i);
         });
@@ -98,14 +95,6 @@ impl Circuit for TestSpongeCircuit {
 
         Ok(())
     }
-
-    fn public_inputs(&self) -> Vec<PublicInputValue> {
-        vec![]
-    }
-
-    fn padded_gates(&self) -> usize {
-        1 << CAPACITY
-    }
 }
 
 #[test]
@@ -113,20 +102,18 @@ fn sponge_gadget() -> Result<(), Error> {
     let label = b"sponge-tester";
     let pp = PublicParameters::setup(1 << CAPACITY, &mut OsRng)?;
 
-    for w in [3, 5, 15].iter() {
-        let w = *w;
+    let mut rng = StdRng::seed_from_u64(0xbeef);
 
-        let (pk, vd) = TestSpongeCircuit::new(
-            vec![BlsScalar::zero(); w],
-            BlsScalar::zero(),
-        )
-        .compile(&pp)?;
-
+    for w in [3, 5, 15] {
         let (i, o) = poseidon_sponge_params(w);
-        let proof =
-            TestSpongeCircuit::new(i, o).prove(&pp, &pk, label, &mut OsRng)?;
+        let circuit = TestSpongeCircuit::new(i, o);
 
-        TestSpongeCircuit::verify(&pp, &vd, &proof, &[], label)?;
+        let (prover, verifier) =
+            Compiler::compile_with_circuit(&pp, label, &circuit)?;
+
+        let (proof, public_inputs) = prover.prove(&mut rng, &circuit)?;
+
+        verifier.verify(&proof, &public_inputs)?;
     }
 
     Ok(())
@@ -170,7 +157,7 @@ fn sponge_hash_test() {
     );
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TestTruncatedCircuit {
     input: Vec<BlsScalar>,
     output: JubJubScalar,
@@ -185,12 +172,10 @@ impl TestTruncatedCircuit {
 }
 
 impl Circuit for TestTruncatedCircuit {
-    const CIRCUIT_ID: [u8; 32] = [0xff; 32];
-
-    fn gadget(
-        &mut self,
-        composer: &mut TurboComposer,
-    ) -> Result<(), PlonkError> {
+    fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError>
+    where
+        C: Composer,
+    {
         let h = sponge::truncated::hash(self.input.as_slice());
         let p = JubJubAffine::from(dusk_jubjub::GENERATOR_EXTENDED * h);
         let p = composer.append_point(p);
@@ -205,20 +190,13 @@ impl Circuit for TestTruncatedCircuit {
 
         let t = sponge::truncated::gadget(composer, i.as_slice());
         let p_p = composer
-            .component_mul_generator(t, dusk_jubjub::GENERATOR_EXTENDED);
+            .component_mul_generator(t, dusk_jubjub::GENERATOR_EXTENDED)
+            .expect("Multiplying with the generator should succeed");
 
         composer.assert_equal(t, o);
         composer.assert_equal_point(p, p_p);
 
         Ok(())
-    }
-
-    fn public_inputs(&self) -> Vec<PublicInputValue> {
-        vec![]
-    }
-
-    fn padded_gates(&self) -> usize {
-        1 << TRUNCATED_CAPACITY
     }
 }
 
@@ -231,22 +209,19 @@ fn truncated_sponge() -> Result<(), PlonkError> {
 
     let label = b"truncated-sponge-tester";
     let pp = PublicParameters::setup(1 << TRUNCATED_CAPACITY, &mut OsRng)?;
+    let mut rng = StdRng::seed_from_u64(0xbeef);
 
-    for w in [3, 6, 9].iter() {
-        let w = *w;
-
-        let (pk, vd) = TestTruncatedCircuit::new(
-            vec![BlsScalar::zero(); w],
-            JubJubScalar::zero(),
-        )
-        .compile(&pp)?;
-
+    for w in [3, 6, 9] {
         let i = input[..w].to_vec();
         let o = sponge::truncated::hash(i.as_slice());
-        let proof = TestTruncatedCircuit::new(i, o)
-            .prove(&pp, &pk, label, &mut OsRng)?;
 
-        TestTruncatedCircuit::verify(&pp, &vd, &proof, &[], label)?;
+        let circuit = TestTruncatedCircuit::new(i, o);
+        let (prover, verifier) =
+            Compiler::compile_with_circuit(&pp, label, &circuit)?;
+
+        let (proof, public_inputs) = prover.prove(&mut rng, &circuit)?;
+
+        verifier.verify(&proof, &public_inputs)?;
     }
 
     Ok(())

@@ -90,6 +90,15 @@ impl<const DEPTH: usize> PoseidonBranch<DEPTH> {
     }
 }
 
+impl<const DEPTH: usize> Default for PoseidonBranch<DEPTH> {
+    fn default() -> Self {
+        Self {
+            path: [PoseidonLevel::default(); DEPTH],
+            root: BlsScalar::default(),
+        }
+    }
+}
+
 impl<const DEPTH: usize> Deref for PoseidonBranch<DEPTH> {
     type Target = BlsScalar;
 

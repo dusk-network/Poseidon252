@@ -71,7 +71,9 @@ majority of the configurations that the user may need:
 ```rust
 use dusk_plonk::error::Error as PlonkError;
 use dusk_poseidon::tree::{self, PoseidonBranch, PoseidonLeaf, PoseidonTree};
-use rand_core::{CryptoRng, OsRng, RngCore};
+use rand::rngs::OsRng;
+use rand::{CryptoRng, RngCore};
+
 
 use dusk_plonk::prelude::*;
 use nstack::annotation::Keyed;
@@ -127,6 +129,7 @@ impl PoseidonLeaf for DataLeaf {
     }
 }
 
+#[derive(Default)]
 struct MerkleOpeningCircuit {
     branch: PoseidonBranch<DEPTH>,
 }
@@ -154,54 +157,43 @@ impl MerkleOpeningCircuit {
 }
 
 impl Circuit for MerkleOpeningCircuit {
-    const CIRCUIT_ID: [u8; 32] = [0xff; 32];
-
-    fn gadget(
-        &mut self,
-        composer: &mut TurboComposer,
-    ) -> Result<(), PlonkError> {
-        use std::ops::Deref;
-
-        let leaf: BlsScalar = *self.branch.deref();
-        let leaf = composer.append_witness(leaf);
-
-        let root = self.branch.root();
-        let root = composer.append_witness(*root);
-
-        let root_p =
-            tree::merkle_opening::<DEPTH>(composer, &self.branch, leaf);
-
-        composer.assert_equal(root_p, root);
-
-        Ok(())
-    }
-
-    fn public_inputs(&self) -> Vec<PublicInputValue> {
-        vec![]
-    }
-
-    fn padded_gates(&self) -> usize {
-        1 << CAPACITY
+    fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError> 
+    where 
+        C: Composer,
+    {
+      let leaf: BlsScalar = *self.branch;
+      let leaf = composer.append_witness(leaf);
+  
+      let root = self.branch.root();
+      let root = composer.append_witness(*root);
+  
+      let root_p =
+              tree::merkle_opening::<C, DEPTH>(composer, &self.branch, leaf);
+  
+      composer.assert_equal(root_p, root);
+  
+      Ok(())
     }
 }
 
-// Create the ZK keys
+// Create a prover and a verifier
 let label = b"dusk-network";
 let pp = PublicParameters::setup(1 << CAPACITY, &mut OsRng).unwrap();
 
+let (prover, verifier) =
+    Compiler::compile(&pp, label).expect("failed to compile circuit");
+
 // Instantiate a new tree
 let mut tree = Tree::default();
-let mut circuit = MerkleOpeningCircuit::random(&mut OsRng, &mut tree);
-let (pk, vd) = circuit.compile(&pp).expect("Failed to compile circuit");
+let circuit = MerkleOpeningCircuit::random(&mut OsRng, &mut tree);
 
 // Generate a ZK opening proof
-let proof = circuit
-    .prove(&pp, &pk, label, &mut OsRng)
-    .expect("Failed to generate proof");
+let (proof, public_inputs) = prover.prove(&mut OsRng, &circuit)
+            .expect("proving the circuit should succeed");
 
 // Verify the proof
-MerkleOpeningCircuit::verify(&pp, &vd, &proof, &[], label)
-    .expect("Proof verification failed");
+verifier.verify(&proof, &public_inputs)
+    .expect("verifying the proof should succeed");
 ```
 
 ## Documentation
