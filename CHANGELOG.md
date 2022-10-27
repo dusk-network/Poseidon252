@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.0]
+
 ### Changed
 
 - Update `dusk-plonk` from `0.12` to `0.13`
@@ -373,7 +375,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
 
 <!-- VERSIONS -->
-[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.28.0...HEAD
+[0.28.0]: https://github.com/dusk-network/poseidon252/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/dusk-network/poseidon252/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/dusk-network/poseidon252/compare/v0.22.0...v0.26.0
 [0.22.0]: https://github.com/dusk-network/poseidon252/compare/v0.21.0...v0.22.0
