@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add benchmarks for merkle opening proof [#197]
+
 ## [0.28.0]
 
 ### Changed
@@ -349,6 +353,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#197]: https://github.com/dusk-network/Poseidon252/issues/197
 [#189]: https://github.com/dusk-network/poseidon252/issues/189
 [#181]: https://github.com/dusk-network/poseidon252/issues/181
 [#180]: https://github.com/dusk-network/poseidon252/issues/180
