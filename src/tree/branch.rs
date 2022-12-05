@@ -69,7 +69,7 @@ impl AsRef<[BlsScalar]> for PoseidonLevel {
 }
 
 /// Represents a full path for a merkle opening
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(
     feature = "rkyv-impl",
     derive(Archive, Deserialize, Serialize),
