@@ -86,7 +86,7 @@ where
         let anno = PoseidonAnnotation::from_child(&self.inner);
         let cardinality: &Cardinality = anno.borrow();
 
-        let pos = **cardinality as u64;
+        let pos = **cardinality;
 
         leaf.set_pos(pos);
         self.inner.push(leaf);
