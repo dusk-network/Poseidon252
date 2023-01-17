@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Implement `dusk_bytes::Serializable` for `PoseidonBranch` and `PoseidonLevel` [#203]
 - Add benchmarks for merkle opening proof [#197]
 
 ### Changed
@@ -357,6 +358,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#203]: https://github.com/dusk-network/poseidon252/issues/203
 [#200]: https://github.com/dusk-network/poseidon252/issues/200
 [#197]: https://github.com/dusk-network/Poseidon252/issues/197
 [#189]: https://github.com/dusk-network/poseidon252/issues/189

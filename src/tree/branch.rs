@@ -12,6 +12,7 @@ use core::borrow::Borrow;
 use core::ops::Deref;
 
 use dusk_bls12_381::BlsScalar;
+use dusk_bytes::{DeserializableSlice, Serializable};
 use dusk_hades::{ScalarStrategy, Strategy};
 use microkelvin::Branch;
 use nstack::annotation::Keyed;
@@ -54,6 +55,42 @@ impl PoseidonLevel {
     }
 }
 
+impl Serializable<{ BlsScalar::SIZE * dusk_hades::WIDTH + u64::SIZE }>
+    for PoseidonLevel
+{
+    type Error = dusk_bytes::Error;
+
+    fn from_bytes(buf: &[u8; Self::SIZE]) -> Result<Self, Self::Error>
+    where
+        Self: Sized,
+    {
+        let mut bytes = &buf[..];
+
+        let mut level = [BlsScalar::zero(); dusk_hades::WIDTH];
+        for scalar in level.iter_mut() {
+            *scalar = BlsScalar::from_reader(&mut bytes)?;
+        }
+
+        let index = u64::from_reader(&mut bytes)?;
+
+        Ok(Self { level, index })
+    }
+
+    fn to_bytes(&self) -> [u8; Self::SIZE] {
+        let mut buf = [0u8; Self::SIZE];
+
+        for (i, scalar) in self.level.iter().enumerate() {
+            buf[i * BlsScalar::SIZE..(i + 1) * BlsScalar::SIZE]
+                .copy_from_slice(&scalar.to_bytes());
+        }
+
+        buf[BlsScalar::SIZE * dusk_hades::WIDTH..]
+            .copy_from_slice(&self.index.to_bytes());
+
+        buf
+    }
+}
+
 impl Deref for PoseidonLevel {
     type Target = BlsScalar;
 
@@ -79,6 +116,54 @@ pub struct PoseidonBranch<const DEPTH: usize> {
     pub(crate) path: [PoseidonLevel; DEPTH],
     root: BlsScalar,
 }
+
+// This macro is necessary due to the fact that `generic_const_exprs`, is still
+// unstable. It should remain here until this is completed:
+// https://github.com/rust-lang/rust/issues/76560
+macro_rules! serializable_branch {
+    ($($depth:literal),+) => {
+        $(impl Serializable<{ PoseidonLevel::SIZE * $depth + BlsScalar::SIZE }>
+            for PoseidonBranch<$depth>
+        {
+            type Error = dusk_bytes::Error;
+
+            fn from_bytes(buf: &[u8; Self::SIZE]) -> Result<Self, Self::Error>
+            where
+                Self: Sized,
+            {
+                let mut bytes = &buf[..];
+
+                let mut path = [PoseidonLevel::default(); $depth];
+                for level in path.iter_mut() {
+                    *level = PoseidonLevel::from_reader(&mut bytes)?;
+                }
+
+                let root = BlsScalar::from_reader(&mut bytes)?;
+
+                Ok(Self { path, root })
+            }
+
+            fn to_bytes(&self) -> [u8; Self::SIZE] {
+                let mut buf = [0u8; Self::SIZE];
+
+                for (i, level) in self.path.iter().enumerate() {
+                    buf[i * PoseidonLevel::SIZE..(i + 1) * PoseidonLevel::SIZE]
+                        .copy_from_slice(&level.to_bytes());
+                }
+
+                buf[PoseidonLevel::SIZE * $depth..]
+                    .copy_from_slice(&self.root.to_bytes());
+
+                buf
+            }
+        })*
+    };
+}
+
+serializable_branch!(
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 64, 128, 256, 512, 1024, 2048
+);
 
 impl<const DEPTH: usize> PoseidonBranch<DEPTH> {
     /// Root representation when the tree is empty
@@ -202,6 +287,47 @@ where
         PoseidonBranch {
             path,
             root: perm[1],
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tree::{PoseidonBranch, PoseidonLevel};
+
+    use dusk_bls12_381::BlsScalar;
+    use dusk_bytes::Serializable;
+
+    #[test]
+    fn branch_serde() {
+        type Branch = PoseidonBranch<17>;
+
+        let mut poseidon_level = PoseidonLevel {
+            index: 0xbeef,
+            ..Default::default()
+        };
+        poseidon_level.level[3] = BlsScalar::from(42);
+
+        let mut branch = Branch {
+            root: BlsScalar::from(4),
+            ..Default::default()
+        };
+        branch.path[7] = poseidon_level;
+
+        let branch_bytes = branch.to_bytes();
+        let deserialized_branch = Branch::from_bytes(&branch_bytes)
+            .expect("Deserializing should succeed");
+
+        assert_eq!(branch.root, deserialized_branch.root);
+        for (level, deserialized_level) in
+            branch.path.iter().zip(&deserialized_branch.path)
+        {
+            assert_eq!(level.index, deserialized_level.index);
+            for (scalar, deserialized_scalar) in
+                level.level.iter().zip(&deserialized_level.level)
+            {
+                assert_eq!(scalar, deserialized_scalar);
+            }
         }
     }
 }
