@@ -74,3 +74,7 @@ codegen-units = 1
 [[bench]]
 name = "merkle"
 harness = false
+
+[[bench]]
+name = "sponge"
+harness = false

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Benchmark for running sponge gadged on 5 BlsScalar (one permutation) [#206]
+
 ## [0.28.1] - 2023-01-18
 
 ### Added
@@ -360,6 +364,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#206]: https://github.com/dusk-network/poseidon252/issues/206
 [#203]: https://github.com/dusk-network/poseidon252/issues/203
 [#200]: https://github.com/dusk-network/poseidon252/issues/200
 [#197]: https://github.com/dusk-network/Poseidon252/issues/197
