@@ -16,7 +16,7 @@ use rand::rngs::OsRng;
 use rand::{CryptoRng, RngCore};
 
 const DEPTH: usize = 17;
-const CAPACITY: usize = 15;
+const CAPACITY: usize = 14;
 type Tree = PoseidonTree<MockLeaf, u64, DEPTH>;
 
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
@@ -117,7 +117,7 @@ fn bench_opening_proof(c: &mut Criterion) {
         })
     });
 
-    // Generate prover and verifier for the upcomming benchmarks
+    // Generate prover and verifier for the following benchmarks
     let (prover, verifier) =
         Compiler::compile::<MerkleOpeningCircuit>(&pp, label)
             .expect("Circuit should compile successfully");
@@ -145,7 +145,6 @@ fn bench_opening_proof(c: &mut Criterion) {
     });
 }
 
-// criterion_group!(benches, bench_opening_proof, bench_level_hash_proof);
 criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(10);
