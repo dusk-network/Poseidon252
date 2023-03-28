@@ -44,24 +44,14 @@ impl Circuit for SpongeCircuit {
 
 // Benchmark for running sponge on 5 BlsScalar, one permutation
 fn bench_sponge(c: &mut Criterion) {
-    // Benchmark circuit compilation
+    // Prepare benchmarks and initialize variables
     let label = b"sponge benchmark";
     let rng = &mut StdRng::seed_from_u64(0xc10d);
     let pp = PublicParameters::setup(1 << CAPACITY, rng).unwrap();
-    c.bench_function("sponge circuit compilation", |b| {
-        b.iter(|| {
-            Compiler::compile::<SpongeCircuit>(black_box(&pp), label)
-                .expect("Circuit should compile");
-        })
-    });
-
-    // Generate circuit description for prover and verifier
     let (prover, verifier) = Compiler::compile::<SpongeCircuit>(&pp, label)
         .expect("Circuit should compile successfully");
-
-    // Benchmark proof creation
     let mut proof = Proof::default();
-    let mut public_inputs = Vec::new();
+    let public_inputs = Vec::new();
     let message = [
         BlsScalar::random(rng),
         BlsScalar::random(rng),
@@ -70,9 +60,26 @@ fn bench_sponge(c: &mut Criterion) {
         BlsScalar::random(rng),
     ];
     let circuit = SpongeCircuit::new(message);
+
+    // Benchmark sponge native
+    c.bench_function("sponge native", |b| {
+        b.iter(|| {
+            dusk_poseidon::sponge::hash(black_box(&circuit.message));
+        })
+    });
+
+    // Benchmark circuit compilation
+    c.bench_function("sponge circuit compilation", |b| {
+        b.iter(|| {
+            Compiler::compile::<SpongeCircuit>(black_box(&pp), label)
+                .expect("Circuit should compile");
+        })
+    });
+
+    // Benchmark proof creation
     c.bench_function("sponge proof generation", |b| {
         b.iter(|| {
-            (proof, public_inputs) = prover
+            (proof, _) = prover
                 .prove(rng, black_box(&circuit))
                 .expect("Proof generation should succeed");
         })
