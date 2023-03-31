@@ -68,14 +68,6 @@ fn bench_sponge(c: &mut Criterion) {
         })
     });
 
-    // Benchmark circuit compilation
-    c.bench_function("sponge circuit compilation", |b| {
-        b.iter(|| {
-            Compiler::compile::<SpongeCircuit>(black_box(&pp), label)
-                .expect("Circuit should compile");
-        })
-    });
-
     // Benchmark proof creation
     c.bench_function("sponge proof generation", |b| {
         b.iter(|| {
