@@ -202,6 +202,25 @@ This crate contains info about all the functions that the library provides as we
 documentation regarding the data structures that it exports. To check it, please feel free to go to
 the [documentation page](https://dusk-network.github.io/Poseidon252/poseidon252/index.html)
 
+## Benchmarks
+
+There are benchmarks for `sponge` and `cipher` in their native form (i.e. as they would run on the host) and their in-circuit form, and benchmarks for the in-circuit `merkle_opening`.
+
+To run all benchmarks on your machine, run
+```shell
+cargo bench
+```
+in the repository.
+
+To run a specific benchmark, run
+```shell
+cargo bench --bench <name>
+```
+where you replace `<name>` with the benchmark name. For example to run the benchmarks for the poseidon cipher encription from the file 'benches/cipher_encrypt.rs', you would need to run
+```shell
+cargo bench --benches cipher_encrypt
+```
+
 ## Licensing
 
 This code is licensed under Mozilla Public License Version 2.0 (MPL-2.0). Please see [LICENSE](https://github.com/dusk-network/plonk/blob/master/LICENSE) for further info.
