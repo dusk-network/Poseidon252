@@ -78,3 +78,11 @@ harness = false
 [[bench]]
 name = "sponge"
 harness = false
+
+[[bench]]
+name = "cipher_encrypt"
+harness = false
+
+[[bench]]
+name = "cipher_decrypt"
+harness = false

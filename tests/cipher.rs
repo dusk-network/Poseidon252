@@ -154,15 +154,15 @@ impl<'a> TestCipherCircuit<'a> {
 impl<'a> Default for TestCipherCircuit<'a> {
     fn default() -> Self {
         let secret = Default::default();
+        let public = Default::default();
         let nonce = Default::default();
-        let message = Default::default();
 
         const MESSAGE: [BlsScalar; PoseidonCipher::capacity()] =
             [BlsScalar::zero(); PoseidonCipher::capacity()];
         const CIPHER: [BlsScalar; PoseidonCipher::cipher_size()] =
             [BlsScalar::zero(); PoseidonCipher::cipher_size()];
 
-        Self::new(secret, nonce, message, &MESSAGE, &CIPHER)
+        Self::new(secret, public, nonce, &MESSAGE, &CIPHER)
     }
 }
 

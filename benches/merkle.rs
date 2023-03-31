@@ -16,7 +16,7 @@ use rand::rngs::OsRng;
 use rand::{CryptoRng, RngCore};
 
 const DEPTH: usize = 17;
-const CAPACITY: usize = 14;
+const CAPACITY: usize = 15;
 type Tree = PoseidonTree<MockLeaf, u64, DEPTH>;
 
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
