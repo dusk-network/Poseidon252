@@ -87,14 +87,6 @@ fn bench_cipher_decryption(c: &mut Criterion) {
         })
     });
 
-    // Benchmark circuit compilation
-    c.bench_function("cipher decryption circuit compilation", |b| {
-        b.iter(|| {
-            Compiler::compile::<CipherDecrypt>(black_box(&pp), label)
-                .expect("Circuit should compile");
-        })
-    });
-
     // Benchmark proof creation
     c.bench_function("cipher decryption proof generation", |b| {
         b.iter(|| {
