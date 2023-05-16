@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Remove merkle tree logic from this crate [#212]
+
 ## [0.28.2] - 2023-04-06
 
 ### Added
@@ -367,6 +371,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#212]: https://github.com/dusk-network/poseidon252/issues/212
 [#198]: https://github.com/dusk-network/poseidon252/issues/198
 [#206]: https://github.com/dusk-network/poseidon252/issues/206
 [#203]: https://github.com/dusk-network/poseidon252/issues/203
