@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.29.0] - 2023-05-17
+
 ### Removed
 
 - Remove merkle tree logic from this crate [#212]
@@ -403,7 +405,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
 
 <!-- VERSIONS -->
-[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.28.2...HEAD
+[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.29.0...HEAD
+[0.29.0]: https://github.com/dusk-network/poseidon252/compare/v0.28.2...v0.29.0
 [0.28.2]: https://github.com/dusk-network/poseidon252/compare/v0.28.1...v0.28.2
 [0.28.1]: https://github.com/dusk-network/poseidon252/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/dusk-network/poseidon252/compare/v0.27.0...v0.28.0
