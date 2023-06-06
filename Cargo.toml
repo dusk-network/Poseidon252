@@ -38,6 +38,7 @@ default = [
 alloc = [
     "dusk-hades/plonk"
 ]
+merkle = []
 
 [profile.dev]
 opt-level = 3

@@ -13,8 +13,9 @@ extern crate alloc;
 /// Encryption and decryption implementation over a Poseidon cipher
 pub mod cipher;
 
-/// Module containing a fixed-length Poseidon hash implementation
+/// Module containing a fixed-length Poseidon hash implementation with one
+/// input scalar and two output scalar
 pub mod perm_uses;
 
-/// Reference implementation for the Poseidon Sponge hash function
+/// Implementation for the Poseidon Sponge hash function
 pub mod sponge;
