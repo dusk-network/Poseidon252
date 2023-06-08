@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add merkle tree from `dusk-merkle` and opening proof in zk [#222]
+- Add `dusk-merkle` dependency [#222]
+
 ## [0.29.0] - 2023-05-17
 
 ### Removed
@@ -373,6 +378,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#222]: https://github.com/dusk-network/poseidon252/issues/222
 [#212]: https://github.com/dusk-network/poseidon252/issues/212
 [#198]: https://github.com/dusk-network/poseidon252/issues/198
 [#206]: https://github.com/dusk-network/poseidon252/issues/206

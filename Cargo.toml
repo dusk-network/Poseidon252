@@ -18,17 +18,30 @@ edition = "2021"
 license = "MPL-2.0"
 
 [dependencies]
+rkyv = { version = "0.7", optional = true, default-features = false }
+bytecheck = { version = "0.6", optional = true, default-features = false }
 dusk-bls12_381 = { version = "0.11", default-features = false }
 dusk-jubjub = { version = "0.12", default-features = false }
 dusk-bytes = "0.1"
 dusk-hades = "0.20"
 dusk-plonk = { version = "0.13", default-features = false, features = ["alloc"] }
+dusk-merkle = { version = "0.4", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
 rand = { version = "0.8", default-features = false, features = ["getrandom", "std_rng"] }
 
 [features]
+size_16 = ["rkyv/size_16"]
+size_32 = ["rkyv/size_32"]
+size_64 = ["rkyv/size_64"]
+rkyv-impl = [
+    "rkyv/validation",
+    "rkyv/alloc",
+    "rkyv",
+    "bytecheck",
+    "dusk-bls12_381/rkyv-impl"
+]
 default = [
     "dusk-plonk/std",
     "dusk-jubjub/std",
@@ -38,6 +51,7 @@ default = [
 alloc = [
     "dusk-hades/plonk"
 ]
+merkle_tree = [ "dusk-merkle" ]
 
 [profile.dev]
 opt-level = 3

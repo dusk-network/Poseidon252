@@ -16,5 +16,9 @@ pub mod cipher;
 /// Module containing a fixed-length Poseidon hash implementation
 pub mod perm_uses;
 
-/// Reference implementation for the Poseidon Sponge hash function
+/// Implementation of the Poseidon Sponge hash function
 pub mod sponge;
+
+/// Implementation of the Poseidon hash function specialized for merkle trees
+/// and the merkle tree using poseidon itself
+pub mod merkle;
