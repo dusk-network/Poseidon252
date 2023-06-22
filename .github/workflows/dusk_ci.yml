@@ -52,7 +52,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --release
+          args: --release --features merkle
 
   test_no_std:
     name: Tests no_std

@@ -4,6 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#[cfg(feature = "merkle")]
+pub mod merkle;
 pub mod truncated;
 
 #[cfg(feature = "alloc")]
@@ -13,18 +15,20 @@ use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
 use dusk_plonk::prelude::*;
 
 /// The `hash` function takes an arbitrary number of Scalars and returns the
-/// hash, using the `Hades` ScalarStrategy.
+/// hash in the form of one scalar by using the `Hades` permutation of a state
+/// of `WIDTH` scalars.
 ///
-/// As the paper definition, the capacity `c` is set to [`WIDTH`], and `r` is
-/// set to `c - 1`.
+/// As the paper definition, the capacity `c` and the rate `r` equal `WIDTH`
+/// and `c` is set to `1`.
 ///
-/// Considering `r` is set to `c - 1`, the first bit will be the capacity and
-/// will have no message addition, and the remainder bits of the permutation
-/// will have the corresponding element of the chunk added.
+/// The first scalar of the state will be the capacity and will have no message
+/// addition. The remainder scalars of the state will be filled by adding
+/// `r`-sized chunks of the input. After each addition of `r`-sized chunks the
+/// state does one permutation.
 ///
 /// The last permutation will append `1` to the message as a padding separator
 /// value. The padding values will be zeroes. To avoid collision, the padding
-/// will imply one additional permutation in case `|m|` is a multiple of `r`.
+/// will imply one additional permutation in case `len` is a multiple of `r`.
 pub fn hash(messages: &[BlsScalar]) -> BlsScalar {
     let mut h = ScalarStrategy::new();
     let mut state = [BlsScalar::zero(); WIDTH];
@@ -73,13 +77,12 @@ pub fn hash(messages: &[BlsScalar]) -> BlsScalar {
 
 /// Mirror the implementation of [`hash`] inside of a PLONK circuit.
 ///
-/// The circuit will be defined by the length of `messages`. This means that a
-/// pre-computed circuit will not behave generically for different messages
-/// sizes.
+/// The circuit will be defined by the length of `messages`. This means that
+/// the circuit description will be different for different messages sizes.
 ///
 /// The expected usage is the length of the message to be known publicly as the
 /// circuit definition. Hence, the padding value `1` will be appended as a
-/// circuit description.
+/// constant in the circuit description.
 ///
 /// The returned value is the hashed witness data computed as a variable.
 ///
