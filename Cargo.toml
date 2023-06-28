@@ -23,6 +23,8 @@ dusk-jubjub = { version = "0.12", default-features = false }
 dusk-bytes = "0.1"
 dusk-hades = "0.21"
 dusk-plonk = { version = "0.14", default-features = false, features = ["alloc"] }
+rkyv = { version = "0.7", optional = true, default-features = false }
+bytecheck = { version = "0.6", optional = true, default-features = false }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -39,6 +41,16 @@ alloc = [
     "dusk-hades/plonk"
 ]
 merkle = []
+size_16 = ["rkyv/size_16"]
+size_32 = ["rkyv/size_32"]
+size_64 = ["rkyv/size_64"]
+rkyv-impl = [
+    "rkyv/validation",
+    "rkyv/alloc",
+    "rkyv",
+    "bytecheck",
+    "dusk-bls12_381/rkyv-impl"
+]
 
 [profile.dev]
 opt-level = 3
