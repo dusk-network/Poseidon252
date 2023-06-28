@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Update `dusk-plonk` from `0.13` to `0.14`
+- Update `dusk-hades` from `0.20` to `0.21`
+
 ### Added
 
 - Add sponge over fixed input length for merkle tree hashing [#215]
