@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0] - 2023-10-11
+
 ### Changed
 
 - Update `dusk-bls12_381` to 0.12
@@ -430,7 +432,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
 
 <!-- VERSIONS -->
-[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.30.1...HEAD
+[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.31.0...HEAD
+[0.31.0]: https://github.com/dusk-network/poseidon252/compare/v0.30.1...v0.31.0
 [0.30.1]: https://github.com/dusk-network/poseidon252/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/dusk-network/poseidon252/compare/v0.29.2...v0.30.0
 [0.29.0]: https://github.com/dusk-network/poseidon252/compare/v0.28.2...v0.29.0
