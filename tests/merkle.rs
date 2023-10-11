@@ -10,6 +10,7 @@
 use dusk_plonk::error::Error as PlonkError;
 use dusk_plonk::prelude::*;
 use dusk_poseidon::sponge;
+use ff::Field;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
@@ -51,15 +52,15 @@ impl Circuit for MerkleCircuit {
 
 #[test]
 fn merkle_sponge() -> Result<(), PlonkError> {
-    let mut rng = &mut StdRng::seed_from_u64(0xbeef);
+    let mut rng = StdRng::seed_from_u64(0xbeef);
     let label = b"merkle-sponge-tester";
-    let pp = PublicParameters::setup(1 << MERKLE_CAPACITY, rng)?;
+    let pp = PublicParameters::setup(1 << MERKLE_CAPACITY, &mut rng)?;
     let (prover, verifier) = Compiler::compile::<MerkleCircuit>(&pp, label)
         .expect("Circuit should compile");
 
     let mut input = [BlsScalar::zero(); A];
     for scalar in input.iter_mut() {
-        *scalar = BlsScalar::random(rng);
+        *scalar = BlsScalar::random(&mut rng);
     }
     let expected_output = sponge::merkle::hash(&input);
 

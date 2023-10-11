@@ -9,6 +9,7 @@ use dusk_poseidon::cipher::{self, PoseidonCipher};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dusk_jubjub::GENERATOR;
 use dusk_plonk::prelude::*;
+use ff::Field;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
@@ -29,8 +30,9 @@ impl CipherDecrypt {
     pub fn random(rng: &mut StdRng) -> Self {
         let shared =
             GENERATOR.to_niels().mul(&JubJubScalar::random(rng)).into();
-        let nonce = BlsScalar::random(rng);
-        let message = [BlsScalar::random(rng), BlsScalar::random(rng)];
+        let nonce = BlsScalar::random(&mut *rng);
+        let message =
+            [BlsScalar::random(&mut *rng), BlsScalar::random(&mut *rng)];
         let cipher = PoseidonCipher::encrypt(&message, &shared, &nonce);
 
         Self {
@@ -68,13 +70,13 @@ impl Circuit for CipherDecrypt {
 fn bench_cipher_decryption(c: &mut Criterion) {
     // Prepare benchmarks and initialize variables
     let label = b"cipher decryption benchmark";
-    let rng = &mut StdRng::seed_from_u64(0xc001);
-    let pp = PublicParameters::setup(1 << CAPACITY, rng).unwrap();
+    let mut rng = StdRng::seed_from_u64(0xc001);
+    let pp = PublicParameters::setup(1 << CAPACITY, &mut rng).unwrap();
     let (prover, verifier) = Compiler::compile::<CipherDecrypt>(&pp, label)
         .expect("Circuit should compile successfully");
     let mut proof = Proof::default();
     let public_inputs = Vec::new();
-    let circuit = CipherDecrypt::random(rng);
+    let circuit = CipherDecrypt::random(&mut rng);
 
     // Benchmark native cipher decryption
     c.bench_function("cipher decryption native", |b| {
@@ -91,7 +93,7 @@ fn bench_cipher_decryption(c: &mut Criterion) {
     c.bench_function("cipher decryption proof generation", |b| {
         b.iter(|| {
             (proof, _) = prover
-                .prove(rng, black_box(&circuit))
+                .prove(&mut rng, black_box(&circuit))
                 .expect("Proof generation should succeed");
         })
     });

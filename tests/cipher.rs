@@ -15,6 +15,7 @@ use dusk_jubjub::{
 };
 use dusk_plonk::error::Error as PlonkError;
 use dusk_poseidon::cipher::{self, PoseidonCipher};
+use ff::Field;
 use rand::rngs::{OsRng, StdRng};
 use rand::{RngCore, SeedableRng};
 

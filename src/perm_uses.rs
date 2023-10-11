@@ -30,6 +30,7 @@ pub fn two_outputs(message: BlsScalar) -> [BlsScalar; 2] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ff::Field;
     use rand::rngs::OsRng;
 
     #[test]
