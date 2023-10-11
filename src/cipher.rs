@@ -26,6 +26,7 @@
 //! use dusk_jubjub::{dhke, JubJubExtended, JubJubScalar, GENERATOR};
 //! use dusk_poseidon::cipher::PoseidonCipher;
 //! use rand::rngs::OsRng;
+//! use ff::Field;
 //!
 //! fn sender(
 //!     sender_secret: &JubJubScalar,
@@ -173,8 +174,8 @@ impl PoseidonCipher {
             // The size of the message is constant because any absent input is
             // replaced by zero
             BlsScalar::from_raw([MESSAGE_CAPACITY as u64, 0, 0, 0]),
-            secret.get_x(),
-            secret.get_y(),
+            secret.get_u(),
+            secret.get_v(),
             nonce,
         ]
     }

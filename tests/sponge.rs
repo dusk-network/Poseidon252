@@ -10,6 +10,7 @@ use dusk_bls12_381::BlsScalar;
 use dusk_bytes::ParseHexStr;
 use dusk_plonk::error::Error as PlonkError;
 use dusk_poseidon::sponge;
+use ff::Field;
 use rand::rngs::{OsRng, StdRng};
 use rand::SeedableRng;
 
@@ -127,33 +128,33 @@ fn sponge_hash_test() {
         .collect();
 
     assert_eq!(
-        "0xe36f4ea9b858d5c85b02770823c7c5d8253c28787d17f283ca348b906dca8528",
-        format!("{:#x}", sponge::hash(&test_inputs[..3]))
+        "0x2885ca6d908b34ca83f2177d78283c25d8c5c7230877025bc8d558b8a94e6fe3",
+        format!("{:?}", sponge::hash(&test_inputs[..3]))
     );
 
     assert_eq!(
-        "0x75ea3265c80d07e608c1f363ea0b4394ff1fa1cbf50b43b14c880a5755f7f755",
-        format!("{:#x}", sponge::hash(&test_inputs[..4]))
+        "0x55f7f755570a884cb1430bf5cba11fff94430bea63f3c108e6070dc86532ea75",
+        format!("{:?}", sponge::hash(&test_inputs[..4]))
     );
 
     assert_eq!(
-        "0x533106a0980eff5b01f5ce63a6b0dd87328b318ac6aa600fc28b9a2ab9f88842",
-        format!("{:#x}", sponge::hash(&test_inputs[..5]))
+        "0x4288f8b92a9a8bc20f60aac68a318b3287ddb0a663cef5015bff0e98a0063153",
+        format!("{:?}", sponge::hash(&test_inputs[..5]))
     );
 
     assert_eq!(
-        "0x1a815864684fff47c4d279ee4c31ad964c9dc232734e08188554fa27d33e6731",
-        format!("{:#x}", sponge::hash(&test_inputs[..6]))
+        "0x31673ed327fa548518084e7332c29d4c96ad314cee79d2c447ff4f686458811a",
+        format!("{:?}", sponge::hash(&test_inputs[..6]))
     );
 
     assert_eq!(
-        "0xa8b936d057df818048e634254719d13970df22926c51e5190c916fcf13dfa25a",
-        format!("{:#x}", sponge::hash(&test_inputs[..8]))
+        "0x5aa2df13cf6f910c19e5516c9222df7039d119472534e6488081df57d036b9a8",
+        format!("{:?}", sponge::hash(&test_inputs[..8]))
     );
 
     assert_eq!(
-        "0x982934231a0410c86f9ed1daa46863a5ddae6d250670d27cb21d10739088e30b",
-        format!("{:#x}", sponge::hash(&test_inputs[..10]))
+        "0x0be3889073101db27cd27006256daedda56368a4dad19e6fc810041a23342998",
+        format!("{:?}", sponge::hash(&test_inputs[..10]))
     );
 }
 

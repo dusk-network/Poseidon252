@@ -7,6 +7,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dusk_hades::WIDTH;
 use dusk_plonk::prelude::*;
+use ff::Field;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
@@ -46,18 +47,18 @@ impl Circuit for SpongeCircuit {
 fn bench_sponge(c: &mut Criterion) {
     // Prepare benchmarks and initialize variables
     let label = b"sponge benchmark";
-    let rng = &mut StdRng::seed_from_u64(0xc10d);
-    let pp = PublicParameters::setup(1 << CAPACITY, rng).unwrap();
+    let mut rng = StdRng::seed_from_u64(0xc10d);
+    let pp = PublicParameters::setup(1 << CAPACITY, &mut rng).unwrap();
     let (prover, verifier) = Compiler::compile::<SpongeCircuit>(&pp, label)
         .expect("Circuit should compile successfully");
     let mut proof = Proof::default();
     let public_inputs = Vec::new();
     let message = [
-        BlsScalar::random(rng),
-        BlsScalar::random(rng),
-        BlsScalar::random(rng),
-        BlsScalar::random(rng),
-        BlsScalar::random(rng),
+        BlsScalar::random(&mut rng),
+        BlsScalar::random(&mut rng),
+        BlsScalar::random(&mut rng),
+        BlsScalar::random(&mut rng),
+        BlsScalar::random(&mut rng),
     ];
     let circuit = SpongeCircuit::new(message);
 
@@ -72,7 +73,7 @@ fn bench_sponge(c: &mut Criterion) {
     c.bench_function("sponge proof generation", |b| {
         b.iter(|| {
             (proof, _) = prover
-                .prove(rng, black_box(&circuit))
+                .prove(&mut rng, black_box(&circuit))
                 .expect("Proof generation should succeed");
         })
     });

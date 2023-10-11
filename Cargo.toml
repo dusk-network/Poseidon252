@@ -18,22 +18,23 @@ edition = "2021"
 license = "MPL-2.0"
 
 [dependencies]
-dusk-bls12_381 = { version = "0.11", default-features = false }
-dusk-jubjub = { version = "0.12", default-features = false }
+dusk-bls12_381 = { version = "0.12", default-features = false }
+dusk-jubjub = { version = "0.13", default-features = false }
 dusk-bytes = "0.1"
-dusk-hades = "0.21"
-dusk-plonk = { version = "0.14", default-features = false, features = ["alloc"] }
+dusk-hades = "0.22"
+dusk-plonk = { version = "0.16", default-features = false, features = ["alloc"] }
 rkyv = { version = "0.7", optional = true, default-features = false }
 bytecheck = { version = "0.6", optional = true, default-features = false }
 
 [dev-dependencies]
 criterion = "0.3"
 rand = { version = "0.8", default-features = false, features = ["getrandom", "std_rng"] }
+ff = { version = "0.13", default-features = false }
 
 [features]
 default = [
     "dusk-plonk/std",
-    "dusk-jubjub/std",
+    "dusk-jubjub/default",
     "dusk-bls12_381/default",
     "alloc",
 ]

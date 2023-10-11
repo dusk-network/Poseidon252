@@ -64,5 +64,5 @@ where
     let h = sponge::gadget(composer, message);
 
     // Truncate to 250 bits
-    composer.append_logic_xor(h, C::ZERO, 250)
+    composer.append_logic_xor::<125>(h, C::ZERO)
 }
