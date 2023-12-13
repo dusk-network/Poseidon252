@@ -1,6 +1,6 @@
 [package]
 name = "dusk-poseidon"
-version = "0.31.0"
+version = "0.32.0"
 description = "Implementation of Poseidon hash algorithm over the Bls12-381 Scalar field."
 categories = ["algorithms", "cryptography", "no-std", "wasm"]
 keywords = ["cryptography", "zero-knowledge", "crypto"]
