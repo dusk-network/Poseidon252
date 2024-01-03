@@ -13,12 +13,12 @@ use dusk_jubjub::{
     dhke, JubJubAffine, JubJubExtended, JubJubScalar, GENERATOR,
     GENERATOR_EXTENDED,
 };
-use dusk_plonk::error::Error as PlonkError;
 use dusk_poseidon::cipher::{self, PoseidonCipher};
 use ff::Field;
 use rand::rngs::{OsRng, StdRng};
 use rand::{RngCore, SeedableRng};
 
+use dusk_plonk::prelude::Error as PlonkError;
 use dusk_plonk::prelude::*;
 
 fn gen() -> (
@@ -168,10 +168,7 @@ impl<'a> Default for TestCipherCircuit<'a> {
 }
 
 impl<'a> Circuit for TestCipherCircuit<'a> {
-    fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError>
-    where
-        C: Composer,
-    {
+    fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
         let nonce = composer.append_witness(self.nonce);
 
         let secret = composer.append_witness(self.secret);
@@ -179,7 +176,7 @@ impl<'a> Circuit for TestCipherCircuit<'a> {
 
         let shared = composer.component_mul_point(secret, public);
 
-        let mut message_circuit = [C::ZERO; PoseidonCipher::capacity()];
+        let mut message_circuit = [Composer::ZERO; PoseidonCipher::capacity()];
 
         self.message
             .iter()

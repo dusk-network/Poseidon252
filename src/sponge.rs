@@ -88,11 +88,8 @@ pub fn hash(messages: &[BlsScalar]) -> BlsScalar {
 ///
 /// [`hash`]: crate::sponge::hash
 #[cfg(feature = "alloc")]
-pub fn gadget<C>(composer: &mut C, messages: &[Witness]) -> Witness
-where
-    C: Composer,
-{
-    let mut state = [C::ZERO; WIDTH];
+pub fn gadget(composer: &mut Composer, messages: &[Witness]) -> Witness {
+    let mut state = [Composer::ZERO; WIDTH];
 
     let l = messages.len();
     let m = l / (WIDTH - 1);

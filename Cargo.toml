@@ -13,8 +13,8 @@ license = "MPL-2.0"
 dusk-bls12_381 = { version = "0.13", default-features = false }
 dusk-jubjub = { version = "0.14", default-features = false }
 dusk-bytes = "0.1"
-dusk-hades = "0.23"
-dusk-plonk = { version = "0.18", default-features = false, features = ["alloc"] }
+dusk-hades = "0.24"
+dusk-plonk = { version = "0.19", default-features = false, features = ["alloc"] }
 rkyv = { version = "0.7", optional = true, default-features = false }
 bytecheck = { version = "0.6", optional = true, default-features = false }
 

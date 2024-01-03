@@ -8,12 +8,12 @@
 
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::ParseHexStr;
-use dusk_plonk::error::Error as PlonkError;
 use dusk_poseidon::sponge;
 use ff::Field;
 use rand::rngs::{OsRng, StdRng};
 use rand::SeedableRng;
 
+use dusk_plonk::prelude::Error as PlonkError;
 use dusk_plonk::prelude::*;
 
 const TEST_INPUTS: [&str; 32] = [
@@ -78,11 +78,8 @@ impl TestSpongeCircuit {
 }
 
 impl Circuit for TestSpongeCircuit {
-    fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError>
-    where
-        C: Composer,
-    {
-        let mut i_var = vec![C::ZERO; self.input.len()];
+    fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
+        let mut i_var = vec![Composer::ZERO; self.input.len()];
         self.input.iter().zip(i_var.iter_mut()).for_each(|(i, v)| {
             *v = composer.append_witness(*i);
         });
@@ -173,10 +170,7 @@ impl TestTruncatedCircuit {
 }
 
 impl Circuit for TestTruncatedCircuit {
-    fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError>
-    where
-        C: Composer,
-    {
+    fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
         let h = sponge::truncated::hash(self.input.as_slice());
         let p = JubJubAffine::from(dusk_jubjub::GENERATOR_EXTENDED * h);
         let p = composer.append_point(p);
