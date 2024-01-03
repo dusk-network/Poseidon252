@@ -7,7 +7,7 @@
 #![cfg(feature = "alloc")]
 #![cfg(feature = "merkle")]
 
-use dusk_plonk::error::Error as PlonkError;
+use dusk_plonk::prelude::Error as PlonkError;
 use dusk_plonk::prelude::*;
 use dusk_poseidon::sponge;
 use ff::Field;
@@ -30,11 +30,8 @@ impl MerkleCircuit {
 }
 
 impl Circuit for MerkleCircuit {
-    fn circuit<C>(&self, composer: &mut C) -> Result<(), PlonkError>
-    where
-        C: Composer,
-    {
-        let mut input_witnesses = [C::ZERO; A];
+    fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
+        let mut input_witnesses = [Composer::ZERO; A];
         for (i, witness) in input_witnesses.iter_mut().enumerate() {
             *witness = composer.append_witness(self.input[i]);
         }

@@ -73,15 +73,12 @@ pub fn hash<const A: usize>(messages: &[BlsScalar; A]) -> BlsScalar {
 ///
 /// The returned value is the witness of the hash of the levels.
 #[cfg(feature = "alloc")]
-pub fn gadget<C, const A: usize>(
-    composer: &mut C,
+pub fn gadget<const A: usize>(
+    composer: &mut Composer,
     messages: &[Witness; A],
-) -> Witness
-where
-    C: Composer,
-{
+) -> Witness {
     // initialize the state with the capacity
-    let mut state = [C::ZERO; WIDTH];
+    let mut state = [Composer::ZERO; WIDTH];
     state[0] = composer.append_witness(BlsScalar::from(tag::<A>()));
 
     messages.chunks(WIDTH - 1).for_each(|chunk| {

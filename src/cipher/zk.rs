@@ -11,15 +11,12 @@ use dusk_plonk::prelude::*;
 
 impl PoseidonCipher {
     /// Returns the initial state of the encryption within a composer circuit
-    pub fn initial_state_circuit<C>(
-        composer: &mut C,
+    pub fn initial_state_circuit(
+        composer: &mut Composer,
         ks0: Witness,
         ks1: Witness,
         nonce: Witness,
-    ) -> [Witness; dusk_hades::WIDTH]
-    where
-        C: Composer,
-    {
+    ) -> [Witness; dusk_hades::WIDTH] {
         let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
         let domain = composer.append_constant(domain);
 
@@ -35,19 +32,16 @@ impl PoseidonCipher {
 /// and jubjub, perform the encryption of the message.
 ///
 /// The returned set of variables is the cipher text
-pub fn encrypt<C>(
-    composer: &mut C,
+pub fn encrypt(
+    composer: &mut Composer,
     shared_secret: &WitnessPoint,
     nonce: Witness,
     message: &[Witness],
-) -> [Witness; PoseidonCipher::cipher_size()]
-where
-    C: Composer,
-{
+) -> [Witness; PoseidonCipher::cipher_size()] {
     let ks0 = *shared_secret.x();
     let ks1 = *shared_secret.y();
 
-    let mut cipher = [C::ZERO; PoseidonCipher::cipher_size()];
+    let mut cipher = [Composer::ZERO; PoseidonCipher::cipher_size()];
 
     let mut state =
         PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
@@ -58,7 +52,7 @@ where
         let x = if i < message.len() {
             message[i]
         } else {
-            C::ZERO
+            Composer::ZERO
         };
 
         let constraint =
@@ -79,19 +73,16 @@ where
 /// and jubjub, perform the decryption of the cipher.
 ///
 /// The returned set of variables is the original message
-pub fn decrypt<C>(
-    composer: &mut C,
+pub fn decrypt(
+    composer: &mut Composer,
     shared_secret: &WitnessPoint,
     nonce: Witness,
     cipher: &[Witness],
-) -> [Witness; PoseidonCipher::capacity()]
-where
-    C: Composer,
-{
+) -> [Witness; PoseidonCipher::capacity()] {
     let ks0 = *shared_secret.x();
     let ks1 = *shared_secret.y();
 
-    let mut message = [C::ZERO; PoseidonCipher::capacity()];
+    let mut message = [Composer::ZERO; PoseidonCipher::capacity()];
     let mut state =
         PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 
