@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.33.0] - 2024-01-03
+
+### Changed
+
+- Update `dusk-plonk` to 0.19
+- Update `dusk-hades` to 0.24
+
 ## [0.32.0] - 2023-12-13
 
 ### Changed
@@ -441,7 +448,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
 
 <!-- VERSIONS -->
-[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.32.0...HEAD
+[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.33.0...HEAD
+[0.33.0]: https://github.com/dusk-network/poseidon252/compare/v0.32.0...v0.33.0
 [0.32.0]: https://github.com/dusk-network/poseidon252/compare/v0.31.0...v0.32.0
 [0.31.0]: https://github.com/dusk-network/poseidon252/compare/v0.30.1...v0.31.0
 [0.30.1]: https://github.com/dusk-network/poseidon252/compare/v0.30.0...v0.30.1
