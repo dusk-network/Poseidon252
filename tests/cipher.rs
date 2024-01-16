@@ -4,22 +4,16 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![cfg(feature = "alloc")]
+#![cfg(feature = "cipher")]
 
 use core::ops::Mul;
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::Serializable;
-use dusk_jubjub::{
-    dhke, JubJubAffine, JubJubExtended, JubJubScalar, GENERATOR,
-    GENERATOR_EXTENDED,
-};
-use dusk_poseidon::cipher::{self, PoseidonCipher};
+use dusk_jubjub::{JubJubAffine, JubJubScalar, GENERATOR};
+use dusk_poseidon::cipher::PoseidonCipher;
 use ff::Field;
-use rand::rngs::{OsRng, StdRng};
-use rand::{RngCore, SeedableRng};
-
-use dusk_plonk::prelude::Error as PlonkError;
-use dusk_plonk::prelude::*;
+use rand::rngs::OsRng;
+use rand::RngCore;
 
 fn gen() -> (
     [BlsScalar; PoseidonCipher::capacity()],
@@ -125,130 +119,142 @@ fn bytes() {
     assert_eq!(message, decrypt);
 }
 
-#[derive(Debug)]
-pub struct TestCipherCircuit<'a> {
-    secret: JubJubScalar,
-    public: JubJubExtended,
-    nonce: BlsScalar,
-    message: &'a [BlsScalar],
-    cipher: &'a [BlsScalar],
-}
+#[cfg(feature = "zk")]
+mod zk {
+    use super::*;
 
-impl<'a> TestCipherCircuit<'a> {
-    pub const fn new(
+    use dusk_jubjub::{dhke, JubJubExtended, GENERATOR_EXTENDED};
+    use dusk_plonk::prelude::Error as PlonkError;
+    use dusk_plonk::prelude::*;
+    use dusk_poseidon::cipher;
+    use rand::rngs::StdRng;
+    use rand::SeedableRng;
+
+    #[derive(Debug)]
+    pub struct TestCipherCircuit<'a> {
         secret: JubJubScalar,
         public: JubJubExtended,
         nonce: BlsScalar,
         message: &'a [BlsScalar],
         cipher: &'a [BlsScalar],
-    ) -> Self {
-        Self {
-            secret,
-            public,
-            nonce,
-            message,
-            cipher,
+    }
+
+    impl<'a> TestCipherCircuit<'a> {
+        pub const fn new(
+            secret: JubJubScalar,
+            public: JubJubExtended,
+            nonce: BlsScalar,
+            message: &'a [BlsScalar],
+            cipher: &'a [BlsScalar],
+        ) -> Self {
+            Self {
+                secret,
+                public,
+                nonce,
+                message,
+                cipher,
+            }
         }
     }
-}
 
-impl<'a> Default for TestCipherCircuit<'a> {
-    fn default() -> Self {
-        let secret = Default::default();
-        let public = Default::default();
-        let nonce = Default::default();
+    impl<'a> Default for TestCipherCircuit<'a> {
+        fn default() -> Self {
+            let secret = Default::default();
+            let public = Default::default();
+            let nonce = Default::default();
 
-        const MESSAGE: [BlsScalar; PoseidonCipher::capacity()] =
-            [BlsScalar::zero(); PoseidonCipher::capacity()];
-        const CIPHER: [BlsScalar; PoseidonCipher::cipher_size()] =
-            [BlsScalar::zero(); PoseidonCipher::cipher_size()];
+            const MESSAGE: [BlsScalar; PoseidonCipher::capacity()] =
+                [BlsScalar::zero(); PoseidonCipher::capacity()];
+            const CIPHER: [BlsScalar; PoseidonCipher::cipher_size()] =
+                [BlsScalar::zero(); PoseidonCipher::cipher_size()];
 
-        Self::new(secret, public, nonce, &MESSAGE, &CIPHER)
+            Self::new(secret, public, nonce, &MESSAGE, &CIPHER)
+        }
     }
-}
 
-impl<'a> Circuit for TestCipherCircuit<'a> {
-    fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
-        let nonce = composer.append_witness(self.nonce);
+    impl<'a> Circuit for TestCipherCircuit<'a> {
+        fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
+            let nonce = composer.append_witness(self.nonce);
 
-        let secret = composer.append_witness(self.secret);
-        let public = composer.append_point(self.public);
+            let secret = composer.append_witness(self.secret);
+            let public = composer.append_point(self.public);
 
-        let shared = composer.component_mul_point(secret, public);
+            let shared = composer.component_mul_point(secret, public);
 
-        let mut message_circuit = [Composer::ZERO; PoseidonCipher::capacity()];
+            let mut message_circuit =
+                [Composer::ZERO; PoseidonCipher::capacity()];
 
-        self.message
-            .iter()
-            .zip(message_circuit.iter_mut())
-            .for_each(|(m, v)| {
-                *v = composer.append_witness(*m);
-            });
+            self.message
+                .iter()
+                .zip(message_circuit.iter_mut())
+                .for_each(|(m, v)| {
+                    *v = composer.append_witness(*m);
+                });
 
-        let cipher_gadget =
-            cipher::encrypt(composer, &shared, nonce, &message_circuit);
+            let cipher_gadget =
+                cipher::encrypt(composer, &shared, nonce, &message_circuit);
 
-        self.cipher
-            .iter()
-            .zip(cipher_gadget.iter())
-            .for_each(|(c, g)| {
-                let x = composer.append_witness(*c);
-                composer.assert_equal(x, *g);
-            });
+            self.cipher
+                .iter()
+                .zip(cipher_gadget.iter())
+                .for_each(|(c, g)| {
+                    let x = composer.append_witness(*c);
+                    composer.assert_equal(x, *g);
+                });
 
-        let message_gadget =
-            cipher::decrypt(composer, &shared, nonce, &cipher_gadget);
+            let message_gadget =
+                cipher::decrypt(composer, &shared, nonce, &cipher_gadget);
 
-        self.message
-            .iter()
-            .zip(message_gadget.iter())
-            .for_each(|(m, g)| {
-                let x = composer.append_witness(*m);
-                composer.assert_equal(x, *g);
-            });
+            self.message.iter().zip(message_gadget.iter()).for_each(
+                |(m, g)| {
+                    let x = composer.append_witness(*m);
+                    composer.assert_equal(x, *g);
+                },
+            );
 
-        Ok(())
+            Ok(())
+        }
     }
-}
 
-#[test]
-fn gadget() -> Result<(), PlonkError> {
-    // Generate a secret and a public key for Bob
-    let bob_secret = JubJubScalar::random(&mut OsRng);
+    #[test]
+    fn gadget() -> Result<(), PlonkError> {
+        // Generate a secret and a public key for Bob
+        let bob_secret = JubJubScalar::random(&mut OsRng);
 
-    // Generate a secret and a public key for Alice
-    let alice_secret = JubJubScalar::random(&mut OsRng);
-    let alice_public = GENERATOR_EXTENDED * alice_secret;
+        // Generate a secret and a public key for Alice
+        let alice_secret = JubJubScalar::random(&mut OsRng);
+        let alice_public = GENERATOR_EXTENDED * alice_secret;
 
-    // Generate a shared secret
-    let shared_secret = dhke(&bob_secret, &alice_public);
+        // Generate a shared secret
+        let shared_secret = dhke(&bob_secret, &alice_public);
 
-    // Generate a secret message
-    let a = BlsScalar::random(&mut OsRng);
-    let b = BlsScalar::random(&mut OsRng);
-    let message = [a, b];
+        // Generate a secret message
+        let a = BlsScalar::random(&mut OsRng);
+        let b = BlsScalar::random(&mut OsRng);
+        let message = [a, b];
 
-    // Perform the encryption
-    let nonce = BlsScalar::random(&mut OsRng);
-    let cipher = PoseidonCipher::encrypt(&message, &shared_secret, &nonce);
+        // Perform the encryption
+        let nonce = BlsScalar::random(&mut OsRng);
+        let cipher = PoseidonCipher::encrypt(&message, &shared_secret, &nonce);
 
-    let label = b"poseidon-cipher";
-    let size = 13;
+        let label = b"poseidon-cipher";
+        let size = 13;
 
-    let pp = PublicParameters::setup(1 << size, &mut OsRng)?;
-    let (prover, verifier) =
-        Compiler::compile::<TestCipherCircuit>(&pp, label)?;
-    let mut rng = StdRng::seed_from_u64(0xbeef);
+        let pp = PublicParameters::setup(1 << size, &mut OsRng)?;
+        let (prover, verifier) =
+            Compiler::compile::<TestCipherCircuit>(&pp, label)?;
+        let mut rng = StdRng::seed_from_u64(0xbeef);
 
-    let circuit = TestCipherCircuit::new(
-        bob_secret,
-        alice_public,
-        nonce,
-        &message,
-        cipher.cipher(),
-    );
+        let circuit = TestCipherCircuit::new(
+            bob_secret,
+            alice_public,
+            nonce,
+            &message,
+            cipher.cipher(),
+        );
 
-    let (proof, public_inputs) = prover.prove(&mut rng, &circuit)?;
+        let (proof, public_inputs) = prover.prove(&mut rng, &circuit)?;
 
-    verifier.verify(&proof, &public_inputs)
+        verifier.verify(&proof, &public_inputs)
+    }
 }

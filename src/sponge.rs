@@ -6,13 +6,14 @@
 
 #[cfg(feature = "merkle")]
 pub mod merkle;
+
 pub mod truncated;
 
-#[cfg(feature = "alloc")]
-use dusk_hades::GadgetStrategy;
+use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
 
-use dusk_plonk::prelude::*;
+#[cfg(feature = "zk")]
+pub use zk::gadget;
 
 /// The `hash` function takes an arbitrary number of Scalars and returns the
 /// hash in the form of one scalar by using the `Hades` permutation of a state
@@ -75,55 +76,63 @@ pub fn hash(messages: &[BlsScalar]) -> BlsScalar {
     state[1]
 }
 
-/// Mirror the implementation of [`hash`] inside of a PLONK circuit.
-///
-/// The circuit will be defined by the length of `messages`. This means that
-/// the circuit description will be different for different messages sizes.
-///
-/// The expected usage is the length of the message to be known publicly as the
-/// circuit definition. Hence, the padding value `1` will be appended as a
-/// constant in the circuit description.
-///
-/// The returned value is the hashed witness data computed as a variable.
-///
-/// [`hash`]: crate::sponge::hash
-#[cfg(feature = "alloc")]
-pub fn gadget(composer: &mut Composer, messages: &[Witness]) -> Witness {
-    let mut state = [Composer::ZERO; WIDTH];
+#[cfg(feature = "zk")]
+mod zk {
+    use super::WIDTH;
 
-    let l = messages.len();
-    let m = l / (WIDTH - 1);
-    let n = m * (WIDTH - 1);
-    let last_iteration = if l == n { m - 1 } else { l / (WIDTH - 1) };
+    use dusk_hades::GadgetStrategy;
+    use dusk_plonk::prelude::{Composer, Constraint, Witness};
 
-    messages
-        .chunks(WIDTH - 1)
-        .enumerate()
-        .for_each(|(i, chunk)| {
-            state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
-                let constraint = Constraint::new().left(1).a(*s).right(1).b(*c);
+    /// Mirror the implementation of [`hash`] inside of a PLONK circuit.
+    ///
+    /// The circuit will be defined by the length of `messages`. This means that
+    /// the circuit description will be different for different messages sizes.
+    ///
+    /// The expected usage is the length of the message to be known publicly as
+    /// the circuit definition. Hence, the padding value `1` will be
+    /// appended as a constant in the circuit description.
+    ///
+    /// The returned value is the hashed witness data computed as a variable.
+    ///
+    /// [`hash`]: crate::sponge::hash
+    pub fn gadget(composer: &mut Composer, messages: &[Witness]) -> Witness {
+        let mut state = [Composer::ZERO; WIDTH];
 
-                *s = composer.gate_add(constraint);
+        let l = messages.len();
+        let m = l / (WIDTH - 1);
+        let n = m * (WIDTH - 1);
+        let last_iteration = if l == n { m - 1 } else { l / (WIDTH - 1) };
+
+        messages
+            .chunks(WIDTH - 1)
+            .enumerate()
+            .for_each(|(i, chunk)| {
+                state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
+                    let constraint =
+                        Constraint::new().left(1).a(*s).right(1).b(*c);
+
+                    *s = composer.gate_add(constraint);
+                });
+
+                if i == last_iteration && chunk.len() < WIDTH - 1 {
+                    let constraint = Constraint::new()
+                        .left(1)
+                        .a(state[chunk.len() + 1])
+                        .constant(1);
+
+                    state[chunk.len() + 1] = composer.gate_add(constraint);
+                } else if i == last_iteration {
+                    GadgetStrategy::gadget(composer, &mut state);
+
+                    let constraint =
+                        Constraint::new().left(1).a(state[1]).constant(1);
+
+                    state[1] = composer.gate_add(constraint);
+                }
+
+                GadgetStrategy::gadget(composer, &mut state);
             });
 
-            if i == last_iteration && chunk.len() < WIDTH - 1 {
-                let constraint = Constraint::new()
-                    .left(1)
-                    .a(state[chunk.len() + 1])
-                    .constant(1);
-
-                state[chunk.len() + 1] = composer.gate_add(constraint);
-            } else if i == last_iteration {
-                GadgetStrategy::gadget(composer, &mut state);
-
-                let constraint =
-                    Constraint::new().left(1).a(state[1]).constant(1);
-
-                state[1] = composer.gate_add(constraint);
-            }
-
-            GadgetStrategy::gadget(composer, &mut state);
-        });
-
-    state[1]
+        state[1]
+    }
 }

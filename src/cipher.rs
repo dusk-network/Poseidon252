@@ -96,6 +96,9 @@ use bytecheck::CheckBytes;
 #[cfg(feature = "rkyv-impl")]
 use rkyv::{Archive, Deserialize, Serialize};
 
+#[cfg(feature = "zk")]
+pub use zk::{decrypt, encrypt};
+
 const MESSAGE_CAPACITY: usize = 2;
 const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 const CIPHER_BYTES_SIZE: usize = CIPHER_SIZE * BlsScalar::SIZE;
@@ -249,8 +252,113 @@ impl PoseidonCipher {
     }
 }
 
-#[cfg(feature = "alloc")]
-mod zk;
+#[cfg(feature = "zk")]
+mod zk {
+    use super::PoseidonCipher;
+    use dusk_hades::GadgetStrategy;
 
-#[cfg(feature = "alloc")]
-pub use zk::{decrypt, encrypt};
+    use dusk_plonk::prelude::*;
+
+    impl PoseidonCipher {
+        /// Returns the initial state of the encryption within a composer
+        /// circuit
+        pub fn initial_state_circuit(
+            composer: &mut Composer,
+            ks0: Witness,
+            ks1: Witness,
+            nonce: Witness,
+        ) -> [Witness; dusk_hades::WIDTH] {
+            let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
+            let domain = composer.append_constant(domain);
+
+            let length = BlsScalar::from_raw([
+                PoseidonCipher::capacity() as u64,
+                0,
+                0,
+                0,
+            ]);
+            let length = composer.append_constant(length);
+
+            [domain, length, ks0, ks1, nonce]
+        }
+    }
+
+    /// Given a shared secret calculated using any key protocol compatible with
+    /// bls and jubjub, perform the encryption of the message.
+    ///
+    /// The returned set of variables is the cipher text
+    pub fn encrypt(
+        composer: &mut Composer,
+        shared_secret: &WitnessPoint,
+        nonce: Witness,
+        message: &[Witness],
+    ) -> [Witness; PoseidonCipher::cipher_size()] {
+        let ks0 = *shared_secret.x();
+        let ks1 = *shared_secret.y();
+
+        let mut cipher = [Composer::ZERO; PoseidonCipher::cipher_size()];
+
+        let mut state =
+            PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
+
+        GadgetStrategy::gadget(composer, &mut state);
+
+        (0..PoseidonCipher::capacity()).for_each(|i| {
+            let x = if i < message.len() {
+                message[i]
+            } else {
+                Composer::ZERO
+            };
+
+            let constraint =
+                Constraint::new().left(1).a(state[i + 1]).right(1).b(x);
+
+            state[i + 1] = composer.gate_add(constraint);
+
+            cipher[i] = state[i + 1];
+        });
+
+        GadgetStrategy::gadget(composer, &mut state);
+        cipher[PoseidonCipher::capacity()] = state[1];
+
+        cipher
+    }
+
+    /// Given a shared secret calculated using any key protocol compatible with
+    /// bls and jubjub, perform the decryption of the cipher.
+    ///
+    /// The returned set of variables is the original message
+    pub fn decrypt(
+        composer: &mut Composer,
+        shared_secret: &WitnessPoint,
+        nonce: Witness,
+        cipher: &[Witness],
+    ) -> [Witness; PoseidonCipher::capacity()] {
+        let ks0 = *shared_secret.x();
+        let ks1 = *shared_secret.y();
+
+        let mut message = [Composer::ZERO; PoseidonCipher::capacity()];
+        let mut state =
+            PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
+
+        GadgetStrategy::gadget(composer, &mut state);
+
+        (0..PoseidonCipher::capacity()).for_each(|i| {
+            let constraint = Constraint::new()
+                .left(1)
+                .a(cipher[i])
+                .right(-BlsScalar::one())
+                .b(state[i + 1]);
+
+            message[i] = composer.gate_add(constraint);
+
+            state[i + 1] = cipher[i];
+        });
+
+        GadgetStrategy::gadget(composer, &mut state);
+
+        composer.assert_equal(cipher[PoseidonCipher::capacity()], state[1]);
+
+        message
+    }
+}

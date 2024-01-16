@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![cfg(feature = "alloc")]
+#![cfg(feature = "zk")]
 #![cfg(feature = "merkle")]
 
 use dusk_plonk::prelude::Error as PlonkError;

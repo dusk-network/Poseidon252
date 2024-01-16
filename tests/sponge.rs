@@ -4,17 +4,9 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![cfg(feature = "alloc")]
-
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::ParseHexStr;
 use dusk_poseidon::sponge;
-use ff::Field;
-use rand::rngs::{OsRng, StdRng};
-use rand::SeedableRng;
-
-use dusk_plonk::prelude::Error as PlonkError;
-use dusk_plonk::prelude::*;
 
 const TEST_INPUTS: [&str; 32] = [
     "bb67ed265bf1db490ded2e1ede55c0d14c55521509dc73f9c354e98ab76c9625",
@@ -50,72 +42,6 @@ const TEST_INPUTS: [&str; 32] = [
     "958318907edb1b919a62fd62aeab05e2c6fea95fc731ba169ae8e406aec5361a",
     "e111a0664ac113b960cd336643db4b34c5cd4f69de84d44be95cadaca4d19115",
 ];
-
-const CAPACITY: usize = 12;
-
-fn poseidon_sponge_params(n: usize) -> (Vec<BlsScalar>, BlsScalar) {
-    let mut input = vec![BlsScalar::zero(); n];
-
-    input
-        .iter_mut()
-        .for_each(|s| *s = BlsScalar::random(&mut OsRng));
-
-    let output = sponge::hash(&input);
-
-    (input, output)
-}
-
-#[derive(Default, Debug)]
-pub struct TestSpongeCircuit {
-    input: Vec<BlsScalar>,
-    output: BlsScalar,
-}
-
-impl TestSpongeCircuit {
-    pub fn new(input: Vec<BlsScalar>, output: BlsScalar) -> Self {
-        Self { input, output }
-    }
-}
-
-impl Circuit for TestSpongeCircuit {
-    fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
-        let mut i_var = vec![Composer::ZERO; self.input.len()];
-        self.input.iter().zip(i_var.iter_mut()).for_each(|(i, v)| {
-            *v = composer.append_witness(*i);
-        });
-
-        // Apply Poseidon Sponge hash to the inputs
-        let computed_o_var = sponge::gadget(composer, i_var.as_slice());
-
-        // Check that the Gadget sponge hash result = Scalar sponge hash result
-        let o_var = composer.append_witness(self.output);
-        composer.assert_equal(o_var, computed_o_var);
-
-        Ok(())
-    }
-}
-
-#[test]
-fn sponge_gadget() -> Result<(), Error> {
-    let label = b"sponge-tester";
-    let pp = PublicParameters::setup(1 << CAPACITY, &mut OsRng)?;
-
-    let mut rng = StdRng::seed_from_u64(0xbeef);
-
-    for w in [3, 5, 15] {
-        let (i, o) = poseidon_sponge_params(w);
-        let circuit = TestSpongeCircuit::new(i, o);
-
-        let (prover, verifier) =
-            Compiler::compile_with_circuit(&pp, label, &circuit)?;
-
-        let (proof, public_inputs) = prover.prove(&mut rng, &circuit)?;
-
-        verifier.verify(&proof, &public_inputs)?;
-    }
-
-    Ok(())
-}
 
 #[test]
 fn sponge_hash_test() {
@@ -155,69 +81,148 @@ fn sponge_hash_test() {
     );
 }
 
-#[derive(Debug, Default)]
-pub struct TestTruncatedCircuit {
-    input: Vec<BlsScalar>,
-    output: JubJubScalar,
-}
+#[cfg(feature = "zk")]
+mod zk {
+    use super::*;
 
-const TRUNCATED_CAPACITY: usize = 17;
+    use rand::rngs::{OsRng, StdRng};
+    use rand::SeedableRng;
 
-impl TestTruncatedCircuit {
-    pub fn new(input: Vec<BlsScalar>, output: JubJubScalar) -> Self {
-        Self { input, output }
+    use dusk_plonk::prelude::Error as PlonkError;
+    use dusk_plonk::prelude::*;
+    use ff::Field;
+
+    const CAPACITY: usize = 12;
+
+    fn poseidon_sponge_params(n: usize) -> (Vec<BlsScalar>, BlsScalar) {
+        let mut input = vec![BlsScalar::zero(); n];
+
+        input
+            .iter_mut()
+            .for_each(|s| *s = BlsScalar::random(&mut OsRng));
+
+        let output = sponge::hash(&input);
+
+        (input, output)
     }
-}
 
-impl Circuit for TestTruncatedCircuit {
-    fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
-        let h = sponge::truncated::hash(self.input.as_slice());
-        let p = JubJubAffine::from(dusk_jubjub::GENERATOR_EXTENDED * h);
-        let p = composer.append_point(p);
+    #[derive(Default, Debug)]
+    pub struct TestSpongeCircuit {
+        input: Vec<BlsScalar>,
+        output: BlsScalar,
+    }
 
-        let i: Vec<Witness> = self
-            .input
-            .iter()
-            .map(|i| composer.append_witness(*i))
-            .collect();
+    impl TestSpongeCircuit {
+        pub fn new(input: Vec<BlsScalar>, output: BlsScalar) -> Self {
+            Self { input, output }
+        }
+    }
 
-        let o = composer.append_witness(self.output);
+    impl Circuit for TestSpongeCircuit {
+        fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
+            let mut i_var = vec![Composer::ZERO; self.input.len()];
+            self.input.iter().zip(i_var.iter_mut()).for_each(|(i, v)| {
+                *v = composer.append_witness(*i);
+            });
 
-        let t = sponge::truncated::gadget(composer, i.as_slice());
-        let p_p = composer
-            .component_mul_generator(t, dusk_jubjub::GENERATOR_EXTENDED)
-            .expect("Multiplying with the generator should succeed");
+            // Apply Poseidon Sponge hash to the inputs
+            let computed_o_var = sponge::gadget(composer, i_var.as_slice());
 
-        composer.assert_equal(t, o);
-        composer.assert_equal_point(p, p_p);
+            // Check that the Gadget sponge hash result = Scalar sponge hash
+            // result
+            let o_var = composer.append_witness(self.output);
+            composer.assert_equal(o_var, computed_o_var);
+
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn sponge_gadget() -> Result<(), Error> {
+        let label = b"sponge-tester";
+        let pp = PublicParameters::setup(1 << CAPACITY, &mut OsRng)?;
+
+        let mut rng = StdRng::seed_from_u64(0xbeef);
+
+        for w in [3, 5, 15] {
+            let (i, o) = poseidon_sponge_params(w);
+            let circuit = TestSpongeCircuit::new(i, o);
+
+            let (prover, verifier) =
+                Compiler::compile_with_circuit(&pp, label, &circuit)?;
+
+            let (proof, public_inputs) = prover.prove(&mut rng, &circuit)?;
+
+            verifier.verify(&proof, &public_inputs)?;
+        }
 
         Ok(())
     }
-}
 
-#[test]
-fn truncated_sponge() -> Result<(), PlonkError> {
-    let input: Vec<BlsScalar> = TEST_INPUTS
-        .iter()
-        .map(|input| BlsScalar::from_hex_str(input).unwrap())
-        .collect();
-
-    let label = b"truncated-sponge-tester";
-    let pp = PublicParameters::setup(1 << TRUNCATED_CAPACITY, &mut OsRng)?;
-    let mut rng = StdRng::seed_from_u64(0xbeef);
-
-    for w in [3, 6, 9] {
-        let i = input[..w].to_vec();
-        let o = sponge::truncated::hash(i.as_slice());
-
-        let circuit = TestTruncatedCircuit::new(i, o);
-        let (prover, verifier) =
-            Compiler::compile_with_circuit(&pp, label, &circuit)?;
-
-        let (proof, public_inputs) = prover.prove(&mut rng, &circuit)?;
-
-        verifier.verify(&proof, &public_inputs)?;
+    #[derive(Debug, Default)]
+    pub struct TestTruncatedCircuit {
+        input: Vec<BlsScalar>,
+        output: JubJubScalar,
     }
 
-    Ok(())
+    const TRUNCATED_CAPACITY: usize = 17;
+
+    impl TestTruncatedCircuit {
+        pub fn new(input: Vec<BlsScalar>, output: JubJubScalar) -> Self {
+            Self { input, output }
+        }
+    }
+
+    impl Circuit for TestTruncatedCircuit {
+        fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
+            let h = sponge::truncated::hash(self.input.as_slice());
+            let p = JubJubAffine::from(dusk_jubjub::GENERATOR_EXTENDED * h);
+            let p = composer.append_point(p);
+
+            let i: Vec<Witness> = self
+                .input
+                .iter()
+                .map(|i| composer.append_witness(*i))
+                .collect();
+
+            let o = composer.append_witness(self.output);
+
+            let t = sponge::truncated::gadget(composer, i.as_slice());
+            let p_p = composer
+                .component_mul_generator(t, dusk_jubjub::GENERATOR_EXTENDED)
+                .expect("Multiplying with the generator should succeed");
+
+            composer.assert_equal(t, o);
+            composer.assert_equal_point(p, p_p);
+
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn truncated_sponge() -> Result<(), PlonkError> {
+        let input: Vec<BlsScalar> = TEST_INPUTS
+            .iter()
+            .map(|input| BlsScalar::from_hex_str(input).unwrap())
+            .collect();
+
+        let label = b"truncated-sponge-tester";
+        let pp = PublicParameters::setup(1 << TRUNCATED_CAPACITY, &mut OsRng)?;
+        let mut rng = StdRng::seed_from_u64(0xbeef);
+
+        for w in [3, 6, 9] {
+            let i = input[..w].to_vec();
+            let o = sponge::truncated::hash(i.as_slice());
+
+            let circuit = TestTruncatedCircuit::new(i, o);
+            let (prover, verifier) =
+                Compiler::compile_with_circuit(&pp, label, &circuit)?;
+
+            let (proof, public_inputs) = prover.prove(&mut rng, &circuit)?;
+
+            verifier.verify(&proof, &public_inputs)?;
+        }
+
+        Ok(())
+    }
 }

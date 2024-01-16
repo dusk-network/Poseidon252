@@ -27,8 +27,10 @@ pub struct CipherEncrypt {
 
 impl CipherEncrypt {
     pub fn random(rng: &mut StdRng) -> Self {
-        let shared =
-            GENERATOR.to_niels().mul(&JubJubScalar::random(rng)).into();
+        let shared = GENERATOR
+            .to_niels()
+            .mul(&JubJubScalar::random(&mut *rng))
+            .into();
         let nonce = BlsScalar::random(&mut *rng);
         let message =
             [BlsScalar::random(&mut *rng), BlsScalar::random(&mut *rng)];
@@ -42,14 +44,11 @@ impl CipherEncrypt {
 }
 
 impl Circuit for CipherEncrypt {
-    fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-    where
-        C: Composer,
-    {
+    fn circuit(&self, composer: &mut Composer) -> Result<(), Error> {
         let shared = composer.append_point(self.shared);
         let nonce = composer.append_witness(self.nonce);
 
-        let mut message_circuit = [C::ZERO; MESSAGE_CAPACITY];
+        let mut message_circuit = [Composer::ZERO; MESSAGE_CAPACITY];
         self.message
             .iter()
             .zip(message_circuit.iter_mut())

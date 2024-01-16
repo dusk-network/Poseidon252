@@ -8,7 +8,9 @@
 
 use crate::sponge;
 use dusk_bls12_381::BlsScalar;
+use dusk_jubjub::JubJubScalar;
 
+#[cfg(feature = "zk")]
 use dusk_plonk::prelude::*;
 
 /// The constant represents the bitmask used to truncate the hashing results of
@@ -56,7 +58,7 @@ pub fn hash(messages: &[BlsScalar]) -> JubJubScalar {
 /// truncated to fit inside of a [`JubJubScalar`].
 ///
 /// [`hash`]: crate::sponge::hash
-#[cfg(feature = "alloc")]
+#[cfg(feature = "zk")]
 pub fn gadget(composer: &mut Composer, message: &[Witness]) -> Witness {
     let h = sponge::gadget(composer, message);
 
