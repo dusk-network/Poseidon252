@@ -18,14 +18,28 @@ jobs:
     name: Dusk Analyzer
     uses: dusk-network/.github/.github/workflows/dusk-analysis.yml@main
 
-  test_std:
-    name: Tests std
-    uses: dusk-network/.github/.github/workflows/run-tests.yml@main
-    with:
-      test_flags: --features=merkle,rkyv-impl,size_32
+  build_benches:
+    name: Build Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo bench --features=cipher,zk --no-run
 
-  test_no_std:
-    name: Tests no_std
+  check_merkle:
+    name: Check merkle compiles without zk
     uses: dusk-network/.github/.github/workflows/run-tests.yml@main
     with:
-      test_flags: --no-default-features
+      test_flags: --features=merkle --no-run
+
+  check_cipher:
+    name: Check cipher compiles without zk
+    uses: dusk-network/.github/.github/workflows/run-tests.yml@main
+    with:
+      test_flags: --features=cipher --no-run
+
+  test_all:
+    name: Tests all
+    uses: dusk-network/.github/.github/workflows/run-tests.yml@main
+    with:
+      test_flags: --features=zk,cipher,merkle,rkyv-impl,size_32

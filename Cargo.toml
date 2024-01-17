@@ -14,7 +14,7 @@ dusk-bls12_381 = { version = "0.13", default-features = false }
 dusk-jubjub = { version = "0.14", default-features = false }
 dusk-bytes = "0.1"
 dusk-hades = "0.24"
-dusk-plonk = { version = "0.19", default-features = false, features = ["alloc"] }
+dusk-plonk = { version = "0.19", default-features = false, features = ["alloc"], optional = true }
 rkyv = { version = "0.7", optional = true, default-features = false }
 bytecheck = { version = "0.6", optional = true, default-features = false }
 
@@ -24,16 +24,12 @@ rand = { version = "0.8", default-features = false, features = ["getrandom", "st
 ff = { version = "0.13", default-features = false }
 
 [features]
-default = [
-    "dusk-plonk/std",
-    "dusk-jubjub/default",
-    "dusk-bls12_381/default",
-    "alloc",
-]
-alloc = [
+zk = [
+    "dusk-plonk",
     "dusk-hades/plonk"
 ]
 merkle = []
+cipher = []
 size_16 = ["rkyv/size_16"]
 size_32 = ["rkyv/size_32"]
 size_64 = ["rkyv/size_64"]
@@ -66,11 +62,14 @@ codegen-units = 1
 [[bench]]
 name = "sponge"
 harness = false
+required-features = ["zk"]
 
 [[bench]]
 name = "cipher_encrypt"
 harness = false
+required-features = ["cipher", "zk"]
 
 [[bench]]
 name = "cipher_decrypt"
 harness = false
+required-features = ["cipher", "zk"]

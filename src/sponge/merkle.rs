@@ -7,11 +7,11 @@
 //! Implement the sponge framework specialized for merkle trees where the input
 //! length is constant and the output is always exactly one scalar.
 
-#[cfg(feature = "alloc")]
-use dusk_hades::GadgetStrategy;
+use dusk_bls12_381::BlsScalar;
 use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
 
-use dusk_plonk::prelude::*;
+#[cfg(feature = "zk")]
+pub use zk::gadget;
 
 // Computes the tag from the domain-separator and arity. Output length is
 // set to 1.
@@ -64,30 +64,37 @@ pub fn hash<const A: usize>(messages: &[BlsScalar; A]) -> BlsScalar {
     state[1]
 }
 
-/// Mirror the implementation of merkle [`hash`] inside of a PLONK circuit.
-///
-/// The tag is dependent of the arity `A` as described in [`hash`] and
-/// appended to the circuit as a constant. This means that a pre-computed
-/// circuit over one arity can never be verified with a circuit of another
-/// arity.
-///
-/// The returned value is the witness of the hash of the levels.
-#[cfg(feature = "alloc")]
-pub fn gadget<const A: usize>(
-    composer: &mut Composer,
-    messages: &[Witness; A],
-) -> Witness {
-    // initialize the state with the capacity
-    let mut state = [Composer::ZERO; WIDTH];
-    state[0] = composer.append_witness(BlsScalar::from(tag::<A>()));
+#[cfg(feature = "zk")]
+mod zk {
+    use super::{tag, WIDTH};
 
-    messages.chunks(WIDTH - 1).for_each(|chunk| {
-        state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
-            let constraint = Constraint::new().left(1).a(*s).right(1).b(*c);
-            *s = composer.gate_add(constraint);
+    use dusk_hades::GadgetStrategy;
+    use dusk_plonk::prelude::*;
+
+    /// Mirror the implementation of merkle [`hash`] inside of a PLONK circuit.
+    ///
+    /// The tag is dependent of the arity `A` as described in [`hash`] and
+    /// appended to the circuit as a constant. This means that a pre-computed
+    /// circuit over one arity can never be verified with a circuit of another
+    /// arity.
+    ///
+    /// The returned value is the witness of the hash of the levels.
+    pub fn gadget<const A: usize>(
+        composer: &mut Composer,
+        messages: &[Witness; A],
+    ) -> Witness {
+        // initialize the state with the capacity
+        let mut state = [Composer::ZERO; WIDTH];
+        state[0] = composer.append_witness(BlsScalar::from(tag::<A>()));
+
+        messages.chunks(WIDTH - 1).for_each(|chunk| {
+            state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
+                let constraint = Constraint::new().left(1).a(*s).right(1).b(*c);
+                *s = composer.gate_add(constraint);
+            });
+            GadgetStrategy::gadget(composer, &mut state);
         });
-        GadgetStrategy::gadget(composer, &mut state);
-    });
 
-    state[1]
+        state[1]
+    }
 }

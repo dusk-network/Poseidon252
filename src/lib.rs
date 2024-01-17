@@ -5,12 +5,11 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #![no_std]
-#![cfg_attr(feature = "alloc", warn(missing_docs), doc = include_str!("../README.md"))]
-
-#[cfg(feature = "alloc")]
-extern crate alloc;
+#![doc = include_str!("../README.md")]
+#![deny(missing_docs)]
 
 /// Encryption and decryption implementation over a Poseidon cipher
+#[cfg(feature = "cipher")]
 pub mod cipher;
 
 /// Module containing a fixed-length Poseidon hash implementation with one

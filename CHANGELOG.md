@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Restructure crate features [#184]
+
+### Removed
+
+- Remove `default` and `alloc` features [#184]
+
+### Added
+
+- Add `zk` and `cipher` features [#184]
+
 ## [0.33.0] - 2024-01-03
 
 ### Changed
@@ -417,12 +429,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- ISSUES -->
 [#215]: https://github.com/dusk-network/poseidon252/issues/215
 [#212]: https://github.com/dusk-network/poseidon252/issues/212
-[#198]: https://github.com/dusk-network/poseidon252/issues/198
 [#206]: https://github.com/dusk-network/poseidon252/issues/206
 [#203]: https://github.com/dusk-network/poseidon252/issues/203
 [#200]: https://github.com/dusk-network/poseidon252/issues/200
+[#198]: https://github.com/dusk-network/poseidon252/issues/198
 [#197]: https://github.com/dusk-network/Poseidon252/issues/197
 [#189]: https://github.com/dusk-network/poseidon252/issues/189
+[#184]: https://github.com/dusk-network/poseidon252/issues/184
 [#181]: https://github.com/dusk-network/poseidon252/issues/181
 [#180]: https://github.com/dusk-network/poseidon252/issues/180
 [#175]: https://github.com/dusk-network/poseidon252/issues/175
