@@ -8,7 +8,8 @@
 //! length is constant and the output is always exactly one scalar.
 
 use dusk_bls12_381::BlsScalar;
-use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
+
+use crate::hades::{ScalarStrategy, Strategy, WIDTH};
 
 #[cfg(feature = "zk")]
 pub use zk::gadget;
@@ -35,7 +36,7 @@ fn tag<const A: usize>() -> u64 {
 ///
 /// As per the paper definition, the capacity `c` is 1, the rate `r` is `4`,
 /// which makes the permutation container exactly `5` elements long
-/// (= `dusk_hades::WIDTH`).
+/// (= `crate::hades::WIDTH`).
 ///
 /// The capacity element is the first scalar of the state and is set to the tag
 /// which is calculated based on the arity of the tree and appended to the
@@ -66,10 +67,11 @@ pub fn hash<const A: usize>(messages: &[BlsScalar; A]) -> BlsScalar {
 
 #[cfg(feature = "zk")]
 mod zk {
-    use super::{tag, WIDTH};
+    use super::tag;
 
-    use dusk_hades::GadgetStrategy;
     use dusk_plonk::prelude::*;
+
+    use crate::hades::{GadgetStrategy, WIDTH};
 
     /// Mirror the implementation of merkle [`hash`] inside of a PLONK circuit.
     ///

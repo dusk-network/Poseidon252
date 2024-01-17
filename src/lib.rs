@@ -18,3 +18,6 @@ pub mod perm_uses;
 
 /// Implementation for the Poseidon Sponge hash function
 pub mod sponge;
+
+/// Implementation of the Poseidon permutation based on the Hades strategy
+pub mod hades;
