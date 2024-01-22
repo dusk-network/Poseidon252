@@ -10,7 +10,8 @@ pub mod merkle;
 pub mod truncated;
 
 use dusk_bls12_381::BlsScalar;
-use dusk_hades::{ScalarStrategy, Strategy, WIDTH};
+
+use crate::hades::{ScalarStrategy, Strategy, WIDTH};
 
 #[cfg(feature = "zk")]
 pub use zk::gadget;
@@ -78,9 +79,7 @@ pub fn hash(messages: &[BlsScalar]) -> BlsScalar {
 
 #[cfg(feature = "zk")]
 mod zk {
-    use super::WIDTH;
-
-    use dusk_hades::GadgetStrategy;
+    use crate::hades::{GadgetStrategy, WIDTH};
     use dusk_plonk::prelude::{Composer, Constraint, Witness};
 
     /// Mirror the implementation of [`hash`] inside of a PLONK circuit.

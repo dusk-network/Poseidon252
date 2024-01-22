@@ -50,7 +50,7 @@ fn sanity() {
 
     // The hades permutation cannot be performed if the cipher is bigger than
     // hades width
-    assert!(dusk_hades::WIDTH >= PoseidonCipher::cipher_size());
+    assert!(dusk_poseidon::hades::WIDTH >= PoseidonCipher::cipher_size());
 }
 
 #[test]

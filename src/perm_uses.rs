@@ -7,21 +7,22 @@
 //! The `pad` module implements the padding algorithm on the Poseidon hash.
 
 use dusk_bls12_381::BlsScalar;
-use dusk_hades::{ScalarStrategy, Strategy};
+
+use crate::hades::{ScalarStrategy, Strategy, WIDTH};
 
 /// Takes in one BlsScalar and outputs 2.
 /// This function is fixed.
 pub fn two_outputs(message: BlsScalar) -> [BlsScalar; 2] {
     const CAPACITY: BlsScalar = BlsScalar::from_raw([0, 1, 0, 0]);
 
-    let mut words = [BlsScalar::zero(); dusk_hades::WIDTH];
+    let mut words = [BlsScalar::zero(); WIDTH];
 
     words[0] = CAPACITY;
     words[1] = message;
 
-    // Since we do a fixed_length hash, `words` is always
-    // the size of `WIDTH`. Therefore, we can simply do
-    // the permutation and return the desired results.
+    // Since we do a fixed_length hash, `words` is always the size of `WIDTH`.
+    // Therefore, we can simply do the permutation and return the desired
+    // results.
     ScalarStrategy::new().perm(&mut words);
 
     [words[1], words[2]]

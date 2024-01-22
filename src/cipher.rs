@@ -88,8 +88,9 @@
 
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
-use dusk_hades::{ScalarStrategy, Strategy};
 use dusk_jubjub::JubJubAffine;
+
+use crate::hades::{ScalarStrategy, Strategy, WIDTH};
 
 #[cfg(feature = "rkyv-impl")]
 use bytecheck::CheckBytes;
@@ -169,7 +170,7 @@ impl PoseidonCipher {
     pub fn initial_state(
         secret: &JubJubAffine,
         nonce: BlsScalar,
-    ) -> [BlsScalar; dusk_hades::WIDTH] {
+    ) -> [BlsScalar; WIDTH] {
         [
             // Domain - Maximum plaintext length of the elements of Fq, as
             // defined in the paper
@@ -255,7 +256,7 @@ impl PoseidonCipher {
 #[cfg(feature = "zk")]
 mod zk {
     use super::PoseidonCipher;
-    use dusk_hades::GadgetStrategy;
+    use crate::hades::{GadgetStrategy, WIDTH};
 
     use dusk_plonk::prelude::*;
 
@@ -267,7 +268,7 @@ mod zk {
             ks0: Witness,
             ks1: Witness,
             nonce: Witness,
-        ) -> [Witness; dusk_hades::WIDTH] {
+        ) -> [Witness; WIDTH] {
             let domain = BlsScalar::from_raw([0x100000000u64, 0, 0, 0]);
             let domain = composer.append_constant(domain);
 

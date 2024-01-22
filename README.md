@@ -13,10 +13,7 @@ Reference implementation for the Poseidon Hashing algorithm.
 This repository has been created so there's a unique library that holds the tools & functions
 required to perform Poseidon Hashes.
 
-This hashes heavily rely on the Hades permutation, which is one of the key parts that Poseidon needs in order
-to work.
-This library uses the reference implementation of [Dusk-Hades](https://github.com/dusk-network/hades252) which has been
-designed & build by the [Dusk-Network team](https://dusk.network/).
+These hashes heavily rely on the Hades design for its inner permutation.
 
 **The library provides the two hashing techniques of Poseidon:**
 

@@ -5,8 +5,8 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use dusk_hades::WIDTH;
 use dusk_plonk::prelude::*;
+use dusk_poseidon::hades::WIDTH;
 use ff::Field;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
