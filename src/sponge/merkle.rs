@@ -9,7 +9,7 @@
 
 use dusk_bls12_381::BlsScalar;
 
-use crate::hades::{ScalarStrategy, Strategy, WIDTH};
+use crate::hades::{permute, WIDTH};
 
 #[cfg(feature = "zk")]
 pub use zk::gadget;
@@ -47,8 +47,6 @@ fn tag<const A: usize>() -> u64 {
 ///
 /// If `A` is not dividable by `r`, the padding values will be zeroes.
 pub fn hash<const A: usize>(messages: &[BlsScalar; A]) -> BlsScalar {
-    let mut h = ScalarStrategy::new();
-
     // initialize the state with zeros and set the first element to the tag
     let mut state = [BlsScalar::zero(); WIDTH];
     state[0] = BlsScalar::from(tag::<A>());
@@ -59,7 +57,7 @@ pub fn hash<const A: usize>(messages: &[BlsScalar; A]) -> BlsScalar {
         state[1..].iter_mut().zip(chunk.iter()).for_each(|(s, c)| {
             *s += c;
         });
-        h.perm(&mut state);
+        permute(&mut state);
     });
 
     state[1]
@@ -71,7 +69,7 @@ mod zk {
 
     use dusk_plonk::prelude::*;
 
-    use crate::hades::{GadgetStrategy, WIDTH};
+    use crate::hades::{permute_gadget, WIDTH};
 
     /// Mirror the implementation of merkle [`hash`] inside of a PLONK circuit.
     ///
@@ -94,7 +92,7 @@ mod zk {
                 let constraint = Constraint::new().left(1).a(*s).right(1).b(*c);
                 *s = composer.gate_add(constraint);
             });
-            GadgetStrategy::gadget(composer, &mut state);
+            permute_gadget(composer, &mut state);
         });
 
         state[1]

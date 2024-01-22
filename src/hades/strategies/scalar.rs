@@ -10,7 +10,7 @@ use crate::hades::{Strategy, MDS_MATRIX, WIDTH};
 
 /// Implements a Hades252 strategy for `BlsScalar` as input values.
 #[derive(Default)]
-pub struct ScalarStrategy {}
+pub(crate) struct ScalarStrategy {}
 
 impl ScalarStrategy {
     /// Constructs a new `ScalarStrategy`.

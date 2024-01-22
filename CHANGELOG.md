@@ -16,10 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Remove `default` and `alloc` features [#184]
+- Remove `Strategy`, `ScalarStrategy` and `GadgetStrategy` from public API [#243]
 
 ### Added
 
 - Add `zk` and `cipher` features [#184]
+- Add hades permutation here [#240]
+- Add internal `permute` and `permute_gadget` functions [#243]
 
 ## [0.33.0] - 2024-01-03
 
@@ -429,6 +432,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#243]: https://github.com/dusk-network/poseidon252/issues/243
+[#240]: https://github.com/dusk-network/poseidon252/issues/240
 [#215]: https://github.com/dusk-network/poseidon252/issues/215
 [#212]: https://github.com/dusk-network/poseidon252/issues/212
 [#206]: https://github.com/dusk-network/poseidon252/issues/206

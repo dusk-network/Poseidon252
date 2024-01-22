@@ -11,7 +11,7 @@ use crate::hades::{Strategy, MDS_MATRIX, WIDTH};
 
 /// Implements a Hades252 strategy for `Witness` as input values.
 /// Requires a reference to a `ConstraintSystem`.
-pub struct GadgetStrategy<'a> {
+pub(crate) struct GadgetStrategy<'a> {
     /// A reference to the constraint system used by the gadgets
     cs: &'a mut Composer,
     count: usize,
@@ -21,13 +21,6 @@ impl<'a> GadgetStrategy<'a> {
     /// Constructs a new `GadgetStrategy` with the constraint system.
     pub fn new(cs: &'a mut Composer) -> Self {
         GadgetStrategy { cs, count: 0 }
-    }
-
-    /// Perform the hades permutation on a plonk circuit
-    pub fn gadget(composer: &'a mut Composer, x: &mut [Witness]) {
-        let mut strategy = GadgetStrategy::new(composer);
-
-        strategy.perm(x);
     }
 }
 
@@ -136,7 +129,7 @@ impl<'a> Strategy<Witness> for GadgetStrategy<'a> {
 mod tests {
     use super::*;
 
-    use crate::hades::ScalarStrategy;
+    use crate::hades::{permute, permute_gadget};
 
     use core::result::Result;
     use ff::Field;
@@ -166,7 +159,7 @@ mod tests {
             });
 
             // Apply Hades gadget strategy.
-            GadgetStrategy::gadget(composer, &mut i_var);
+            permute_gadget(composer, &mut i_var);
 
             // Copy the result of the permutation into the perm.
             perm.copy_from_slice(&i_var);
@@ -193,7 +186,7 @@ mod tests {
         let mut output = [BlsScalar::zero(); WIDTH];
 
         output.copy_from_slice(&input);
-        ScalarStrategy::new().perm(&mut output);
+        permute(&mut output);
 
         (input, output)
     }
@@ -235,7 +228,7 @@ mod tests {
         // Prepare input & output
         let i = [BlsScalar::from(5000u64); WIDTH];
         let mut o = [BlsScalar::from(5000u64); WIDTH];
-        ScalarStrategy::new().perm(&mut o);
+        permute(&mut o);
 
         let circuit = TestCircuit { i, o };
         let mut rng = StdRng::seed_from_u64(0xbeef);
@@ -262,7 +255,7 @@ mod tests {
         i[1] = x_scalar;
 
         let mut o = [BlsScalar::from(31u64); WIDTH];
-        ScalarStrategy::new().perm(&mut o);
+        permute(&mut o);
 
         let circuit = TestCircuit { i, o };
         let mut rng = StdRng::seed_from_u64(0xbeef);

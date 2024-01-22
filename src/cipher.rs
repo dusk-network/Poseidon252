@@ -90,7 +90,7 @@ use dusk_bls12_381::BlsScalar;
 use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
 use dusk_jubjub::JubJubAffine;
 
-use crate::hades::{ScalarStrategy, Strategy, WIDTH};
+use crate::hades::{permute, WIDTH};
 
 #[cfg(feature = "rkyv-impl")]
 use bytecheck::CheckBytes;
@@ -199,12 +199,10 @@ impl PoseidonCipher {
         nonce: &BlsScalar,
     ) -> Self {
         let zero = BlsScalar::zero();
-        let mut strategy = ScalarStrategy::new();
-
         let mut cipher = [zero; CIPHER_SIZE];
         let mut state = PoseidonCipher::initial_state(secret, *nonce);
 
-        strategy.perm(&mut state);
+        permute(&mut state);
 
         (0..MESSAGE_CAPACITY).for_each(|i| {
             state[i + 1] += if i < message.len() {
@@ -216,7 +214,7 @@ impl PoseidonCipher {
             cipher[i] = state[i + 1];
         });
 
-        strategy.perm(&mut state);
+        permute(&mut state);
         cipher[MESSAGE_CAPACITY] = state[1];
 
         PoseidonCipher::new(cipher)
@@ -231,19 +229,17 @@ impl PoseidonCipher {
         nonce: &BlsScalar,
     ) -> Option<[BlsScalar; MESSAGE_CAPACITY]> {
         let zero = BlsScalar::zero();
-        let mut strategy = ScalarStrategy::new();
-
         let mut message = [zero; MESSAGE_CAPACITY];
         let mut state = PoseidonCipher::initial_state(secret, *nonce);
 
-        strategy.perm(&mut state);
+        permute(&mut state);
 
         (0..MESSAGE_CAPACITY).for_each(|i| {
             message[i] = self.cipher[i] - state[i + 1];
             state[i + 1] = self.cipher[i];
         });
 
-        strategy.perm(&mut state);
+        permute(&mut state);
 
         if self.cipher[MESSAGE_CAPACITY] != state[1] {
             return None;
@@ -256,7 +252,7 @@ impl PoseidonCipher {
 #[cfg(feature = "zk")]
 mod zk {
     use super::PoseidonCipher;
-    use crate::hades::{GadgetStrategy, WIDTH};
+    use crate::hades::{permute_gadget, WIDTH};
 
     use dusk_plonk::prelude::*;
 
@@ -302,7 +298,7 @@ mod zk {
         let mut state =
             PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 
-        GadgetStrategy::gadget(composer, &mut state);
+        permute_gadget(composer, &mut state);
 
         (0..PoseidonCipher::capacity()).for_each(|i| {
             let x = if i < message.len() {
@@ -319,7 +315,7 @@ mod zk {
             cipher[i] = state[i + 1];
         });
 
-        GadgetStrategy::gadget(composer, &mut state);
+        permute_gadget(composer, &mut state);
         cipher[PoseidonCipher::capacity()] = state[1];
 
         cipher
@@ -342,7 +338,7 @@ mod zk {
         let mut state =
             PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 
-        GadgetStrategy::gadget(composer, &mut state);
+        permute_gadget(composer, &mut state);
 
         (0..PoseidonCipher::capacity()).for_each(|i| {
             let constraint = Constraint::new()
@@ -356,7 +352,7 @@ mod zk {
             state[i + 1] = cipher[i];
         });
 
-        GadgetStrategy::gadget(composer, &mut state);
+        permute_gadget(composer, &mut state);
 
         composer.assert_equal(cipher[PoseidonCipher::capacity()], state[1]);
 

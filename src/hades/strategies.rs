@@ -15,21 +15,42 @@
 
 use dusk_bls12_381::BlsScalar;
 
-use crate::hades::{PARTIAL_ROUNDS, ROUND_CONSTANTS, TOTAL_FULL_ROUNDS};
+#[cfg(feature = "zk")]
+use dusk_plonk::prelude::{Composer, Witness};
+
+use crate::hades::{PARTIAL_ROUNDS, ROUND_CONSTANTS, TOTAL_FULL_ROUNDS, WIDTH};
 
 /// Strategy for zero-knowledge plonk circuits
 #[cfg(feature = "zk")]
 mod gadget;
+#[cfg(feature = "zk")]
+use gadget::GadgetStrategy;
 
 /// Strategy for scalars
 mod scalar;
+use scalar::ScalarStrategy;
 
+// #[cfg(feature = "zk")]
+// pub use gadget::GadgetStrategy;
+// pub use scalar::ScalarStrategy;
+
+/// Perform one Hades permutation on the given state.
+pub fn permute(state: &mut [BlsScalar; WIDTH]) {
+    let mut hades = ScalarStrategy::new();
+
+    hades.perm(state);
+}
+
+/// Perform one Hades permutation on the given state in a plonk circuit.
 #[cfg(feature = "zk")]
-pub use gadget::GadgetStrategy;
-pub use scalar::ScalarStrategy;
+pub fn permute_gadget(composer: &mut Composer, state: &mut [Witness; WIDTH]) {
+    let mut hades = GadgetStrategy::new(composer);
+
+    hades.perm(state);
+}
 
 /// Defines the Hades252 strategy algorithm.
-pub trait Strategy<T: Clone + Copy> {
+pub(crate) trait Strategy<T: Clone + Copy> {
     /// Fetch the next round constant from an iterator
     fn next_c<'b, I>(constants: &mut I) -> BlsScalar
     where
