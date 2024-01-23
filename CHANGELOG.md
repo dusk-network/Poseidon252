@@ -12,17 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Restructure crate features [#184]
+- Rename trait `hades::Strategy` to `hades::Permutation` [#243]
+- Rename struct `hades::ScalarStrategy` to `hades::ScalarPermutation` [#243]
+- Rename struct `hades::GadgetStrategy` to `hades::GadgetPermutaiton` [#243]
 
 ### Removed
 
 - Remove `default` and `alloc` features [#184]
-- Remove `Strategy`, `ScalarStrategy` and `GadgetStrategy` from public API [#243]
+- Remove `hades::Strategy`, `hades::ScalarStrategy` and `hades::GadgetStrategy` from public API [#243]
+- Remove `dusk-hades` dependency [#240]
 
 ### Added
 
 - Add `zk` and `cipher` features [#184]
-- Add hades permutation here [#240]
-- Add internal `permute` and `permute_gadget` functions [#243]
+- Add the code for the hades permutation to crate [#240]
+- Add internal `permute` and `permute_gadget` functions to `hades` module [#243]
 
 ## [0.33.0] - 2024-01-03
 

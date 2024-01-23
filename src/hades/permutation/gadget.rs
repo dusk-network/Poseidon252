@@ -7,121 +7,124 @@
 use dusk_bls12_381::BlsScalar;
 use dusk_plonk::prelude::*;
 
-use crate::hades::{Strategy, MDS_MATRIX, WIDTH};
+use crate::hades::{Permutation as HadesPermutation, MDS_MATRIX, WIDTH};
 
-/// Implements a Hades252 strategy for `Witness` as input values.
+/// A state for the ['HadesPermutation`] operating on [`Witness`]es.
 /// Requires a reference to a `ConstraintSystem`.
-pub(crate) struct GadgetStrategy<'a> {
+pub(crate) struct GadgetPermutaiton<'a> {
     /// A reference to the constraint system used by the gadgets
-    cs: &'a mut Composer,
-    count: usize,
+    composer: &'a mut Composer,
+    round: usize,
 }
 
-impl<'a> GadgetStrategy<'a> {
-    /// Constructs a new `GadgetStrategy` with the constraint system.
-    pub fn new(cs: &'a mut Composer) -> Self {
-        GadgetStrategy { cs, count: 0 }
+impl<'a> GadgetPermutaiton<'a> {
+    /// Constructs a new `GadgetPermutaiton` with the constraint system.
+    pub fn new(composer: &'a mut Composer) -> Self {
+        Self { composer, round: 0 }
     }
 }
 
-impl AsMut<Composer> for GadgetStrategy<'_> {
+impl AsMut<Composer> for GadgetPermutaiton<'_> {
     fn as_mut(&mut self) -> &mut Composer {
-        self.cs
+        self.composer
     }
 }
 
-impl<'a> Strategy<Witness> for GadgetStrategy<'a> {
-    fn add_round_key<'b, I>(&mut self, constants: &mut I, words: &mut [Witness])
-    where
+impl<'a> HadesPermutation<Witness> for GadgetPermutaiton<'a> {
+    fn add_round_key<'b, I>(
+        &mut self,
+        constants: &mut I,
+        state: &mut [Witness; WIDTH],
+    ) where
         I: Iterator<Item = &'b BlsScalar>,
     {
-        // Add only for the first round.
-        //
-        // The remainder ARC are performed with the constant appended
-        // to the linear layer
-        if self.count == 0 {
-            words.iter_mut().for_each(|w| {
+        // To safe constraints we only add the constants here in the first
+        // round. The remaining constants will be added in the matrix
+        // multiplication.
+        if self.round == 0 {
+            state.iter_mut().for_each(|w| {
                 let constant = Self::next_c(constants);
                 let constraint =
                     Constraint::new().left(1).a(*w).constant(constant);
 
-                *w = self.cs.gate_add(constraint);
+                *w = self.composer.gate_add(constraint);
             });
         }
     }
 
     fn quintic_s_box(&mut self, value: &mut Witness) {
         let constraint = Constraint::new().mult(1).a(*value).b(*value);
-        let v2 = self.cs.gate_mul(constraint);
+        let v2 = self.composer.gate_mul(constraint);
 
         let constraint = Constraint::new().mult(1).a(v2).b(v2);
-        let v4 = self.cs.gate_mul(constraint);
+        let v4 = self.composer.gate_mul(constraint);
 
         let constraint = Constraint::new().mult(1).a(v4).b(*value);
-        *value = self.cs.gate_mul(constraint);
+        *value = self.composer.gate_mul(constraint);
     }
 
     /// Adds a constraint for each matrix coefficient multiplication
-    fn mul_matrix<'b, I>(&mut self, constants: &mut I, values: &mut [Witness])
-    where
+    fn mul_matrix<'b, I>(
+        &mut self,
+        constants: &mut I,
+        state: &mut [Witness; WIDTH],
+    ) where
         I: Iterator<Item = &'b BlsScalar>,
     {
         let mut result = [Composer::ZERO; WIDTH];
-        self.count += 1;
+        self.round += 1;
 
         // Implementation optimized for WIDTH = 5
         //
-        // c is the next round constant.
-        // For the partial round, it is added only for the last element
+        // c is the next round's constant and hence zero for the last round.
         //
         // The resulting array `r` will be defined as
-        // r[x] = sum j 0..WIDTH ( MDS[x][j] * values[j] ) + c
+        // r[x] = sum_{j=0..WIDTH} ( MDS[x][j] * state[j] ) + c
         //
         // q_l = MDS[x][0]
         // q_r = MDS[x][1]
         // q_4 = MDS[x][2]
-        // w_l = values[0]
-        // w_r = values[1]
-        // w_4 = values[2]
+        // w_l = state[0]
+        // w_r = state[1]
+        // w_4 = state[2]
         // r[x] = q_l · w_l + q_r · w_r + q_4 · w_4;
         //
         // q_l = MDS[x][3]
         // q_r = MDS[x][4]
         // q_4 = 1
-        // w_l = values[3]
-        // w_r = values[4]
+        // w_l = state[3]
+        // w_r = state[4]
         // w_4 = r[x]
         // r[x] = q_l · w_l + q_r · w_r + q_4 · w_4 + c;
         for j in 0..WIDTH {
-            let c = if self.count < Self::rounds() {
-                Self::next_c(constants)
-            } else {
-                BlsScalar::zero()
+            let c = match self.round < Self::rounds() {
+                true => Self::next_c(constants),
+                false => BlsScalar::zero(),
             };
 
             let constraint = Constraint::new()
                 .left(MDS_MATRIX[j][0])
-                .a(values[0])
+                .a(state[0])
                 .right(MDS_MATRIX[j][1])
-                .b(values[1])
+                .b(state[1])
                 .fourth(MDS_MATRIX[j][2])
-                .d(values[2]);
+                .d(state[2]);
 
-            result[j] = self.cs.gate_add(constraint);
+            result[j] = self.composer.gate_add(constraint);
 
             let constraint = Constraint::new()
                 .left(MDS_MATRIX[j][3])
-                .a(values[3])
+                .a(state[3])
                 .right(MDS_MATRIX[j][4])
-                .b(values[4])
+                .b(state[4])
                 .fourth(1)
                 .d(result[j])
                 .constant(c);
 
-            result[j] = self.cs.gate_add(constraint);
+            result[j] = self.composer.gate_add(constraint);
         }
 
-        values.copy_from_slice(&result);
+        state.copy_from_slice(&result);
     }
 }
 
@@ -158,7 +161,7 @@ mod tests {
                 *v = composer.append_witness(*o);
             });
 
-            // Apply Hades gadget strategy.
+            // Apply Hades gadget permutation.
             permute_gadget(composer, &mut i_var);
 
             // Copy the result of the permutation into the perm.

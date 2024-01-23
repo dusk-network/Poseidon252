@@ -6,28 +6,29 @@
 
 use dusk_bls12_381::BlsScalar;
 
-use crate::hades::{Strategy, MDS_MATRIX, WIDTH};
+use crate::hades::{Permutation as HadesPermutation, MDS_MATRIX, WIDTH};
 
-/// Implements a Hades252 strategy for `BlsScalar` as input values.
+/// State that implements the [`HadesPermutation`] for `BlsScalar` as input
+/// values.
 #[derive(Default)]
-pub(crate) struct ScalarStrategy {}
+pub(crate) struct ScalarPermutation {}
 
-impl ScalarStrategy {
-    /// Constructs a new `ScalarStrategy`.
+impl ScalarPermutation {
+    /// Constructs a new `ScalarPermutation`.
     pub fn new() -> Self {
         Default::default()
     }
 }
 
-impl Strategy<BlsScalar> for ScalarStrategy {
+impl HadesPermutation<BlsScalar> for ScalarPermutation {
     fn add_round_key<'b, I>(
         &mut self,
         constants: &mut I,
-        words: &mut [BlsScalar],
+        state: &mut [BlsScalar; WIDTH],
     ) where
         I: Iterator<Item = &'b BlsScalar>,
     {
-        words.iter_mut().for_each(|w| {
+        state.iter_mut().for_each(|w| {
             *w += Self::next_c(constants);
         });
     }
@@ -39,19 +40,19 @@ impl Strategy<BlsScalar> for ScalarStrategy {
     fn mul_matrix<'b, I>(
         &mut self,
         _constants: &mut I,
-        values: &mut [BlsScalar],
+        state: &mut [BlsScalar; WIDTH],
     ) where
         I: Iterator<Item = &'b BlsScalar>,
     {
         let mut result = [BlsScalar::zero(); WIDTH];
 
-        for (j, value) in values.iter().enumerate().take(WIDTH) {
+        for (j, value) in state.iter().enumerate() {
             for k in 0..WIDTH {
                 result[k] += MDS_MATRIX[k][j] * value;
             }
         }
 
-        values.copy_from_slice(&result);
+        state.copy_from_slice(&result);
     }
 }
 
@@ -59,10 +60,7 @@ impl Strategy<BlsScalar> for ScalarStrategy {
 mod tests {
     use super::*;
 
-    fn perm(values: &mut [BlsScalar]) {
-        let mut strategy = ScalarStrategy::new();
-        strategy.perm(values);
-    }
+    use crate::hades::permute;
 
     #[test]
     fn hades_det() {
@@ -70,9 +68,9 @@ mod tests {
         let mut y = [BlsScalar::from(17u64); WIDTH];
         let mut z = [BlsScalar::from(19u64); WIDTH];
 
-        perm(&mut x);
-        perm(&mut y);
-        perm(&mut z);
+        permute(&mut x);
+        permute(&mut y);
+        permute(&mut z);
 
         assert_eq!(x, y);
         assert_ne!(x, z);
