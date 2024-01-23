@@ -7,26 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.34.0] - 2024-01-24
-
 ### Changed
 
-- Restructure crate features [#184]
 - Rename trait `hades::Strategy` to `hades::Permutation` [#243]
 - Rename struct `hades::ScalarStrategy` to `hades::ScalarPermutation` [#243]
 - Rename struct `hades::GadgetStrategy` to `hades::GadgetPermutaiton` [#243]
+- Reduce the number of `ROUND_CONSTANTS` from 960 to 335 [#246]
+- Remove the constants iterator in favor of indexing the constants array directly [#246]
+- Change `ROUND_CONSTANTS` into a two-dimensional array [#246]
+- Rename `TOTAL_FULL_ROUNDS` to `FULL_ROUNDS` [#246]
 
 ### Removed
 
-- Remove `default` and `alloc` features [#184]
 - Remove `hades::Strategy`, `hades::ScalarStrategy` and `hades::GadgetStrategy` from public API [#243]
 - Remove `dusk-hades` dependency [#240]
 
 ### Added
 
-- Add `zk` and `cipher` features [#184]
 - Add the code for the hades permutation to crate [#240]
 - Add internal `permute` and `permute_gadget` functions to `hades` module [#243]
+
+## [0.34.0] - 2024-01-24
+
+### Changed
+
+- Restructure crate features [#184]
+
+### Removed
+
+- Remove `default` and `alloc` features [#184]
+
+### Added
+
+- Add `zk` and `cipher` features [#184]
 
 ## [0.33.0] - 2024-01-03
 
@@ -436,6 +449,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#246]: https://github.com/dusk-network/poseidon252/issues/246
 [#243]: https://github.com/dusk-network/poseidon252/issues/243
 [#240]: https://github.com/dusk-network/poseidon252/issues/240
 [#215]: https://github.com/dusk-network/poseidon252/issues/215

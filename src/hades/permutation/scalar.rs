@@ -6,44 +6,43 @@
 
 use dusk_bls12_381::BlsScalar;
 
-use crate::hades::{Permutation as HadesPermutation, MDS_MATRIX, WIDTH};
+use crate::hades::{
+    Permutation as HadesPermutation, MDS_MATRIX, ROUND_CONSTANTS, WIDTH,
+};
 
-/// State that implements the [`HadesPermutation`] for `BlsScalar` as input
+/// An implementation of the [`HadesPermutation`] for `BlsScalar` as input
 /// values.
 #[derive(Default)]
-pub(crate) struct ScalarPermutation {}
+pub(crate) struct ScalarPermutation {
+    round: usize,
+}
 
 impl ScalarPermutation {
     /// Constructs a new `ScalarPermutation`.
     pub fn new() -> Self {
-        Default::default()
+        Self { round: 0 }
     }
 }
 
 impl HadesPermutation<BlsScalar> for ScalarPermutation {
-    fn add_round_key<'b, I>(
-        &mut self,
-        constants: &mut I,
-        state: &mut [BlsScalar; WIDTH],
-    ) where
-        I: Iterator<Item = &'b BlsScalar>,
-    {
-        state.iter_mut().for_each(|w| {
-            *w += Self::next_c(constants);
-        });
+    fn increment_round(&mut self) {
+        self.round += 1;
+    }
+
+    fn add_round_constants(&mut self, state: &mut [BlsScalar; WIDTH]) {
+        state
+            .iter_mut()
+            .enumerate()
+            // the rounds start counting at 1, so the respective round constants
+            // are stored at index `round - 1`
+            .for_each(|(i, s)| *s += ROUND_CONSTANTS[self.round - 1][i]);
     }
 
     fn quintic_s_box(&mut self, value: &mut BlsScalar) {
         *value = value.square().square() * *value;
     }
 
-    fn mul_matrix<'b, I>(
-        &mut self,
-        _constants: &mut I,
-        state: &mut [BlsScalar; WIDTH],
-    ) where
-        I: Iterator<Item = &'b BlsScalar>,
-    {
+    fn mul_matrix(&mut self, state: &mut [BlsScalar; WIDTH]) {
         let mut result = [BlsScalar::zero(); WIDTH];
 
         for (j, value) in state.iter().enumerate() {

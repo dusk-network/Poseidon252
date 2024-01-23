@@ -6,9 +6,9 @@
 
 # How to generate the assets
 
-The `ark.bin` and `mds.bin` files in this folder are generated using the snippets below:
+The `arc.bin` and `mds.bin` files in this folder are generated using the snippets below:
 
-## Filename: ark.bin
+## Generate round constants
 
 ```rust
 use dusk_bls12_381::BlsScalar;
@@ -16,9 +16,9 @@ use sha2::{Digest, Sha512};
 use std::fs;
 use std::io::Write;
 
-// The amount of constants generated, this needs to be the same number as in
-// `dusk_poseidon::hades::CONSTANTS`.
-const CONSTANTS: usize = 960;
+// The amount of constants generated, this needs to be at least the total number
+// of rounds (= 59 + 8) multiplied by the width of the permutaiton array (= 5).
+const CONSTANTS: usize = (59 + 8) * 5;
 
 fn constants() -> [BlsScalar; CONSTANTS] {
     let mut cnst = [BlsScalar::zero(); CONSTANTS];
@@ -41,7 +41,7 @@ fn constants() -> [BlsScalar; CONSTANTS] {
 }
 
 fn write_constants() -> std::io::Result<()> {
-    let filename = "ark.bin";
+    let filename = "arc.bin";
     let mut buf: Vec<u8> = vec![];
 
     constants().iter().for_each(|c| {
@@ -56,7 +56,7 @@ fn write_constants() -> std::io::Result<()> {
 }
 ```
 
-## Filename: mds.bin
+## Generate mds matrix
 
 ```rust
 use dusk_bls12_381::BlsScalar;
