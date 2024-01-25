@@ -13,18 +13,19 @@
 //! - Permutation `WIDTH` is 5 field elements
 //! - 8 full rounds: 4 full rounds at the beginning and 4 full rounds at the
 //!   end, and each full round has `WIDTH` quintic S-Boxes.
-//! - 59 partial rounds: each partial round has a quintic S-Box and `WIDTH - 1`
-//!   identity functions.
+//! - 59 partial rounds: each partial round has `WIDTH - 1` identity function
+//!   and one quintic S-Box.
 //! - 960 round constants
-//! - Round constants for the full rounds are generated using [this algorithm](https://extgit.iaik.tugraz.at/krypto/hadesmimc/blob/master/code/calc_round_numbers.py)
+//! - Round constants are generated using [this algorithm](https://extgit.iaik.tugraz.at/krypto/hadesmimc/blob/master/code/calc_round_numbers.py)
 //! - The MDS matrix is a cauchy matrix, the method used to generate it, is
 //!   noted in section "Concrete Instantiations Poseidon and Starkad"
 
 mod mds_matrix;
+mod permutation;
 mod round_constants;
-mod strategies;
 
 use mds_matrix::MDS_MATRIX;
+use permutation::Permutation;
 use round_constants::ROUND_CONSTANTS;
 
 const TOTAL_FULL_ROUNDS: usize = 8;
@@ -36,9 +37,9 @@ const CONSTANTS: usize = 960;
 /// The amount of field elements that fit into the hades permutation container
 pub const WIDTH: usize = 5;
 
+pub(crate) use permutation::permute;
 #[cfg(feature = "zk")]
-pub use strategies::GadgetStrategy;
-pub use strategies::{ScalarStrategy, Strategy};
+pub(crate) use permutation::permute_gadget;
 
 const fn u64_from_buffer<const N: usize>(buf: &[u8; N], i: usize) -> u64 {
     u64::from_le_bytes([

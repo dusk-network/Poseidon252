@@ -11,7 +11,7 @@ pub mod truncated;
 
 use dusk_bls12_381::BlsScalar;
 
-use crate::hades::{ScalarStrategy, Strategy, WIDTH};
+use crate::hades::{permute, WIDTH};
 
 #[cfg(feature = "zk")]
 pub use zk::gadget;
@@ -32,7 +32,6 @@ pub use zk::gadget;
 /// value. The padding values will be zeroes. To avoid collision, the padding
 /// will imply one additional permutation in case `len` is a multiple of `r`.
 pub fn hash(messages: &[BlsScalar]) -> BlsScalar {
-    let mut h = ScalarStrategy::new();
     let mut state = [BlsScalar::zero(); WIDTH];
 
     // If exists an `m` such as `m · (WIDTH - 1) == l`, then the last iteration
@@ -66,12 +65,12 @@ pub fn hash(messages: &[BlsScalar]) -> BlsScalar {
             // append `1`, then there must be an extra permutation
             // for the padding
             } else if i == last_iteration {
-                h.perm(&mut state);
+                permute(&mut state);
 
                 state[1] += BlsScalar::one();
             }
 
-            h.perm(&mut state);
+            permute(&mut state);
         });
 
     state[1]
@@ -79,7 +78,7 @@ pub fn hash(messages: &[BlsScalar]) -> BlsScalar {
 
 #[cfg(feature = "zk")]
 mod zk {
-    use crate::hades::{GadgetStrategy, WIDTH};
+    use crate::hades::{permute_gadget, WIDTH};
     use dusk_plonk::prelude::{Composer, Constraint, Witness};
 
     /// Mirror the implementation of [`hash`] inside of a PLONK circuit.
@@ -121,7 +120,7 @@ mod zk {
 
                     state[chunk.len() + 1] = composer.gate_add(constraint);
                 } else if i == last_iteration {
-                    GadgetStrategy::gadget(composer, &mut state);
+                    permute_gadget(composer, &mut state);
 
                     let constraint =
                         Constraint::new().left(1).a(state[1]).constant(1);
@@ -129,7 +128,7 @@ mod zk {
                     state[1] = composer.gate_add(constraint);
                 }
 
-                GadgetStrategy::gadget(composer, &mut state);
+                permute_gadget(composer, &mut state);
             });
 
         state[1]
