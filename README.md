@@ -6,42 +6,49 @@
 
 Reference implementation for the Poseidon Hashing algorithm.
 
-#### Reference
-
+Reference:
 [Starkad and Poseidon: New Hash Functions for Zero Knowledge Proof Systems](https://eprint.iacr.org/2019/458.pdf)
 
-This repository has been created so there's a unique library that holds the tools & functions
-required to perform Poseidon Hashes.
+This repository has been created so there's a unique library that holds the tools & functions required to perform Poseidon Hashes on field elements of the bls12-381 elliptic curve.
 
-These hashes heavily rely on the Hades design for its inner permutation.
+The hash uses the Hades design for its inner permutation and the [SAFE](https://eprint.iacr.org/2023/522.pdf) framework for contstructing the sponge.
 
-**The library provides the two hashing techniques of Poseidon:**
+The library provides the two hashing techniques of Poseidon:
+- The 'normal' hashing functionalities operating on `BlsScalar`.
+- The 'gadget' hashing functionalities that build a circuit which outputs the hash.
 
-## Sponge Hash
+## Example
 
-The `Sponge` technique in Poseidon allows to hash an unlimited amount of data
-into a single `Scalar`.
-The sponge hash technique requires a padding to be applied before the data can
-be hashed.
+```rust
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 
-This is done to avoid hash collisions as stated in the paper of the Poseidon Hash
-algorithm. See: <https://eprint.iacr.org/2019/458.pdf>.
-The inputs of the `sponge_hash` are always `Scalar` or need to be capable of being represented
-as it.
+use dusk_poseidon::{Domain, Hash};
+use dusk_bls12_381::BlsScalar;
+use ff::Field;
 
-The module provides two sponge hash implementations:
+// generate random input
+let mut rng = StdRng::seed_from_u64(0xbeef);
+let mut input = [BlsScalar::zero(); 42];
+for scalar in input.iter_mut() {
+    *scalar = BlsScalar::random(&mut rng);
+}
 
-- Sponge hash using `Scalar` as backend. Which hashes the inputted `Scalar`s and returns a single
-  `Scalar`.
+// digest the input all at once
+let hash = Hash::digest(Domain::Other, &input);
 
-- Sponge hash gadget using `dusk_plonk::Witness` as a backend. This technique is used/required
-  when you want to proof pre-images of unconstrained data inside Zero-Knowledge PLONK circuits.
+// update the input gradually
+let mut hasher = Hash::new(Domain::Other);
+hasher.update(&input[..3]);
+hasher.update(&input[3..]);
+assert_eq!(hash, hasher.finalize());
 
-## Documentation
+// create a hash used for merkle tree hashing with arity = 4
+let merkle_hash = Hash::digest(Domain::Merkle4, &input[..4]);
 
-This crate contains info about all the functions that the library provides as well as the
-documentation regarding the data structures that it exports. To check it, please feel free to go to
-the [documentation page](https://dusk-network.github.io/Poseidon252/poseidon252/index.html)
+// which is different when another domain is used
+assert_ne!(merkle_hash, Hash::digest(Domain::Other, &input[..4]));
+```
 
 ## Benchmarks
 
@@ -49,18 +56,9 @@ There are benchmarks for `sponge` and `cipher` in their native form, operating o
 
 To run all benchmarks on your machine, run
 ```shell
-cargo bench
+cargo bench --features=zk,cipher
 ```
 in the repository.
-
-To run a specific benchmark, run
-```shell
-cargo bench --bench <name>
-```
-where you replace `<name>` with the benchmark name. For example to run the benchmarks for the poseidon cipher encription from the file 'benches/cipher_encrypt.rs', you would need to run
-```shell
-cargo bench --benches cipher_encrypt
-```
 
 ## Licensing
 

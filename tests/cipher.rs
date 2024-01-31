@@ -10,7 +10,7 @@ use core::ops::Mul;
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::Serializable;
 use dusk_jubjub::{JubJubAffine, JubJubScalar, GENERATOR};
-use dusk_poseidon::cipher::PoseidonCipher;
+use dusk_poseidon::PoseidonCipher;
 use ff::Field;
 use rand::rngs::OsRng;
 use rand::RngCore;
@@ -50,7 +50,7 @@ fn sanity() {
 
     // The hades permutation cannot be performed if the cipher is bigger than
     // hades width
-    assert!(dusk_poseidon::hades::WIDTH >= PoseidonCipher::cipher_size());
+    assert!(dusk_poseidon::HADES_WIDTH >= PoseidonCipher::cipher_size());
 }
 
 #[test]
@@ -126,7 +126,7 @@ mod zk {
     use dusk_jubjub::{dhke, JubJubExtended, GENERATOR_EXTENDED};
     use dusk_plonk::prelude::Error as PlonkError;
     use dusk_plonk::prelude::*;
-    use dusk_poseidon::cipher;
+    use dusk_poseidon::{decrypt_gadget, encrypt_gadget};
     use rand::rngs::StdRng;
     use rand::SeedableRng;
 
@@ -192,7 +192,7 @@ mod zk {
                 });
 
             let cipher_gadget =
-                cipher::encrypt(composer, &shared, nonce, &message_circuit);
+                encrypt_gadget(composer, &shared, nonce, &message_circuit);
 
             self.cipher
                 .iter()
@@ -203,7 +203,7 @@ mod zk {
                 });
 
             let message_gadget =
-                cipher::decrypt(composer, &shared, nonce, &cipher_gadget);
+                decrypt_gadget(composer, &shared, nonce, &cipher_gadget);
 
             self.message.iter().zip(message_gadget.iter()).for_each(
                 |(m, g)| {

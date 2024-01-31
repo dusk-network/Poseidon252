@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use dusk_poseidon::cipher::{self, PoseidonCipher};
+use dusk_poseidon::{encrypt_gadget, PoseidonCipher};
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dusk_jubjub::GENERATOR;
@@ -56,7 +56,7 @@ impl Circuit for CipherEncrypt {
                 *message_witness = composer.append_witness(*message_scalar);
             });
 
-        cipher::encrypt(composer, &shared, nonce, &message_circuit);
+        encrypt_gadget(composer, &shared, nonce, &message_circuit);
 
         Ok(())
     }

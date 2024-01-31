@@ -5,44 +5,53 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use dusk_bls12_381::BlsScalar;
+use dusk_safe::Safe;
 
-use crate::hades::{
-    Permutation as HadesPermutation, MDS_MATRIX, ROUND_CONSTANTS, WIDTH,
-};
+use super::Hades;
+use crate::hades::{MDS_MATRIX, ROUND_CONSTANTS, WIDTH};
 
-/// An implementation of the [`HadesPermutation`] for `BlsScalar` as input
-/// values.
+/// An implementation of the [`Permutation`] for `BlsScalar` as input values.
 #[derive(Default)]
-pub(crate) struct ScalarPermutation {
-    round: usize,
-}
+pub(crate) struct ScalarPermutation();
 
 impl ScalarPermutation {
     /// Constructs a new `ScalarPermutation`.
     pub fn new() -> Self {
-        Self { round: 0 }
+        Self()
     }
 }
 
-impl HadesPermutation<BlsScalar> for ScalarPermutation {
-    fn increment_round(&mut self) {
-        self.round += 1;
+impl Safe<BlsScalar, WIDTH> for ScalarPermutation {
+    fn permute(&mut self, state: &mut [BlsScalar; WIDTH]) {
+        self.perm(state);
     }
 
-    fn add_round_constants(&mut self, state: &mut [BlsScalar; WIDTH]) {
+    fn tag(&mut self, input: &[u8]) -> BlsScalar {
+        BlsScalar::hash_to_scalar(input.as_ref())
+    }
+
+    fn add(&mut self, right: &BlsScalar, left: &BlsScalar) -> BlsScalar {
+        right + left
+    }
+}
+
+impl Hades<BlsScalar> for ScalarPermutation {
+    fn add_round_constants(
+        &mut self,
+        round: usize,
+        state: &mut [BlsScalar; WIDTH],
+    ) {
         state
             .iter_mut()
             .enumerate()
-            // the rounds start counting at 1, so the respective round constants
-            // are stored at index `round - 1`
-            .for_each(|(i, s)| *s += ROUND_CONSTANTS[self.round - 1][i]);
+            .for_each(|(i, s)| *s += ROUND_CONSTANTS[round][i]);
     }
 
     fn quintic_s_box(&mut self, value: &mut BlsScalar) {
         *value = value.square().square() * *value;
     }
 
-    fn mul_matrix(&mut self, state: &mut [BlsScalar; WIDTH]) {
+    fn mul_matrix(&mut self, _round: usize, state: &mut [BlsScalar; WIDTH]) {
         let mut result = [BlsScalar::zero(); WIDTH];
 
         for (j, value) in state.iter().enumerate() {
@@ -59,17 +68,15 @@ impl HadesPermutation<BlsScalar> for ScalarPermutation {
 mod tests {
     use super::*;
 
-    use crate::hades::permute;
-
     #[test]
     fn hades_det() {
         let mut x = [BlsScalar::from(17u64); WIDTH];
         let mut y = [BlsScalar::from(17u64); WIDTH];
         let mut z = [BlsScalar::from(19u64); WIDTH];
 
-        permute(&mut x);
-        permute(&mut y);
-        permute(&mut z);
+        ScalarPermutation::new().permute(&mut x);
+        ScalarPermutation::new().permute(&mut y);
+        ScalarPermutation::new().permute(&mut z);
 
         assert_eq!(x, y);
         assert_ne!(x, z);
