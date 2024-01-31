@@ -7,9 +7,11 @@
 use dusk_bls12_381::BlsScalar;
 use dusk_plonk::prelude::*;
 
-use crate::hades::{Permutation as HadesPermutation, MDS_MATRIX, WIDTH};
+use crate::hades::{
+    Permutation as HadesPermutation, MDS_MATRIX, ROUND_CONSTANTS, WIDTH,
+};
 
-/// A state for the ['HadesPermutation`] operating on [`Witness`]es.
+/// An implementation for the ['HadesPermutation`] operating on [`Witness`]es.
 /// Requires a reference to a `ConstraintSystem`.
 pub(crate) struct GadgetPermutaiton<'a> {
     /// A reference to the constraint system used by the gadgets
@@ -31,19 +33,19 @@ impl AsMut<Composer> for GadgetPermutaiton<'_> {
 }
 
 impl<'a> HadesPermutation<Witness> for GadgetPermutaiton<'a> {
-    fn add_round_key<'b, I>(
-        &mut self,
-        constants: &mut I,
-        state: &mut [Witness; WIDTH],
-    ) where
-        I: Iterator<Item = &'b BlsScalar>,
-    {
+    fn increment_round(&mut self) {
+        self.round += 1;
+    }
+
+    fn add_round_constants(&mut self, state: &mut [Witness; WIDTH]) {
         // To safe constraints we only add the constants here in the first
         // round. The remaining constants will be added in the matrix
         // multiplication.
-        if self.round == 0 {
-            state.iter_mut().for_each(|w| {
-                let constant = Self::next_c(constants);
+        // Note that the rounds start counting at 1 but the ROUND_CONSTANTS
+        // start counting at 0.
+        if self.round == 1 {
+            state.iter_mut().enumerate().for_each(|(i, w)| {
+                let constant = ROUND_CONSTANTS[0][i];
                 let constraint =
                     Constraint::new().left(1).a(*w).constant(constant);
 
@@ -64,22 +66,14 @@ impl<'a> HadesPermutation<Witness> for GadgetPermutaiton<'a> {
     }
 
     /// Adds a constraint for each matrix coefficient multiplication
-    fn mul_matrix<'b, I>(
-        &mut self,
-        constants: &mut I,
-        state: &mut [Witness; WIDTH],
-    ) where
-        I: Iterator<Item = &'b BlsScalar>,
-    {
+    fn mul_matrix(&mut self, state: &mut [Witness; WIDTH]) {
         let mut result = [Composer::ZERO; WIDTH];
-        self.round += 1;
 
         // Implementation optimized for WIDTH = 5
         //
-        // c is the next round's constant and hence zero for the last round.
-        //
         // The resulting array `r` will be defined as
         // r[x] = sum_{j=0..WIDTH} ( MDS[x][j] * state[j] ) + c
+        // with c being the constant for the next round.
         //
         // q_l = MDS[x][0]
         // q_r = MDS[x][1]
@@ -97,8 +91,11 @@ impl<'a> HadesPermutation<Witness> for GadgetPermutaiton<'a> {
         // w_4 = r[x]
         // r[x] = q_l · w_l + q_r · w_r + q_4 · w_4 + c;
         for j in 0..WIDTH {
+            // c is the next round's constant and hence zero for the last round.
             let c = match self.round < Self::rounds() {
-                true => Self::next_c(constants),
+                // the rounds start counting at 1, so the constants for the next
+                // round are stored at the round index (and not at `round + 1`)
+                true => ROUND_CONSTANTS[self.round][j],
                 false => BlsScalar::zero(),
             };
 

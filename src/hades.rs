@@ -15,8 +15,7 @@
 //!   end, and each full round has `WIDTH` quintic S-Boxes.
 //! - 59 partial rounds: each partial round has `WIDTH - 1` identity function
 //!   and one quintic S-Box.
-//! - 960 round constants
-//! - Round constants are generated using [this algorithm](https://extgit.iaik.tugraz.at/krypto/hadesmimc/blob/master/code/calc_round_numbers.py)
+//! - 335 round constants which are generated using [this algorithm](https://extgit.iaik.tugraz.at/krypto/hadesmimc/blob/master/code/calc_round_numbers.py)
 //! - The MDS matrix is a cauchy matrix, the method used to generate it, is
 //!   noted in section "Concrete Instantiations Poseidon and Starkad"
 
@@ -28,11 +27,9 @@ use mds_matrix::MDS_MATRIX;
 use permutation::Permutation;
 use round_constants::ROUND_CONSTANTS;
 
-const TOTAL_FULL_ROUNDS: usize = 8;
+const FULL_ROUNDS: usize = 8;
 
 const PARTIAL_ROUNDS: usize = 59;
-
-const CONSTANTS: usize = 960;
 
 /// The amount of field elements that fit into the hades permutation container
 pub const WIDTH: usize = 5;
