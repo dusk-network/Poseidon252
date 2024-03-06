@@ -7,13 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `Hash` struct [#202]
+
+### Changed
+
+- Refactor code with the introduction of SAFE framework [#248]
+
+### Removed
+
+- Remove `perm_uses` module as it is obsolete with the introduction of SAFE [#248]
+- Remove `merkle` feature with the introduction of SAFE [#248]
+
 ## [0.35.0] - 2024-02-28
 
 ### Changed
 
 - Rename trait `hades::Strategy` to `hades::Permutation` [#243]
 - Rename struct `hades::ScalarStrategy` to `hades::ScalarPermutation` [#243]
-- Rename struct `hades::GadgetStrategy` to `hades::GadgetPermutaiton` [#243]
+- Rename struct `hades::GadgetStrategy` to `hades::GadgetPermutation` [#243]
 - Reduce the number of `ROUND_CONSTANTS` from 960 to 335 [#246]
 - Remove the constants iterator in favor of indexing the constants array directly [#246]
 - Change `ROUND_CONSTANTS` into a two-dimensional array [#246]
@@ -28,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add the code for the hades permutation to crate [#240]
 - Add internal `permute` and `permute_gadget` functions to `hades` module [#243]
+- Add SAFE dependency [#248]
 
 ## [0.34.0] - 2024-01-24
 
@@ -451,6 +465,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#248]: https://github.com/dusk-network/poseidon252/issues/248
 [#246]: https://github.com/dusk-network/poseidon252/issues/246
 [#243]: https://github.com/dusk-network/poseidon252/issues/243
 [#240]: https://github.com/dusk-network/poseidon252/issues/240
@@ -458,6 +473,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#212]: https://github.com/dusk-network/poseidon252/issues/212
 [#206]: https://github.com/dusk-network/poseidon252/issues/206
 [#203]: https://github.com/dusk-network/poseidon252/issues/203
+[#202]: https://github.com/dusk-network/poseidon252/issues/202
 [#200]: https://github.com/dusk-network/poseidon252/issues/200
 [#198]: https://github.com/dusk-network/poseidon252/issues/198
 [#197]: https://github.com/dusk-network/Poseidon252/issues/197

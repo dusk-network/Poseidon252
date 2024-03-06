@@ -8,16 +8,25 @@
 #![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
 
-/// Encryption and decryption implementation over a Poseidon cipher
+extern crate alloc;
+
+mod error;
+pub use error::Error;
+
+mod hades;
+pub use hades::WIDTH as HADES_WIDTH;
+
+mod hash;
+#[cfg(feature = "zk")]
+pub use hash::gadget::HashGadget;
+pub use hash::{Domain, Hash};
+
 #[cfg(feature = "cipher")]
-pub mod cipher;
-
-/// Module containing a fixed-length Poseidon hash implementation with one
-/// input scalar and two output scalar
-pub mod perm_uses;
-
-/// Implementation for the Poseidon Sponge hash function
-pub mod sponge;
-
-/// Implementation of the Poseidon permutation based on the Hades strategy
-pub mod hades;
+mod cipher;
+#[cfg(feature = "cipher")]
+pub use cipher::PoseidonCipher;
+#[cfg(feature = "cipher")]
+#[cfg(feature = "zk")]
+pub use cipher::{
+    zk::decrypt as decrypt_gadget, zk::encrypt as encrypt_gadget,
+};

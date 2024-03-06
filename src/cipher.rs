@@ -24,7 +24,7 @@
 //! use core::ops::Mul;
 //! use dusk_bls12_381::BlsScalar;
 //! use dusk_jubjub::{dhke, JubJubExtended, JubJubScalar, GENERATOR};
-//! use dusk_poseidon::cipher::PoseidonCipher;
+//! use dusk_poseidon::PoseidonCipher;
 //! use rand::rngs::OsRng;
 //! use ff::Field;
 //!
@@ -89,16 +89,14 @@
 use dusk_bls12_381::BlsScalar;
 use dusk_bytes::{DeserializableSlice, Error as BytesError, Serializable};
 use dusk_jubjub::JubJubAffine;
+use dusk_safe::Safe;
 
-use crate::hades::{permute, WIDTH};
+use crate::hades::{ScalarPermutation, WIDTH};
 
 #[cfg(feature = "rkyv-impl")]
 use bytecheck::CheckBytes;
 #[cfg(feature = "rkyv-impl")]
 use rkyv::{Archive, Deserialize, Serialize};
-
-#[cfg(feature = "zk")]
-pub use zk::{decrypt, encrypt};
 
 const MESSAGE_CAPACITY: usize = 2;
 const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
@@ -202,7 +200,7 @@ impl PoseidonCipher {
         let mut cipher = [zero; CIPHER_SIZE];
         let mut state = PoseidonCipher::initial_state(secret, *nonce);
 
-        permute(&mut state);
+        ScalarPermutation::new().permute(&mut state);
 
         (0..MESSAGE_CAPACITY).for_each(|i| {
             state[i + 1] += if i < message.len() {
@@ -214,7 +212,7 @@ impl PoseidonCipher {
             cipher[i] = state[i + 1];
         });
 
-        permute(&mut state);
+        ScalarPermutation::new().permute(&mut state);
         cipher[MESSAGE_CAPACITY] = state[1];
 
         PoseidonCipher::new(cipher)
@@ -232,14 +230,14 @@ impl PoseidonCipher {
         let mut message = [zero; MESSAGE_CAPACITY];
         let mut state = PoseidonCipher::initial_state(secret, *nonce);
 
-        permute(&mut state);
+        ScalarPermutation::new().permute(&mut state);
 
         (0..MESSAGE_CAPACITY).for_each(|i| {
             message[i] = self.cipher[i] - state[i + 1];
             state[i + 1] = self.cipher[i];
         });
 
-        permute(&mut state);
+        ScalarPermutation::new().permute(&mut state);
 
         if self.cipher[MESSAGE_CAPACITY] != state[1] {
             return None;
@@ -250,11 +248,12 @@ impl PoseidonCipher {
 }
 
 #[cfg(feature = "zk")]
-mod zk {
+pub mod zk {
     use super::PoseidonCipher;
-    use crate::hades::{permute_gadget, WIDTH};
+    use crate::hades::{GadgetPermutation, WIDTH};
 
     use dusk_plonk::prelude::*;
+    use dusk_safe::Safe;
 
     impl PoseidonCipher {
         /// Returns the initial state of the encryption within a composer
@@ -298,7 +297,7 @@ mod zk {
         let mut state =
             PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 
-        permute_gadget(composer, &mut state);
+        GadgetPermutation::new(composer).permute(&mut state);
 
         (0..PoseidonCipher::capacity()).for_each(|i| {
             let x = if i < message.len() {
@@ -315,7 +314,7 @@ mod zk {
             cipher[i] = state[i + 1];
         });
 
-        permute_gadget(composer, &mut state);
+        GadgetPermutation::new(composer).permute(&mut state);
         cipher[PoseidonCipher::capacity()] = state[1];
 
         cipher
@@ -338,7 +337,7 @@ mod zk {
         let mut state =
             PoseidonCipher::initial_state_circuit(composer, ks0, ks1, nonce);
 
-        permute_gadget(composer, &mut state);
+        GadgetPermutation::new(composer).permute(&mut state);
 
         (0..PoseidonCipher::capacity()).for_each(|i| {
             let constraint = Constraint::new()
@@ -352,7 +351,7 @@ mod zk {
             state[i + 1] = cipher[i];
         });
 
-        permute_gadget(composer, &mut state);
+        GadgetPermutation::new(composer).permute(&mut state);
 
         composer.assert_equal(cipher[PoseidonCipher::capacity()], state[1]);
 

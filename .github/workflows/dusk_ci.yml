@@ -26,12 +26,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo bench --features=cipher,zk --no-run
 
-  check_merkle:
-    name: Check merkle compiles without zk
-    uses: dusk-network/.github/.github/workflows/run-tests.yml@main
-    with:
-      test_flags: --features=merkle --no-run
-
   check_cipher:
     name: Check cipher compiles without zk
     uses: dusk-network/.github/.github/workflows/run-tests.yml@main
@@ -42,4 +36,4 @@ jobs:
     name: Tests all
     uses: dusk-network/.github/.github/workflows/run-tests.yml@main
     with:
-      test_flags: --features=zk,cipher,merkle,rkyv-impl,size_32
+      test_flags: --features=zk,cipher,rkyv-impl,size_32

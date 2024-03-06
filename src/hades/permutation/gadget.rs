@@ -6,44 +6,52 @@
 
 use dusk_bls12_381::BlsScalar;
 use dusk_plonk::prelude::*;
+use dusk_safe::Safe;
 
-use crate::hades::{
-    Permutation as HadesPermutation, MDS_MATRIX, ROUND_CONSTANTS, WIDTH,
-};
+use crate::hades::{MDS_MATRIX, ROUND_CONSTANTS, WIDTH};
 
-/// An implementation for the ['HadesPermutation`] operating on [`Witness`]es.
+use super::Hades;
+
+/// An implementation for the [`Hades`]permutation operating on [`Witness`]es.
 /// Requires a reference to a `ConstraintSystem`.
-pub(crate) struct GadgetPermutaiton<'a> {
+pub(crate) struct GadgetPermutation<'a> {
     /// A reference to the constraint system used by the gadgets
     composer: &'a mut Composer,
-    round: usize,
 }
 
-impl<'a> GadgetPermutaiton<'a> {
-    /// Constructs a new `GadgetPermutaiton` with the constraint system.
+impl<'a> GadgetPermutation<'a> {
+    /// Constructs a new `GadgetPermutation` with the constraint system.
     pub fn new(composer: &'a mut Composer) -> Self {
-        Self { composer, round: 0 }
+        Self { composer }
     }
 }
 
-impl AsMut<Composer> for GadgetPermutaiton<'_> {
-    fn as_mut(&mut self) -> &mut Composer {
-        self.composer
+impl<'a> Safe<Witness, WIDTH> for GadgetPermutation<'a> {
+    fn permute(&mut self, state: &mut [Witness; WIDTH]) {
+        self.perm(state);
+    }
+
+    fn tag(&mut self, input: &[u8]) -> Witness {
+        let tag = BlsScalar::hash_to_scalar(input.as_ref());
+        self.composer.append_witness(tag)
+    }
+
+    fn add(&mut self, right: &Witness, left: &Witness) -> Witness {
+        let constraint = Constraint::new().left(1).a(*left).right(1).b(*right);
+        self.composer.gate_add(constraint)
     }
 }
 
-impl<'a> HadesPermutation<Witness> for GadgetPermutaiton<'a> {
-    fn increment_round(&mut self) {
-        self.round += 1;
-    }
-
-    fn add_round_constants(&mut self, state: &mut [Witness; WIDTH]) {
+impl<'a> Hades<Witness> for GadgetPermutation<'a> {
+    fn add_round_constants(
+        &mut self,
+        round: usize,
+        state: &mut [Witness; WIDTH],
+    ) {
         // To safe constraints we only add the constants here in the first
         // round. The remaining constants will be added in the matrix
         // multiplication.
-        // Note that the rounds start counting at 1 but the ROUND_CONSTANTS
-        // start counting at 0.
-        if self.round == 1 {
+        if round == 0 {
             state.iter_mut().enumerate().for_each(|(i, w)| {
                 let constant = ROUND_CONSTANTS[0][i];
                 let constraint =
@@ -66,7 +74,7 @@ impl<'a> HadesPermutation<Witness> for GadgetPermutaiton<'a> {
     }
 
     /// Adds a constraint for each matrix coefficient multiplication
-    fn mul_matrix(&mut self, state: &mut [Witness; WIDTH]) {
+    fn mul_matrix(&mut self, round: usize, state: &mut [Witness; WIDTH]) {
         let mut result = [Composer::ZERO; WIDTH];
 
         // Implementation optimized for WIDTH = 5
@@ -92,10 +100,8 @@ impl<'a> HadesPermutation<Witness> for GadgetPermutaiton<'a> {
         // r[x] = q_l · w_l + q_r · w_r + q_4 · w_4 + c;
         for j in 0..WIDTH {
             // c is the next round's constant and hence zero for the last round.
-            let c = match self.round < Self::rounds() {
-                // the rounds start counting at 1, so the constants for the next
-                // round are stored at the round index (and not at `round + 1`)
-                true => ROUND_CONSTANTS[self.round][j],
+            let c = match round + 1 < Self::ROUNDS {
+                true => ROUND_CONSTANTS[round + 1][j],
                 false => BlsScalar::zero(),
             };
 
@@ -129,7 +135,7 @@ impl<'a> HadesPermutation<Witness> for GadgetPermutaiton<'a> {
 mod tests {
     use super::*;
 
-    use crate::hades::{permute, permute_gadget};
+    use crate::hades::ScalarPermutation;
 
     use core::result::Result;
     use ff::Field;
@@ -148,24 +154,24 @@ mod tests {
 
             let mut perm: [Witness; WIDTH] = [zero; WIDTH];
 
-            let mut i_var: [Witness; WIDTH] = [zero; WIDTH];
-            self.i.iter().zip(i_var.iter_mut()).for_each(|(i, v)| {
-                *v = composer.append_witness(*i);
+            let mut i_wit: [Witness; WIDTH] = [zero; WIDTH];
+            self.i.iter().zip(i_wit.iter_mut()).for_each(|(i, w)| {
+                *w = composer.append_witness(*i);
             });
 
-            let mut o_var: [Witness; WIDTH] = [zero; WIDTH];
-            self.o.iter().zip(o_var.iter_mut()).for_each(|(o, v)| {
-                *v = composer.append_witness(*o);
+            let mut o_wit: [Witness; WIDTH] = [zero; WIDTH];
+            self.o.iter().zip(o_wit.iter_mut()).for_each(|(o, w)| {
+                *w = composer.append_witness(*o);
             });
 
             // Apply Hades gadget permutation.
-            permute_gadget(composer, &mut i_var);
+            GadgetPermutation::new(composer).permute(&mut i_wit);
 
             // Copy the result of the permutation into the perm.
-            perm.copy_from_slice(&i_var);
+            perm.copy_from_slice(&i_wit);
 
             // Check that the Gadget perm results = BlsScalar perm results
-            i_var.iter().zip(o_var.iter()).for_each(|(p, o)| {
+            i_wit.iter().zip(o_wit.iter()).for_each(|(p, o)| {
                 composer.assert_equal(*p, *o);
             });
 
@@ -186,7 +192,7 @@ mod tests {
         let mut output = [BlsScalar::zero(); WIDTH];
 
         output.copy_from_slice(&input);
-        permute(&mut output);
+        ScalarPermutation::new().permute(&mut output);
 
         (input, output)
     }
@@ -228,7 +234,7 @@ mod tests {
         // Prepare input & output
         let i = [BlsScalar::from(5000u64); WIDTH];
         let mut o = [BlsScalar::from(5000u64); WIDTH];
-        permute(&mut o);
+        ScalarPermutation::new().permute(&mut o);
 
         let circuit = TestCircuit { i, o };
         let mut rng = StdRng::seed_from_u64(0xbeef);
@@ -255,7 +261,7 @@ mod tests {
         i[1] = x_scalar;
 
         let mut o = [BlsScalar::from(31u64); WIDTH];
-        permute(&mut o);
+        ScalarPermutation::new().permute(&mut o);
 
         let circuit = TestCircuit { i, o };
         let mut rng = StdRng::seed_from_u64(0xbeef);

@@ -6,7 +6,7 @@
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dusk_plonk::prelude::*;
-use dusk_poseidon::hades::WIDTH;
+use dusk_poseidon::{Domain, Hash, HashGadget, HADES_WIDTH};
 use ff::Field;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
@@ -15,18 +15,22 @@ const CAPACITY: usize = 11;
 
 #[derive(Default)]
 struct SpongeCircuit {
-    message: [BlsScalar; WIDTH],
+    message: [BlsScalar; HADES_WIDTH - 1],
+    output: BlsScalar,
 }
 
 impl SpongeCircuit {
-    pub fn new(message: [BlsScalar; WIDTH]) -> Self {
-        SpongeCircuit { message }
+    pub fn new(
+        message: [BlsScalar; HADES_WIDTH - 1],
+        output: BlsScalar,
+    ) -> Self {
+        SpongeCircuit { message, output }
     }
 }
 
 impl Circuit for SpongeCircuit {
     fn circuit(&self, composer: &mut Composer) -> Result<(), Error> {
-        let mut w_message = [Composer::ZERO; WIDTH];
+        let mut w_message = [Composer::ZERO; HADES_WIDTH - 1];
         w_message
             .iter_mut()
             .zip(self.message)
@@ -34,7 +38,10 @@ impl Circuit for SpongeCircuit {
                 *witness = composer.append_witness(scalar);
             });
 
-        dusk_poseidon::sponge::gadget(composer, &w_message);
+        let output_witness =
+            HashGadget::digest(Domain::Merkle4, composer, &w_message)
+                .expect("creating the hash should not fail");
+        composer.assert_equal_constant(output_witness[0], 0, Some(self.output));
 
         Ok(())
     }
@@ -49,20 +56,20 @@ fn bench_sponge(c: &mut Criterion) {
     let (prover, verifier) = Compiler::compile::<SpongeCircuit>(&pp, label)
         .expect("Circuit should compile successfully");
     let mut proof = Proof::default();
-    let public_inputs = Vec::new();
     let message = [
         BlsScalar::random(&mut rng),
         BlsScalar::random(&mut rng),
         BlsScalar::random(&mut rng),
         BlsScalar::random(&mut rng),
-        BlsScalar::random(&mut rng),
     ];
-    let circuit = SpongeCircuit::new(message);
+    let public_inputs = Hash::digest(Domain::Merkle4, &message)
+        .expect("creating the hash should not fail");
+    let circuit = SpongeCircuit::new(message, public_inputs[0]);
 
     // Benchmark sponge native
     c.bench_function("sponge native", |b| {
         b.iter(|| {
-            dusk_poseidon::sponge::hash(black_box(&circuit.message));
+            let _ = Hash::digest(Domain::Merkle4, black_box(&circuit.message));
         })
     });
 

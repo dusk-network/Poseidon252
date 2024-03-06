@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use dusk_poseidon::cipher::{self, PoseidonCipher};
+use dusk_poseidon::{decrypt_gadget, PoseidonCipher};
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dusk_jubjub::GENERATOR;
@@ -59,7 +59,7 @@ impl Circuit for CipherDecrypt {
                 *cipher_witness = composer.append_witness(*cipher_scalar);
             });
 
-        cipher::decrypt(composer, &shared, nonce, &cipher_circuit);
+        decrypt_gadget(composer, &shared, nonce, &cipher_circuit);
 
         Ok(())
     }
