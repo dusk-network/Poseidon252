@@ -29,14 +29,14 @@ pub enum Domain {
     Other,
 }
 
-impl Domain {
+impl From<Domain> for u64 {
     /// Encryption for the domain-separator are taken from section 4.2 of the
     /// paper adapted to u64.
     /// When `Other` is selected we set the domain-separator to zero. We can do
     /// this since the io-pattern will be encoded in the tag in any case,
     /// ensuring safety from collision attacks.
-    pub const fn encoding(&self) -> u64 {
-        match self {
+    fn from(domain: Domain) -> Self {
+        match domain {
             // 2^4 - 1
             Domain::Merkle4 => 0x0000_0000_0000_000f,
             // 2^2 - 1
@@ -107,21 +107,18 @@ impl<'a> Hash<'a> {
 
     /// Finalize the hash.
     pub fn finalize(&self) -> Result<Vec<BlsScalar>, Error> {
-        // generate the io-pattern
-        let io_pattern = io_pattern(self.domain, &self.input, self.output_len)?;
-
-        // set the domain-separator
-        let domain_sep = self.domain.encoding();
-
-        // Generate the hash using the sponge framework.
+        // Generate the hash using the sponge framework:
         // initialize the sponge
-        let mut sponge =
-            Sponge::start(ScalarPermutation::new(), io_pattern, domain_sep)?;
+        let mut sponge = Sponge::start(
+            ScalarPermutation::new(),
+            io_pattern(self.domain, &self.input, self.output_len)?,
+            self.domain.into(),
+        )?;
         // absorb the input
         for input in self.input.iter() {
             sponge.absorb(input.len(), input)?;
         }
-        // squeeze the output
+        // squeeze output_len elements
         sponge.squeeze(self.output_len)?;
 
         // return the result

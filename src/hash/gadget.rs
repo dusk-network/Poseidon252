@@ -46,25 +46,19 @@ impl<'a> HashGadget<'a> {
         &self,
         composer: &mut Composer,
     ) -> Result<Vec<Witness>, Error> {
-        // generate the io-pattern
-        let io_pattern = io_pattern(self.domain, &self.input, self.output_len)?;
-
-        // get the domain-separator
-        let domain_sep = self.domain.encoding();
-
-        // Generate the hash using the sponge framework.
+        // Generate the hash using the sponge framework:
         // initialize the sponge
         let mut sponge = Sponge::start(
             GadgetPermutation::new(composer),
-            io_pattern,
-            domain_sep,
+            io_pattern(self.domain, &self.input, self.output_len)?,
+            self.domain.into(),
         )?;
         // absorb the input
         for input in self.input.iter() {
             sponge.absorb(input.len(), input)?;
         }
-        // squeeze the output
-        sponge.squeeze(self.output_len as usize)?;
+        // squeeze output_len elements
+        sponge.squeeze(self.output_len)?;
 
         // return the result
         Ok(sponge.finish()?)

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `Hash` struct [#202]
+- Add `From<Domain> for u64` implementation [#251]
 
 ### Changed
 
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove `perm_uses` module as it is obsolete with the introduction of SAFE [#248]
 - Remove `merkle` feature with the introduction of SAFE [#248]
+- Remove `Domain.encoding` method in favor of `From` trait [#251]
 
 ## [0.35.0] - 2024-02-28
 
@@ -465,6 +467,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#251]: https://github.com/dusk-network/poseidon252/issues/251
 [#248]: https://github.com/dusk-network/poseidon252/issues/248
 [#246]: https://github.com/dusk-network/poseidon252/issues/246
 [#243]: https://github.com/dusk-network/poseidon252/issues/243
