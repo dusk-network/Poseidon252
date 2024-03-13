@@ -7,14 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.0] - 2024-03-13
+
 ### Added
 
 - Add `Hash` struct [#202]
+- Add `Error` struct [#202]
+- Add `Domain` struct [#202]
 - Add `From<Domain> for u64` implementation [#251]
+- Add `dusk-safe` dependency [#248]
 
 ### Changed
 
 - Refactor code with the introduction of SAFE framework [#248]
+- Expose `hades::WIDTH` as `HADES_WIDTH` [#248]
 
 ### Removed
 
@@ -507,7 +513,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
 
 <!-- VERSIONS -->
-[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.35.0...HEAD
+[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.36.0...HEAD
+[0.36.0]: https://github.com/dusk-network/poseidon252/compare/v0.35.0...v0.36.0
 [0.35.0]: https://github.com/dusk-network/poseidon252/compare/v0.34.0...v0.35.0
 [0.34.0]: https://github.com/dusk-network/poseidon252/compare/v0.33.0...v0.34.0
 [0.33.0]: https://github.com/dusk-network/poseidon252/compare/v0.32.0...v0.33.0
