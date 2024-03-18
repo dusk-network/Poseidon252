@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add variable length encryption and decryption [#236]
+- Add variable length encryption and decryption gadgets [#236]
+- Add `encryption` feature [#236]
+
+### Removed
+
+- Remove `PoseidonCipher` struct as it is replaced by encryption functions [#236]
+- Remove `cipher` feature [#236]
+- Remove `rkyv` dependency and all related features [#236]
+- Remove `bytecheck` dependency [#236]
+- Remove `dusk-bytes` dependency [#236]
+
+### Changed
+
+- Append the tag as a constant when initializing the gadget state [#236]
+
 ## [0.36.0] - 2024-03-13
 
 ### Added
@@ -478,6 +496,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#246]: https://github.com/dusk-network/poseidon252/issues/246
 [#243]: https://github.com/dusk-network/poseidon252/issues/243
 [#240]: https://github.com/dusk-network/poseidon252/issues/240
+[#236]: https://github.com/dusk-network/poseidon252/issues/236
 [#215]: https://github.com/dusk-network/poseidon252/issues/215
 [#212]: https://github.com/dusk-network/poseidon252/issues/212
 [#206]: https://github.com/dusk-network/poseidon252/issues/206

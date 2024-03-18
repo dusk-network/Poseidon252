@@ -12,8 +12,8 @@ use crate::hades::{MDS_MATRIX, ROUND_CONSTANTS, WIDTH};
 
 use super::Hades;
 
-/// An implementation for the [`Hades`]permutation operating on [`Witness`]es.
-/// Requires a reference to a `ConstraintSystem`.
+/// An implementation for the [`Hades`] permutation operating on [`Witness`]es.
+/// Requires a reference to a plonk circuit [`Composer`].
 pub(crate) struct GadgetPermutation<'a> {
     /// A reference to the constraint system used by the gadgets
     composer: &'a mut Composer,
@@ -33,7 +33,8 @@ impl<'a> Safe<Witness, WIDTH> for GadgetPermutation<'a> {
 
     fn tag(&mut self, input: &[u8]) -> Witness {
         let tag = BlsScalar::hash_to_scalar(input.as_ref());
-        self.composer.append_witness(tag)
+        // append the tag as a constant
+        self.composer.append_constant(tag)
     }
 
     fn add(&mut self, right: &Witness, left: &Witness) -> Witness {
@@ -48,7 +49,7 @@ impl<'a> Hades<Witness> for GadgetPermutation<'a> {
         round: usize,
         state: &mut [Witness; WIDTH],
     ) {
-        // To safe constraints we only add the constants here in the first
+        // To save constraints we only add the constants here in the first
         // round. The remaining constants will be added in the matrix
         // multiplication.
         if round == 0 {
@@ -128,6 +129,25 @@ impl<'a> Hades<Witness> for GadgetPermutation<'a> {
         }
 
         state.copy_from_slice(&result);
+    }
+}
+
+#[cfg(feature = "encryption")]
+impl dusk_safe::Encryption<Witness, WIDTH> for GadgetPermutation<'_> {
+    fn subtract(&mut self, minuend: &Witness, subtrahend: &Witness) -> Witness {
+        let constraint = Constraint::new()
+            .left(1)
+            .a(*minuend)
+            .right(-BlsScalar::one())
+            .b(*subtrahend);
+        self.composer.gate_add(constraint)
+    }
+
+    fn is_equal(&mut self, lhs: &Witness, rhs: &Witness) -> bool {
+        self.composer.assert_equal(*lhs, *rhs);
+        // for the encryption to work we need to return true here, the proof
+        // creation will fail at a later point if the above assertion isn't met
+        true
     }
 }
 

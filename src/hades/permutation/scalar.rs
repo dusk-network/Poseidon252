@@ -64,6 +64,21 @@ impl Hades<BlsScalar> for ScalarPermutation {
     }
 }
 
+#[cfg(feature = "encryption")]
+impl dusk_safe::Encryption<BlsScalar, WIDTH> for ScalarPermutation {
+    fn subtract(
+        &mut self,
+        minuend: &BlsScalar,
+        subtrahend: &BlsScalar,
+    ) -> BlsScalar {
+        minuend - subtrahend
+    }
+
+    fn is_equal(&mut self, lhs: &BlsScalar, rhs: &BlsScalar) -> bool {
+        lhs == rhs
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

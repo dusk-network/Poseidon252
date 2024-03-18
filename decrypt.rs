@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use dusk_poseidon::{encrypt_gadget, PoseidonCipher};
+use dusk_poseidon::{decrypt, decrypt_gadget};
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dusk_jubjub::GENERATOR;
@@ -17,15 +17,16 @@ use std::ops::Mul;
 
 const CAPACITY: usize = 11;
 const MESSAGE_CAPACITY: usize = 2;
+const CIPHER_SIZE: usize = MESSAGE_CAPACITY + 1;
 
 #[derive(Default)]
-pub struct CipherEncrypt {
+pub struct CipherDecrypt {
     shared: JubJubAffine,
     nonce: BlsScalar,
-    message: [BlsScalar; MESSAGE_CAPACITY],
+    cipher: PoseidonCipher,
 }
 
-impl CipherEncrypt {
+impl CipherDecrypt {
     pub fn random(rng: &mut StdRng) -> Self {
         let shared = GENERATOR
             .to_niels()
@@ -34,51 +35,53 @@ impl CipherEncrypt {
         let nonce = BlsScalar::random(&mut *rng);
         let message =
             [BlsScalar::random(&mut *rng), BlsScalar::random(&mut *rng)];
+        let cipher = PoseidonCipher::encrypt(&message, &shared, &nonce);
 
         Self {
             shared,
             nonce,
-            message,
+            cipher,
         }
     }
 }
 
-impl Circuit for CipherEncrypt {
+impl Circuit for CipherDecrypt {
     fn circuit(&self, composer: &mut Composer) -> Result<(), Error> {
         let shared = composer.append_point(self.shared);
         let nonce = composer.append_witness(self.nonce);
 
-        let mut message_circuit = [Composer::ZERO; MESSAGE_CAPACITY];
-        self.message
+        let mut cipher_circuit = [Composer::ZERO; CIPHER_SIZE];
+        self.cipher
+            .cipher()
             .iter()
-            .zip(message_circuit.iter_mut())
-            .for_each(|(message_scalar, message_witness)| {
-                *message_witness = composer.append_witness(*message_scalar);
+            .zip(cipher_circuit.iter_mut())
+            .for_each(|(cipher_scalar, cipher_witness)| {
+                *cipher_witness = composer.append_witness(*cipher_scalar);
             });
 
-        encrypt_gadget(composer, &shared, nonce, &message_circuit);
+        decrypt_gadget(composer, &shared, nonce, &cipher_circuit);
 
         Ok(())
     }
 }
 
-// Benchmark cipher encryption
-fn bench_cipher_encryption(c: &mut Criterion) {
+// Benchmark cipher decryption
+fn bench_cipher_decryption(c: &mut Criterion) {
     // Prepare benchmarks and initialize variables
-    let label = b"cipher encryption benchmark";
+    let label = b"cipher decryption benchmark";
     let mut rng = StdRng::seed_from_u64(0xc001);
     let pp = PublicParameters::setup(1 << CAPACITY, &mut rng).unwrap();
-    let (prover, verifier) = Compiler::compile::<CipherEncrypt>(&pp, label)
+    let (prover, verifier) = Compiler::compile::<CipherDecrypt>(&pp, label)
         .expect("Circuit should compile successfully");
     let mut proof = Proof::default();
     let public_inputs = Vec::new();
-    let circuit = CipherEncrypt::random(&mut rng);
+    let circuit = CipherDecrypt::random(&mut rng);
 
-    // Benchmark native cipher encryption
-    c.bench_function("cipher encryption native", |b| {
+    // Benchmark native cipher decryption
+    c.bench_function("cipher decryption native", |b| {
         b.iter(|| {
-            PoseidonCipher::encrypt(
-                black_box(&circuit.message),
+            PoseidonCipher::decrypt(
+                black_box(&circuit.cipher),
                 black_box(&circuit.shared),
                 black_box(&circuit.nonce),
             );
@@ -86,7 +89,7 @@ fn bench_cipher_encryption(c: &mut Criterion) {
     });
 
     // Benchmark proof creation
-    c.bench_function("cipher encryption proof generation", |b| {
+    c.bench_function("cipher decryption proof generation", |b| {
         b.iter(|| {
             (proof, _) = prover
                 .prove(&mut rng, black_box(&circuit))
@@ -95,7 +98,7 @@ fn bench_cipher_encryption(c: &mut Criterion) {
     });
 
     // Benchmark proof verification
-    c.bench_function("cipher encryption proof verification", |b| {
+    c.bench_function("cipher decryption proof verification", |b| {
         b.iter(|| {
             verifier
                 .verify(black_box(&proof), &public_inputs)
@@ -107,6 +110,6 @@ fn bench_cipher_encryption(c: &mut Criterion) {
 criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(10);
-    targets = bench_cipher_encryption
+    targets = bench_cipher_decryption
 }
 criterion_main!(benches);

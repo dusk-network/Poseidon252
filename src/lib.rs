@@ -21,12 +21,11 @@ mod hash;
 pub use hash::gadget::HashGadget;
 pub use hash::{Domain, Hash};
 
-#[cfg(feature = "cipher")]
-mod cipher;
-#[cfg(feature = "cipher")]
-pub use cipher::PoseidonCipher;
-#[cfg(feature = "cipher")]
+#[cfg(feature = "encryption")]
+mod encryption;
+
+#[cfg(feature = "encryption")]
 #[cfg(feature = "zk")]
-pub use cipher::{
-    zk::decrypt as decrypt_gadget, zk::encrypt as encrypt_gadget,
-};
+pub use encryption::gadget::{decrypt_gadget, encrypt_gadget};
+#[cfg(feature = "encryption")]
+pub use encryption::{decrypt, encrypt};

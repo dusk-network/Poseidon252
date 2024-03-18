@@ -18,6 +18,17 @@ pub enum Error {
 
     /// The input doesn't yield enough input elements.
     TooFewInputElements,
+
+    /// Failed to encrypt the message into the cipher with the provided secret
+    /// and nonce.
+    EncryptionFailed,
+
+    /// Failed to decrypt the message from the cipher with the provided secret
+    /// and nonce.
+    DecryptionFailed,
+
+    /// Invalid point on the jubjub-curve
+    InvalidPoint,
 }
 
 impl From<SafeError> for Error {
@@ -26,6 +37,8 @@ impl From<SafeError> for Error {
             SafeError::IOPatternViolation => Self::IOPatternViolation,
             SafeError::InvalidIOPattern => Self::InvalidIOPattern,
             SafeError::TooFewInputElements => Self::TooFewInputElements,
+            SafeError::EncryptionFailed => Self::EncryptionFailed,
+            SafeError::DecryptionFailed => Self::DecryptionFailed,
         }
     }
 }
