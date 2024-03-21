@@ -67,14 +67,14 @@ fn bench_sponge(c: &mut Criterion) {
     let circuit = SpongeCircuit::new(message, public_inputs[0]);
 
     // Benchmark sponge native
-    c.bench_function("sponge native", |b| {
+    c.bench_function("hash 4 BlsScalar", |b| {
         b.iter(|| {
             let _ = Hash::digest(Domain::Merkle4, black_box(&circuit.message));
         })
     });
 
     // Benchmark proof creation
-    c.bench_function("sponge proof generation", |b| {
+    c.bench_function("hash 4 BlsScalar proof generation", |b| {
         b.iter(|| {
             (proof, _) = prover
                 .prove(&mut rng, black_box(&circuit))
@@ -83,7 +83,7 @@ fn bench_sponge(c: &mut Criterion) {
     });
 
     // Benchmark proof verification
-    c.bench_function("sponge proof verification", |b| {
+    c.bench_function("hash 4 BlsScalar proof verification", |b| {
         b.iter(|| {
             verifier
                 .verify(black_box(&proof), &public_inputs)

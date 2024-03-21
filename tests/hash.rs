@@ -20,7 +20,7 @@ static PUB_PARAMS: Lazy<PublicParameters> = Lazy::new(|| {
 
     const CAPACITY: usize = 12;
     PublicParameters::setup(1 << CAPACITY, &mut rng)
-        .expect("Cannot initialize Public Parameters")
+        .expect("Setup of public params should pass")
 });
 
 fn compile_and_verify<C>(
