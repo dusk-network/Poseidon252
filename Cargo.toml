@@ -1,6 +1,6 @@
 [package]
 name = "dusk-poseidon"
-version = "0.37.0-rc.0"
+version = "0.37.0"
 description = "Implementation of Poseidon hash algorithm over the Bls12-381 Scalar field."
 categories = ["algorithms", "cryptography", "no-std", "wasm"]
 keywords = ["cryptography", "zero-knowledge", "crypto"]
@@ -12,8 +12,8 @@ license = "MPL-2.0"
 [dependencies]
 dusk-bls12_381 = { version = "0.13", default-features = false, features = ["zeroize"] }
 dusk-jubjub = { version = "0.14", default-features = false }
-dusk-plonk = { version = "0.19.2-rc.0", default-features = false, features = ["alloc", "zeroize"], optional = true }
-dusk-safe = "0.2.0-rc.0"
+dusk-plonk = { version = "0.19", default-features = false, features = ["alloc", "zeroize"], optional = true }
+dusk-safe = "0.2"
 
 [dev-dependencies]
 criterion = "0.5"
