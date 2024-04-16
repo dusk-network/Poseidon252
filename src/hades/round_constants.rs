@@ -18,9 +18,9 @@ use crate::hades::{FULL_ROUNDS, PARTIAL_ROUNDS, WIDTH};
 const ROUNDS: usize = FULL_ROUNDS + PARTIAL_ROUNDS;
 
 /// `ROUND_CONSTANTS` consists on a static reference that points to the
-/// pre-loaded 335 constant scalar of the bls12_381 curve.
+/// pre-loaded 340 constant scalar of the bls12_381 curve.
 ///
-/// These 335 `BlsScalar` constants are loaded from `assets/arc.bin`.
+/// These 340 `BlsScalar` constants are loaded from `assets/arc.bin`.
 ///
 /// Check `assets/HOWTO.md` to see how we generated the constants.
 pub const ROUND_CONSTANTS: [[BlsScalar; WIDTH]; ROUNDS] = {
