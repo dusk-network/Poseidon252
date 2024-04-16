@@ -13,9 +13,9 @@
 //! - Permutation container `WIDTH` is 5 field elements
 //! - 8 full rounds: 4 full rounds at the beginning and 4 full rounds at the
 //!   end, and each full round has `WIDTH` quintic S-Boxes.
-//! - 59 partial rounds: each partial round has `WIDTH - 1` identity function
+//! - 60 partial rounds: each partial round has `WIDTH - 1` identity function
 //!   and one quintic S-Box.
-//! - 335 round constants which are generated using [this algorithm](https://extgit.iaik.tugraz.at/krypto/hadesmimc/blob/master/code/calc_round_numbers.py)
+//! - 340 round constants which are generated using [this algorithm](https://extgit.iaik.tugraz.at/krypto/hadesmimc/blob/master/code/calc_round_numbers.py)
 //! - The MDS matrix is a cauchy matrix, the method used to generate it, is
 //!   noted in section "Concrete Instantiations Poseidon and Starkad"
 
@@ -28,7 +28,7 @@ use round_constants::ROUND_CONSTANTS;
 
 const FULL_ROUNDS: usize = 8;
 
-const PARTIAL_ROUNDS: usize = 59;
+const PARTIAL_ROUNDS: usize = 60;
 
 /// The amount of field elements that fit into the hades permutation container
 pub const WIDTH: usize = 5;
@@ -133,32 +133,32 @@ mod tests {
             .collect();
 
         assert_eq!(
-        "0x2885ca6d908b34ca83f2177d78283c25d8c5c7230877025bc8d558b8a94e6fe3",
+        "0x26abf2d0476f154e69bf19740092fe36265680c294462b8e759ad73a99567dd5",
         format!("{:?}", create_poseidon_hash(&test_inputs[..3]))
     );
 
         assert_eq!(
-        "0x55f7f755570a884cb1430bf5cba11fff94430bea63f3c108e6070dc86532ea75",
+        "0x1cc40219c7ec92919d6db7a41cd41953333a2ed544606daca182e4eaa6c7db2d",
         format!("{:?}", create_poseidon_hash(&test_inputs[..4]))
     );
 
         assert_eq!(
-        "0x4288f8b92a9a8bc20f60aac68a318b3287ddb0a663cef5015bff0e98a0063153",
+        "0x707c98a0e9a6e4832ac33ee08811bce122017a58dbbbf66a2f6fcdc69d45462d",
         format!("{:?}", create_poseidon_hash(&test_inputs[..5]))
     );
 
         assert_eq!(
-        "0x31673ed327fa548518084e7332c29d4c96ad314cee79d2c447ff4f686458811a",
+        "0x26905a794d3d2fb0c3ed2276abc696c27a5bfdea7f106e596cbeedd86891c461",
         format!("{:?}", create_poseidon_hash(&test_inputs[..6]))
     );
 
         assert_eq!(
-        "0x5aa2df13cf6f910c19e5516c9222df7039d119472534e6488081df57d036b9a8",
+        "0x1b98a2c5f1fe54d21b5ce9bf0dcc99ea8784a64f3c544fa06d3f73569741006e",
         format!("{:?}", create_poseidon_hash(&test_inputs[..8]))
     );
 
         assert_eq!(
-        "0x0be3889073101db27cd27006256daedda56368a4dad19e6fc810041a23342998",
+        "0x211b7ea21c9afca93dabdfbda8b2d5275b2dd802fed87bb431e98557c61667d2",
         format!("{:?}", create_poseidon_hash(&test_inputs[..10]))
     );
     }

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Change `const PARTIAL_ROUNDS` to 60 (was 59) [#260]
+- Increase the number of constants to 340 (was 335) [#260]
+
 ## [0.37.0] - 2024-03-27
 
 ### Added
@@ -493,6 +498,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#260]: https://github.com/dusk-network/poseidon252/issues/260
 [#251]: https://github.com/dusk-network/poseidon252/issues/251
 [#248]: https://github.com/dusk-network/poseidon252/issues/248
 [#246]: https://github.com/dusk-network/poseidon252/issues/246

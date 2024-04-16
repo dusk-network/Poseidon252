@@ -17,8 +17,8 @@ use std::fs;
 use std::io::Write;
 
 // The amount of constants generated, this needs to be at least the total number
-// of rounds (= 59 + 8) multiplied by the width of the permutation array (= 5).
-const CONSTANTS: usize = (59 + 8) * 5;
+// of rounds (= 60 + 8) multiplied by the width of the permutation array (= 5).
+const CONSTANTS: usize = (60 + 8) * 5;
 
 fn constants() -> [BlsScalar; CONSTANTS] {
     let mut cnst = [BlsScalar::zero(); CONSTANTS];
