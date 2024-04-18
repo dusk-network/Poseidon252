@@ -10,7 +10,7 @@ use dusk_plonk::prelude::{Composer, Witness};
 use dusk_safe::Sponge;
 
 use crate::hades::GadgetPermutation;
-use crate::{Domain, Error};
+use crate::Domain;
 
 use super::io_pattern;
 
@@ -31,9 +31,13 @@ impl<'a> HashGadget<'a> {
         }
     }
 
-    /// Override the length of the hash output (default value is 1).
+    /// Override the length of the hash output (default value is 1) when using
+    /// the hash for anything other than hashing a merkle tree or
+    /// encryption.
     pub fn output_len(&mut self, output_len: usize) {
-        self.output_len = output_len;
+        if self.domain == Domain::Other && output_len > 0 {
+            self.output_len = output_len;
+        }
     }
 
     /// Update the hash input.
@@ -42,60 +46,84 @@ impl<'a> HashGadget<'a> {
     }
 
     /// Finalize the hash.
-    pub fn finalize(
-        &self,
-        composer: &mut Composer,
-    ) -> Result<Vec<Witness>, Error> {
+    ///
+    /// # Panics
+    /// This function panics when the io-pattern can not be created with the
+    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
+    /// anything other than 4 Scalar.
+    pub fn finalize(&self, composer: &mut Composer) -> Vec<Witness> {
         // Generate the hash using the sponge framework:
         // initialize the sponge
         let mut sponge = Sponge::start(
             GadgetPermutation::new(composer),
-            io_pattern(self.domain, &self.input, self.output_len)?,
+            io_pattern(self.domain, &self.input, self.output_len)
+                .expect("io-pattern should be valid"),
             self.domain.into(),
-        )?;
+        )
+        .expect("at this point the io-pattern is valid");
+
         // absorb the input
         for input in self.input.iter() {
-            sponge.absorb(input.len(), input)?;
+            sponge
+                .absorb(input.len(), input)
+                .expect("at this point the io-pattern is valid");
         }
+
         // squeeze output_len elements
-        sponge.squeeze(self.output_len)?;
+        sponge
+            .squeeze(self.output_len)
+            .expect("at this point the io-pattern is valid");
 
         // return the result
-        Ok(sponge.finish()?)
+        sponge
+            .finish()
+            .expect("at this point the io-pattern is valid")
     }
 
     /// Finalize the hash and output JubJubScalar.
-    pub fn finalize_truncated(
-        &self,
-        composer: &mut Composer,
-    ) -> Result<Vec<Witness>, Error> {
+    ///
+    /// # Panics
+    /// This function panics when the io-pattern can not be created with the
+    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
+    /// anything other than 4 Scalar.
+    pub fn finalize_truncated(&self, composer: &mut Composer) -> Vec<Witness> {
         // finalize the hash as bls-scalar witnesses
-        let bls_output = self.finalize(composer)?;
+        let bls_output = self.finalize(composer);
 
         // truncate the bls witnesses to 250 bits
-        Ok(bls_output
+        bls_output
             .iter()
             .map(|bls| composer.append_logic_xor::<125>(*bls, Composer::ZERO))
-            .collect())
+            .collect()
     }
 
     /// Digest an input and calculate the hash immediately
+    ///
+    /// # Panics
+    /// This function panics when the io-pattern can not be created with the
+    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
+    /// anything other than 4 Scalar.
     pub fn digest(
         domain: Domain,
         composer: &mut Composer,
         input: &'a [Witness],
-    ) -> Result<Vec<Witness>, Error> {
+    ) -> Vec<Witness> {
         let mut hash = Self::new(domain);
         hash.update(input);
         hash.finalize(composer)
     }
 
     /// Digest an input and calculate the hash as jubjub-scalar immediately
+    ///
+    /// # Panics
+    /// This function panics when the io-pattern can not be created with the
+    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
+    /// anything other than 4 Scalar.
     pub fn digest_truncated(
         domain: Domain,
         composer: &mut Composer,
         input: &'a [Witness],
-    ) -> Result<Vec<Witness>, Error> {
+    ) -> Vec<Witness> {
         let mut hash = Self::new(domain);
         hash.update(input);
         hash.finalize_truncated(composer)

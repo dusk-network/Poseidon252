@@ -19,9 +19,15 @@ pub(crate) mod gadget;
 /// The Domain Separation for Poseidon
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Domain {
-    /// Domain to specify hashing of 4-arity merkle tree
+    /// Domain to specify hashing of 4-arity merkle tree.
+    /// Note that selecting this domain-separator means that the total hash
+    /// input must be exactly 4 `BlsScalar` long, and any empty slots of the
+    /// merkle tree level need to be filled with the zero element.
     Merkle4,
     /// Domain to specify hashing of 2-arity merkle tree
+    /// Note that selecting this domain-separator means that the total hash
+    /// input must be exactly 2 `BlsScalar` long, and any empty slots of the
+    /// merkle tree level need to be filled with the zero element.
     Merkle2,
     /// Domain to specify hash used for encryption
     Encryption,
@@ -49,6 +55,10 @@ impl From<Domain> for u64 {
     }
 }
 
+// This function, which is called during the finalization step of the hash, will
+// always produce a valid io-pattern based on the input.
+// The function will return an error if a merkle domain is selected but the
+// given input elements don't add up to the specified arity.
 fn io_pattern<T>(
     domain: Domain,
     input: &[&[T]],
@@ -95,9 +105,13 @@ impl<'a> Hash<'a> {
         }
     }
 
-    /// Override the length of the hash output (default value is 1).
+    /// Override the length of the hash output (default value is 1) when using
+    /// the hash for anything other than hashing a merkle tree or
+    /// encryption.
     pub fn output_len(&mut self, output_len: usize) {
-        self.output_len = output_len;
+        if self.domain == Domain::Other && output_len > 0 {
+            self.output_len = output_len;
+        }
     }
 
     /// Update the hash input.
@@ -106,28 +120,48 @@ impl<'a> Hash<'a> {
     }
 
     /// Finalize the hash.
-    pub fn finalize(&self) -> Result<Vec<BlsScalar>, Error> {
+    ///
+    /// # Panics
+    /// This function panics when the io-pattern can not be created with the
+    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
+    /// anything other than 4 Scalar.
+    pub fn finalize(&self) -> Vec<BlsScalar> {
         // Generate the hash using the sponge framework:
         // initialize the sponge
         let mut sponge = Sponge::start(
             ScalarPermutation::new(),
-            io_pattern(self.domain, &self.input, self.output_len)?,
+            io_pattern(self.domain, &self.input, self.output_len)
+                .expect("io-pattern should be valid"),
             self.domain.into(),
-        )?;
+        )
+        .expect("at this point the io-pattern is valid");
+
         // absorb the input
         for input in self.input.iter() {
-            sponge.absorb(input.len(), input)?;
+            sponge
+                .absorb(input.len(), input)
+                .expect("at this point the io-pattern is valid");
         }
+
         // squeeze output_len elements
-        sponge.squeeze(self.output_len)?;
+        sponge
+            .squeeze(self.output_len)
+            .expect("at this point the io-pattern is valid");
 
         // return the result
-        Ok(sponge.finish()?)
+        sponge
+            .finish()
+            .expect("at this point the io-pattern is valid")
     }
 
     /// Finalize the hash and output the result as a `JubJubScalar` by
     /// truncating the `BlsScalar` output to 250 bits.
-    pub fn finalize_truncated(&self) -> Result<Vec<JubJubScalar>, Error> {
+    ///
+    /// # Panics
+    /// This function panics when the io-pattern can not be created with the
+    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
+    /// anything other than 4 Scalar.
+    pub fn finalize_truncated(&self) -> Vec<JubJubScalar> {
         // bit-mask to 'cast' a bls-scalar result to a jubjub-scalar by
         // truncating the 6 highest bits
         const TRUNCATION_MASK: BlsScalar = BlsScalar::from_raw([
@@ -138,31 +172,38 @@ impl<'a> Hash<'a> {
         ]);
 
         // finalize the hash as bls-scalar
-        let bls_output = self.finalize()?;
+        let bls_output = self.finalize();
 
-        Ok(bls_output
+        bls_output
             .iter()
             .map(|bls| {
                 JubJubScalar::from_raw((bls & &TRUNCATION_MASK).reduce().0)
             })
-            .collect())
+            .collect()
     }
 
     /// Digest an input and calculate the hash immediately
-    pub fn digest(
-        domain: Domain,
-        input: &'a [BlsScalar],
-    ) -> Result<Vec<BlsScalar>, Error> {
+    ///
+    /// # Panics
+    /// This function panics when the io-pattern can not be created with the
+    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
+    /// anything other than 4 Scalar.
+    pub fn digest(domain: Domain, input: &'a [BlsScalar]) -> Vec<BlsScalar> {
         let mut hash = Self::new(domain);
         hash.update(input);
         hash.finalize()
     }
 
     /// Digest an input and calculate the hash as jubjub-scalar immediately
+    ///
+    /// # Panics
+    /// This function panics when the io-pattern can not be created with the
+    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
+    /// anything other than 4 Scalar.
     pub fn digest_truncated(
         domain: Domain,
         input: &'a [BlsScalar],
-    ) -> Result<Vec<JubJubScalar>, Error> {
+    ) -> Vec<JubJubScalar> {
         let mut hash = Self::new(domain);
         hash.update(input);
         hash.finalize_truncated()

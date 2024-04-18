@@ -67,8 +67,7 @@ impl<const L: usize> TestCircuit<L> {
             .for_each(|s| *s = BlsScalar::random(&mut *rng));
 
         // calculate expected hash output
-        let output = Hash::digest(Domain::Other, &input)
-            .expect("hash creation should not fail");
+        let output = Hash::digest(Domain::Other, &input);
 
         Self {
             input,
@@ -94,8 +93,7 @@ impl<const L: usize> Circuit for TestCircuit<L> {
 
         // check that the gadget result is as expected
         let gadget_output =
-            HashGadget::digest(Domain::Other, composer, &input_witnesses)
-                .expect("hash creation should not fail");
+            HashGadget::digest(Domain::Other, composer, &input_witnesses);
         composer.assert_equal_constant(gadget_output[0], 0, Some(self.output));
 
         Ok(())
@@ -147,8 +145,7 @@ impl<const L: usize> TestTruncatedCircuit<L> {
             .for_each(|s| *s = BlsScalar::random(&mut *rng));
 
         // calculate expected hash output
-        let output = Hash::digest_truncated(Domain::Other, &input)
-            .expect("hash creation should not fail");
+        let output = Hash::digest_truncated(Domain::Other, &input);
 
         Self {
             input,
@@ -179,8 +176,7 @@ impl<const L: usize> Circuit for TestTruncatedCircuit<L> {
             Domain::Other,
             composer,
             &input_witnesses,
-        )
-        .expect("hash creation should not fail");
+        );
         composer.assert_equal_constant(
             gadget_output[0],
             0,
@@ -239,7 +235,7 @@ impl<const I: usize, const O: usize> MultipleOutputCircuit<I, O> {
         let mut hash = Hash::new(Domain::Other);
         hash.update(&input);
         hash.output_len(O);
-        let output = hash.finalize().expect("Hash creation should pass");
+        let output = hash.finalize();
 
         assert_eq!(output.len(), O);
 
@@ -266,9 +262,7 @@ impl<const I: usize, const O: usize> Circuit for MultipleOutputCircuit<I, O> {
         let mut hash = HashGadget::new(Domain::Other);
         hash.output_len(O);
         hash.update(&input_witnesses);
-        let gadget_output = hash
-            .finalize(composer)
-            .expect("hash creation should not fail");
+        let gadget_output = hash.finalize(composer);
 
         assert_eq!(gadget_output.len(), self.output.len());
 

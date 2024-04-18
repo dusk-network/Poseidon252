@@ -39,8 +39,7 @@ impl Circuit for SpongeCircuit {
             });
 
         let output_witness =
-            HashGadget::digest(Domain::Merkle4, composer, &w_message)
-                .expect("creating the hash should not fail");
+            HashGadget::digest(Domain::Merkle4, composer, &w_message);
         composer.assert_equal_constant(output_witness[0], 0, Some(self.output));
 
         Ok(())
@@ -62,8 +61,7 @@ fn bench_sponge(c: &mut Criterion) {
         BlsScalar::random(&mut rng),
         BlsScalar::random(&mut rng),
     ];
-    let public_inputs = Hash::digest(Domain::Merkle4, &message)
-        .expect("creating the hash should not fail");
+    let public_inputs = Hash::digest(Domain::Merkle4, &message);
     let circuit = SpongeCircuit::new(message, public_inputs[0]);
 
     // Benchmark sponge native
