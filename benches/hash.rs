@@ -39,7 +39,7 @@ impl Circuit for SpongeCircuit {
             });
 
         let output_witness =
-            HashGadget::digest(Domain::Merkle4, composer, &w_message);
+            HashGadget::digest(composer, Domain::Merkle4, &w_message);
         composer.assert_equal_constant(output_witness[0], 0, Some(self.output));
 
         Ok(())
