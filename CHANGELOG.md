@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Switch parameter for gadgets: `composer` should always be the first parameter
+
 ## [0.38.0] - 2024-04-24
 
 ### Changed

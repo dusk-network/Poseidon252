@@ -93,7 +93,7 @@ impl<const L: usize> Circuit for TestCircuit<L> {
 
         // check that the gadget result is as expected
         let gadget_output =
-            HashGadget::digest(Domain::Other, composer, &input_witnesses);
+            HashGadget::digest(composer, Domain::Other, &input_witnesses);
         composer.assert_equal_constant(gadget_output[0], 0, Some(self.output));
 
         Ok(())
@@ -173,8 +173,8 @@ impl<const L: usize> Circuit for TestTruncatedCircuit<L> {
         let mut hash = HashGadget::new(Domain::Other);
         hash.update(&input_witnesses);
         let gadget_output = HashGadget::digest_truncated(
-            Domain::Other,
             composer,
+            Domain::Other,
             &input_witnesses,
         );
         composer.assert_equal_constant(

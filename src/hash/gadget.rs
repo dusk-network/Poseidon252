@@ -104,8 +104,8 @@ impl<'a> HashGadget<'a> {
     /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
     /// anything other than 4 Scalar.
     pub fn digest(
-        domain: Domain,
         composer: &mut Composer,
+        domain: Domain,
         input: &'a [Witness],
     ) -> Vec<Witness> {
         let mut hash = Self::new(domain);
@@ -120,8 +120,8 @@ impl<'a> HashGadget<'a> {
     /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
     /// anything other than 4 Scalar.
     pub fn digest_truncated(
-        domain: Domain,
         composer: &mut Composer,
+        domain: Domain,
         input: &'a [Witness],
     ) -> Vec<Witness> {
         let mut hash = Self::new(domain);

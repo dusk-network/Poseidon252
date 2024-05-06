@@ -17,9 +17,7 @@ The library provides the two hashing techniques of Poseidon:
 - The 'normal' hashing functionalities operating on `BlsScalar`.
 - The 'gadget' hashing functionalities that build a circuit which outputs the hash.
 
-## Examples
-
-### Hash
+## Example
 
 ```rust
 use rand::rngs::StdRng;
@@ -50,41 +48,6 @@ let merkle_hash = Hash::digest(Domain::Merkle4, &input[..4]);
 
 // which is different when another domain is used
 assert_ne!(merkle_hash, Hash::digest(Domain::Other, &input[..4]));
-```
-
-### Encryption
-
-```rust
-#![cfg(feature = "encryption")]
-
-use dusk_bls12_381::BlsScalar;
-use dusk_jubjub::{JubJubScalar, GENERATOR_EXTENDED, dhke};
-use dusk_poseidon::{decrypt, encrypt, Error};
-use ff::Field;
-use rand::rngs::StdRng;
-use rand::SeedableRng;
-
-// generate the keys and nonce needed for the encryption
-let mut rng = StdRng::seed_from_u64(0x42424242);
-let alice_secret = JubJubScalar::random(&mut rng);
-let alice_public = GENERATOR_EXTENDED * &alice_secret;
-let bob_secret = JubJubScalar::random(&mut rng);
-let bob_public = GENERATOR_EXTENDED * &bob_secret;
-let nonce = BlsScalar::random(&mut rng);
-
-// Alice encrypts a message of 3 BlsScalar using Diffie-Hellman key exchange
-// with Bob's public key
-let message = vec![BlsScalar::from(10), BlsScalar::from(20), BlsScalar::from(30)];
-let shared_secret = dhke(&alice_secret, &bob_public);
-let cipher = encrypt(&message, &shared_secret, &nonce)
-    .expect("Encryption should pass");
-
-// Bob decrypts the cipher using Diffie-Hellman key exchange with Alice's public key
-let shared_secret = dhke(&bob_secret, &alice_public);
-let decrypted_message = decrypt(&cipher, &shared_secret, &nonce)
-    .expect("Decryption should pass");
-
-assert_eq!(decrypted_message, message);
 ```
 
 ## Benchmarks
