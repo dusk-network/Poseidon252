@@ -115,11 +115,11 @@ mod tests {
         // absorb given input
         sponge
             .absorb(input.len(), input)
-            .expect("Absorbtion of the input should work fine");
+            .expect("Absorption of the input should work fine");
         // absorb padding of one BlsScalar::one()
         sponge
             .absorb(1, &[BlsScalar::one()])
-            .expect("Absorbtion of padding should work fine");
+            .expect("Absorption of padding should work fine");
         sponge.squeeze(1).expect("Squeezing should work fine");
         let output = sponge.finish().expect("Finish should work fine");
         output[0]
