@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.39.0] - 2024-05-08
+
 ### Changed
 
 - Switch parameter for gadgets: `composer` should always be the first parameter
@@ -548,7 +550,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
 
 <!-- VERSIONS -->
-[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.38.0...HEAD
+[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.39.0...HEAD
+[0.39.0]: https://github.com/dusk-network/poseidon252/compare/v0.38.0...v0.39.0
 [0.38.0]: https://github.com/dusk-network/poseidon252/compare/v0.37.0...v0.38.0
 [0.37.0]: https://github.com/dusk-network/poseidon252/compare/v0.36.0...v0.37.0
 [0.36.0]: https://github.com/dusk-network/poseidon252/compare/v0.35.0...v0.36.0
