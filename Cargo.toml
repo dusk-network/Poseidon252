@@ -10,7 +10,7 @@ edition = "2021"
 license = "MPL-2.0"
 
 [dependencies]
-dusk-bls12_381 = { version = "0.13", default-features = false, features = ["zeroize"] }
+dusk-bls12_381 = { version = "0.14", default-features = false, features = ["zeroize"] }
 dusk-jubjub = { version = "0.14", default-features = false }
 dusk-plonk = { version = "0.20", default-features = false, features = ["alloc", "zeroize"], optional = true }
 dusk-safe = "0.2"
