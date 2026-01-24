@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Set MSRV to 1.85, Rust edition 2024, and switch to stable toolchain [#274]
+- Update `dusk-plonk` to `0.22.0-rc.0`
+
 ## [0.41.0] - 2025-02-06
 
 ### Changed
@@ -522,6 +527,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#274]: https://github.com/dusk-network/poseidon252/issues/274
 [#260]: https://github.com/dusk-network/poseidon252/issues/260
 [#259]: https://github.com/dusk-network/poseidon252/issues/259
 [#251]: https://github.com/dusk-network/poseidon252/issues/251

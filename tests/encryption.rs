@@ -7,11 +7,11 @@
 #![cfg(feature = "encryption")]
 
 use dusk_bls12_381::BlsScalar;
-use dusk_jubjub::{JubJubAffine, JubJubScalar, GENERATOR_EXTENDED};
-use dusk_poseidon::{decrypt, encrypt, Error};
+use dusk_jubjub::{GENERATOR_EXTENDED, JubJubAffine, JubJubScalar};
+use dusk_poseidon::{Error, decrypt, encrypt};
 use ff::Field;
-use rand::rngs::StdRng;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 fn encryption_variables(
     rng: &mut StdRng,

@@ -32,7 +32,7 @@ impl<'a> Safe<Witness, WIDTH> for GadgetPermutation<'a> {
     }
 
     fn tag(&mut self, input: &[u8]) -> Witness {
-        let tag = BlsScalar::hash_to_scalar(input.as_ref());
+        let tag = BlsScalar::hash_to_scalar(input);
         // append the tag as a constant
         self.composer.append_constant(tag)
     }
@@ -159,8 +159,8 @@ mod tests {
 
     use core::result::Result;
     use ff::Field;
-    use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use rand::rngs::StdRng;
 
     #[derive(Default)]
     struct TestCircuit {
