@@ -4,12 +4,12 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use dusk_plonk::prelude::*;
-use dusk_poseidon::{Domain, Hash, HashGadget, HADES_WIDTH};
+use dusk_poseidon::{Domain, HADES_WIDTH, Hash, HashGadget};
 use ff::Field;
-use rand::rngs::StdRng;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 const CAPACITY: usize = 11;
 

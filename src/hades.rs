@@ -133,33 +133,33 @@ mod tests {
             .collect();
 
         assert_eq!(
-        "0x26abf2d0476f154e69bf19740092fe36265680c294462b8e759ad73a99567dd5",
-        format!("{:?}", create_poseidon_hash(&test_inputs[..3]))
-    );
+            "0x26abf2d0476f154e69bf19740092fe36265680c294462b8e759ad73a99567dd5",
+            format!("{:?}", create_poseidon_hash(&test_inputs[..3]))
+        );
 
         assert_eq!(
-        "0x1cc40219c7ec92919d6db7a41cd41953333a2ed544606daca182e4eaa6c7db2d",
-        format!("{:?}", create_poseidon_hash(&test_inputs[..4]))
-    );
+            "0x1cc40219c7ec92919d6db7a41cd41953333a2ed544606daca182e4eaa6c7db2d",
+            format!("{:?}", create_poseidon_hash(&test_inputs[..4]))
+        );
 
         assert_eq!(
-        "0x707c98a0e9a6e4832ac33ee08811bce122017a58dbbbf66a2f6fcdc69d45462d",
-        format!("{:?}", create_poseidon_hash(&test_inputs[..5]))
-    );
+            "0x707c98a0e9a6e4832ac33ee08811bce122017a58dbbbf66a2f6fcdc69d45462d",
+            format!("{:?}", create_poseidon_hash(&test_inputs[..5]))
+        );
 
         assert_eq!(
-        "0x26905a794d3d2fb0c3ed2276abc696c27a5bfdea7f106e596cbeedd86891c461",
-        format!("{:?}", create_poseidon_hash(&test_inputs[..6]))
-    );
+            "0x26905a794d3d2fb0c3ed2276abc696c27a5bfdea7f106e596cbeedd86891c461",
+            format!("{:?}", create_poseidon_hash(&test_inputs[..6]))
+        );
 
         assert_eq!(
-        "0x1b98a2c5f1fe54d21b5ce9bf0dcc99ea8784a64f3c544fa06d3f73569741006e",
-        format!("{:?}", create_poseidon_hash(&test_inputs[..8]))
-    );
+            "0x1b98a2c5f1fe54d21b5ce9bf0dcc99ea8784a64f3c544fa06d3f73569741006e",
+            format!("{:?}", create_poseidon_hash(&test_inputs[..8]))
+        );
 
         assert_eq!(
-        "0x211b7ea21c9afca93dabdfbda8b2d5275b2dd802fed87bb431e98557c61667d2",
-        format!("{:?}", create_poseidon_hash(&test_inputs[..10]))
-    );
+            "0x211b7ea21c9afca93dabdfbda8b2d5275b2dd802fed87bb431e98557c61667d2",
+            format!("{:?}", create_poseidon_hash(&test_inputs[..10]))
+        );
     }
 }

@@ -7,8 +7,8 @@
 #![cfg(feature = "zk")]
 
 use once_cell::sync::Lazy;
-use rand::rngs::StdRng;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 use dusk_plonk::prelude::Error as PlonkError;
 use dusk_plonk::prelude::*;

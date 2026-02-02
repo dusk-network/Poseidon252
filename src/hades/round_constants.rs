@@ -29,7 +29,9 @@ pub const ROUND_CONSTANTS: [[BlsScalar; WIDTH]; ROUNDS] = {
     // make sure that there are enough bytes for (WIDTH * ROUNDS) BlsScalar
     // stored under 'assets/arc.bin'
     if bytes.len() < WIDTH * ROUNDS * 32 {
-        panic!("There are not enough round constants stored in 'assets/arc.bin', have a look at the HOWTO to generate enough constants.");
+        panic!(
+            "There are not enough round constants stored in 'assets/arc.bin', have a look at the HOWTO to generate enough constants."
+        );
     }
 
     let mut cnst = [[BlsScalar::zero(); WIDTH]; ROUNDS];

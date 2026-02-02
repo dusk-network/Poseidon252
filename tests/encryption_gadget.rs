@@ -8,14 +8,14 @@
 #![cfg(feature = "zk")]
 
 use dusk_bls12_381::BlsScalar;
-use dusk_jubjub::{JubJubAffine, JubJubScalar, GENERATOR_EXTENDED};
+use dusk_jubjub::{GENERATOR_EXTENDED, JubJubAffine, JubJubScalar};
 use dusk_plonk::prelude::Error as PlonkError;
 use dusk_plonk::prelude::*;
 use dusk_poseidon::{decrypt_gadget, encrypt, encrypt_gadget};
 use ff::Field;
 use once_cell::sync::Lazy;
-use rand::rngs::StdRng;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 static PUB_PARAMS: Lazy<PublicParameters> = Lazy::new(|| {
     let mut rng = StdRng::seed_from_u64(0xfab);

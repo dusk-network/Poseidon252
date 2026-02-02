@@ -9,8 +9,8 @@ use alloc::vec::Vec;
 use dusk_plonk::prelude::{Composer, Witness};
 use dusk_safe::Sponge;
 
-use crate::hades::GadgetPermutation;
 use crate::Domain;
+use crate::hades::GadgetPermutation;
 
 use super::io_pattern;
 

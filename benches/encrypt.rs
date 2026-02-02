@@ -4,16 +4,16 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use dusk_bls12_381::BlsScalar;
-use dusk_jubjub::{JubJubAffine, JubJubScalar, GENERATOR_EXTENDED};
+use dusk_jubjub::{GENERATOR_EXTENDED, JubJubAffine, JubJubScalar};
 use dusk_plonk::prelude::Error as PlonkError;
 use dusk_plonk::prelude::*;
 use dusk_poseidon::{encrypt, encrypt_gadget};
 use ff::Field;
 use once_cell::sync::Lazy;
-use rand::rngs::StdRng;
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 const MESSAGE_LEN: usize = 2;
 

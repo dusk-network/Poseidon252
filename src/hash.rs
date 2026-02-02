@@ -10,8 +10,8 @@ use dusk_bls12_381::BlsScalar;
 use dusk_jubjub::JubJubScalar;
 use dusk_safe::{Call, Sponge};
 
-use crate::hades::ScalarPermutation;
 use crate::Error;
+use crate::hades::ScalarPermutation;
 
 #[cfg(feature = "zk")]
 pub(crate) mod gadget;
