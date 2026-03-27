@@ -32,8 +32,6 @@ pub(crate) mod scalar;
 /// This structure allows to minimize the number of non-linear ops while
 /// maintaining the security.
 pub(crate) trait Hades<T> {
-    const ROUNDS: usize = FULL_ROUNDS + PARTIAL_ROUNDS;
-
     /// Add round constants to the state.
     ///
     /// This constants addition, also known as `ARC`, is used to reach

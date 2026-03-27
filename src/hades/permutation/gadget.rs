@@ -9,6 +9,7 @@ use dusk_plonk::prelude::*;
 use dusk_safe::Safe;
 
 use super::Hades;
+use crate::hades::round_constants::ROUNDS;
 use crate::hades::{MDS_MATRIX, ROUND_CONSTANTS, WIDTH};
 
 /// An implementation for the [`Hades`] permutation operating on [`Witness`]es.
@@ -100,7 +101,7 @@ impl<'a> Hades<Witness> for GadgetPermutation<'a> {
         // r[x] = q_l · w_l + q_r · w_r + q_4 · w_4 + c;
         for j in 0..WIDTH {
             // c is the next round's constant and hence zero for the last round.
-            let c = match round + 1 < Self::ROUNDS {
+            let c = match round + 1 < ROUNDS {
                 true => ROUND_CONSTANTS[round + 1][j],
                 false => BlsScalar::zero(),
             };
