@@ -56,8 +56,7 @@ const fn u64_from_buffer<const N: usize>(buf: &[u8; N], i: usize) -> u64 {
 #[cfg(test)]
 mod tests {
     extern crate std;
-    use std::format;
-    use std::vec;
+    use std::{format, vec};
 
     use dusk_bls12_381::BlsScalar;
     use dusk_bytes::ParseHexStr;

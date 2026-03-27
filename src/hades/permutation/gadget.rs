@@ -8,9 +8,8 @@ use dusk_bls12_381::BlsScalar;
 use dusk_plonk::prelude::*;
 use dusk_safe::Safe;
 
-use crate::hades::{MDS_MATRIX, ROUND_CONSTANTS, WIDTH};
-
 use super::Hades;
+use crate::hades::{MDS_MATRIX, ROUND_CONSTANTS, WIDTH};
 
 /// An implementation for the [`Hades`] permutation operating on [`Witness`]es.
 /// Requires a reference to a plonk circuit [`Composer`].
@@ -153,14 +152,14 @@ impl dusk_safe::Encryption<Witness, WIDTH> for GadgetPermutation<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use crate::hades::ScalarPermutation;
-
     use core::result::Result;
+
     use ff::Field;
     use rand::SeedableRng;
     use rand::rngs::StdRng;
+
+    use super::*;
+    use crate::hades::ScalarPermutation;
 
     #[derive(Default)]
     struct TestCircuit {

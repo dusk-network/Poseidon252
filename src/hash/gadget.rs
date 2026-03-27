@@ -9,10 +9,9 @@ use alloc::vec::Vec;
 use dusk_plonk::prelude::{Composer, Witness};
 use dusk_safe::Sponge;
 
+use super::io_pattern;
 use crate::Domain;
 use crate::hades::GadgetPermutation;
-
-use super::io_pattern;
 
 /// Hash struct.
 pub struct HashGadget<'a> {
