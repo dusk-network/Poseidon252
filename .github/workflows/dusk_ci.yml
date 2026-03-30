@@ -18,22 +18,29 @@ jobs:
     name: Dusk Analyzer
     uses: dusk-network/.github/.github/workflows/dusk-analysis.yml@main
 
-  build_benches:
-    name: Build Benchmarks
-    runs-on: ubuntu-latest
+  test:
+    name: Test
+    runs-on: core
     steps:
       - uses: actions/checkout@v4
+      - uses: dsherret/rust-toolchain-file@v1
+      - uses: Swatinem/rust-cache@v2
+      - run: make test
+
+  no-std:
+    name: Build no_std
+    runs-on: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dsherret/rust-toolchain-file@v1
+      - uses: Swatinem/rust-cache@v2
+      - run: make no-std
+
+  build_benches:
+    name: Build Benchmarks
+    runs-on: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dsherret/rust-toolchain-file@v1
       - uses: Swatinem/rust-cache@v2
       - run: cargo bench --all-features --no-run
-
-  check_encryption:
-    name: Check encryption compiles without zk
-    uses: dusk-network/.github/.github/workflows/run-tests.yml@main
-    with:
-      test_flags: --features=encryption --no-run
-
-  test_all:
-    name: Tests all
-    uses: dusk-network/.github/.github/workflows/run-tests.yml@main
-    with:
-      test_flags: --all-features

@@ -15,7 +15,7 @@ use dusk_bls12_381::BlsScalar;
 
 use crate::hades::{FULL_ROUNDS, PARTIAL_ROUNDS, WIDTH};
 
-const ROUNDS: usize = FULL_ROUNDS + PARTIAL_ROUNDS;
+pub(crate) const ROUNDS: usize = FULL_ROUNDS + PARTIAL_ROUNDS;
 
 /// `ROUND_CONSTANTS` consists on a static reference that points to the
 /// pre-loaded 340 constant scalar of the bls12_381 curve.
