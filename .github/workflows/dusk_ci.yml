@@ -7,34 +7,23 @@ on:
 name: Continuous integration
 
 jobs:
-  code_analysis:
-    name: Code Analysis
-    uses: dusk-network/.github/.github/workflows/code-analysis.yml@main
+  code-quality:
+    name: Code quality
+    uses: dusk-network/.github/.github/workflows/run-make.yml@main
     with:
-      clippy_default: false
-      clippy_args: --all-features
-
-  analyze:
-    name: Dusk Analyzer
-    uses: dusk-network/.github/.github/workflows/dusk-analysis.yml@main
+      make_target: cq
 
   test:
-    name: Test
-    runs-on: core
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dsherret/rust-toolchain-file@v1
-      - uses: Swatinem/rust-cache@v2
-      - run: make test
+    name: Run tests
+    uses: dusk-network/.github/.github/workflows/run-make.yml@main
+    with:
+      make_target: test
 
   no-std:
-    name: Build no_std
-    runs-on: core
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dsherret/rust-toolchain-file@v1
-      - uses: Swatinem/rust-cache@v2
-      - run: make no-std
+    name: Run no-std checks
+    uses: dusk-network/.github/.github/workflows/run-make.yml@main
+    with:
+      make_target: no-std
 
   build_benches:
     name: Build Benchmarks

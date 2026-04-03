@@ -7,9 +7,15 @@ test: ## Run tests (--all-features, release mode)
 
 clippy: ## Run clippy
 	@cargo clippy --all-features -- -D warnings
+	@cargo clippy --no-default-features -- -D warnings
+
+cq: ## Run code quality checks (formatting + clippy)
+	@$(MAKE) fmt CHECK=1
+	@$(MAKE) clippy
 
 fmt: ## Format code
-	@cargo +nightly fmt --all
+	@rustup component add --toolchain nightly rustfmt 2>/dev/null || true
+	@cargo +nightly fmt --all $(if $(CHECK),-- --check,)
 
 check: ## Type-check
 	@cargo check --all-features
@@ -24,4 +30,4 @@ no-std: ## Verify no_std bare-metal build
 	@rustup target add thumbv6m-none-eabi 2>/dev/null || true
 	@cargo build --release --no-default-features --target thumbv6m-none-eabi
 
-.PHONY: help test clippy fmt check doc clean no-std
+.PHONY: help test clippy cq fmt check doc clean no-std
