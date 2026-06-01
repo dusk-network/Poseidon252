@@ -11,7 +11,7 @@
 //! ```rust
 //! #![cfg(feature = "encryption")]
 //!
-//! use dusk_bls12_381::BlsScalar;
+//! use dusk_curves::bls12_381::BlsScalar;
 //! use dusk_jubjub::{JubJubScalar, GENERATOR_EXTENDED, dhke};
 //! use dusk_poseidon::{decrypt, encrypt, Error};
 //! use ff::Field;
@@ -47,7 +47,7 @@ pub(crate) mod gadget;
 
 use alloc::vec::Vec;
 
-use dusk_bls12_381::BlsScalar;
+use dusk_curves::bls12_381::BlsScalar;
 use dusk_jubjub::JubJubAffine;
 
 use crate::hades::ScalarPermutation;

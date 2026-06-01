@@ -7,7 +7,7 @@
 #![cfg(feature = "encryption")]
 #![cfg(feature = "zk")]
 
-use dusk_bls12_381::BlsScalar;
+use dusk_curves::bls12_381::BlsScalar;
 use dusk_jubjub::{GENERATOR_EXTENDED, JubJubAffine, JubJubScalar};
 use dusk_plonk::prelude::{Error as PlonkError, *};
 use dusk_poseidon::{decrypt_gadget, encrypt, encrypt_gadget};

@@ -58,8 +58,8 @@ mod tests {
     extern crate std;
     use std::{format, vec};
 
-    use dusk_bls12_381::BlsScalar;
     use dusk_bytes::ParseHexStr;
+    use dusk_curves::bls12_381::BlsScalar;
     use dusk_safe::{Call, Safe, Sponge};
 
     use crate::hades::{ScalarPermutation, WIDTH};
