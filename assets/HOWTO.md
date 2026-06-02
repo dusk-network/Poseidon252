@@ -11,7 +11,7 @@ The `arc.bin` and `mds.bin` files in this folder are generated using the snippet
 ## Generate round constants
 
 ```rust
-use dusk_bls12_381::BlsScalar;
+use dusk_curves::bls12_381::BlsScalar;
 use sha2::{Digest, Sha512};
 use std::fs;
 use std::io::Write;
@@ -59,7 +59,7 @@ fn write_constants() -> std::io::Result<()> {
 ## Generate mds matrix
 
 ```rust
-use dusk_bls12_381::BlsScalar;
+use dusk_curves::bls12_381::BlsScalar;
 use std::fs;
 use std::io::Write;
 

@@ -11,7 +11,7 @@
 //! https://extgit.iaik.tugraz.at/krypto/hadesmimc/blob/master/code/calc_round_numbers.py
 //! and then mapped onto `BlsScalar` in the Bls12_381 scalar field.
 
-use dusk_bls12_381::BlsScalar;
+use dusk_curves::bls12_381::BlsScalar;
 
 use crate::hades::{FULL_ROUNDS, PARTIAL_ROUNDS, WIDTH};
 

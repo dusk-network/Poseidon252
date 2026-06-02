@@ -17,6 +17,17 @@ The library provides the two hashing techniques of Poseidon:
 - The 'normal' hashing functionalities operating on `BlsScalar`.
 - The 'gadget' hashing functionalities that build a circuit which outputs the hash.
 
+## Features
+
+Select exactly one BLS backend feature when depending on this crate:
+
+- `bls-backend-dusk` forwards the pure Rust Dusk backend.
+- `bls-backend-blst` forwards the `blst` backend.
+
+The backend features are mutually exclusive and are not enabled by default.
+The `zk` feature enables the `dusk-plonk` gadgets, and `encryption` enables
+the SAFE encryption helpers.
+
 ## Example
 
 ```rust
@@ -24,7 +35,7 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 
 use dusk_poseidon::{Domain, Hash};
-use dusk_bls12_381::BlsScalar;
+use dusk_curves::bls12_381::BlsScalar;
 use ff::Field;
 
 // generate random input
@@ -56,7 +67,7 @@ There are benchmarks for hashing, encrypting and decrypting in their native form
 
 To run all benchmarks on your machine, run
 ```shell
-cargo bench --features=zk,encryption
+cargo bench --features=zk,encryption,bls-backend-blst
 ```
 in the repository.
 

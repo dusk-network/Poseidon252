@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use dusk_bls12_381::BlsScalar;
+use dusk_curves::bls12_381::BlsScalar;
 use dusk_plonk::prelude::*;
 use dusk_safe::Safe;
 
