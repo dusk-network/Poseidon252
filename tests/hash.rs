@@ -115,6 +115,23 @@ fn test_gadget() -> Result<(), Error> {
     compile_and_verify(&mut rng, &circuit, &circuit.public_inputs())
 }
 
+#[test]
+fn incorrect_hash_output_fails() -> Result<(), Error> {
+    let mut rng = StdRng::seed_from_u64(0xbeef);
+    let label = b"hash-gadget-tester";
+    let (prover, _) = Compiler::compile::<TestCircuit<3>>(&PUB_PARAMS, label)?;
+
+    let mut circuit = TestCircuit::<3>::random(&mut rng);
+    circuit.output += BlsScalar::one();
+
+    assert!(
+        prover.prove(&mut rng, &circuit).is_err(),
+        "proving should fail with an incorrect hash output"
+    );
+
+    Ok(())
+}
+
 // -------------------
 // Test truncated hash
 // -------------------

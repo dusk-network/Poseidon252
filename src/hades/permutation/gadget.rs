@@ -4,13 +4,73 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use alloc::vec::Vec;
+
 use dusk_bls12_381::BlsScalar;
 use dusk_plonk::prelude::*;
 use dusk_safe::Safe;
 
 use super::Hades;
-use crate::hades::round_constants::ROUNDS;
-use crate::hades::{MDS_MATRIX, ROUND_CONSTANTS, WIDTH};
+use crate::hades::{OPT_ROUND_CONSTANTS, PARTIAL_ROUNDS, WIDTH};
+
+#[derive(Clone)]
+struct LinearExpression {
+    terms: Vec<(BlsScalar, Witness)>,
+    constant: BlsScalar,
+}
+
+impl LinearExpression {
+    fn zero() -> Self {
+        Self {
+            terms: Vec::new(),
+            constant: BlsScalar::zero(),
+        }
+    }
+
+    fn witness(witness: Witness) -> Self {
+        let mut expr = Self::zero();
+        expr.add_term(BlsScalar::one(), witness);
+        expr
+    }
+
+    fn add_term(&mut self, coefficient: BlsScalar, witness: Witness) {
+        if coefficient == BlsScalar::zero() {
+            return;
+        }
+
+        if let Some((existing, _)) =
+            self.terms.iter_mut().find(|(_, w)| *w == witness)
+        {
+            *existing += coefficient;
+            if *existing == BlsScalar::zero() {
+                self.terms.retain(|(coefficient, _)| {
+                    *coefficient != BlsScalar::zero()
+                });
+            }
+            return;
+        }
+
+        self.terms.push((coefficient, witness));
+    }
+
+    fn add_scaled_expression(
+        &mut self,
+        coefficient: BlsScalar,
+        expression: &Self,
+    ) {
+        if coefficient == BlsScalar::zero() {
+            return;
+        }
+
+        self.constant += coefficient * expression.constant;
+        expression
+            .terms
+            .iter()
+            .for_each(|(term_coefficient, witness)| {
+                self.add_term(coefficient * term_coefficient, *witness);
+            });
+    }
+}
 
 /// An implementation for the [`Hades`] permutation operating on [`Witness`]es.
 /// Requires a reference to a plonk circuit [`Composer`].
@@ -23,6 +83,119 @@ impl<'a> GadgetPermutation<'a> {
     /// Constructs a new `GadgetPermutation` with the constraint system.
     pub fn new(composer: &'a mut Composer) -> Self {
         Self { composer }
+    }
+
+    fn gate_add_expression(
+        &mut self,
+        terms: &[(BlsScalar, Witness)],
+        constant: BlsScalar,
+    ) -> Witness {
+        let first_terms = terms.len().min(3);
+        let mut constraint = Constraint::new().constant(constant);
+
+        if let Some((coefficient, witness)) = terms[..first_terms].first() {
+            constraint = constraint.left(*coefficient).a(*witness);
+        }
+
+        if let Some((coefficient, witness)) = terms[..first_terms].get(1) {
+            constraint = constraint.right(*coefficient).b(*witness);
+        }
+
+        if let Some((coefficient, witness)) = terms[..first_terms].get(2) {
+            constraint = constraint.fourth(*coefficient).d(*witness);
+        }
+
+        let mut witness = self.composer.gate_add(constraint);
+        let mut offset = first_terms;
+
+        while offset < terms.len() {
+            let mut constraint = Constraint::new().left(1).a(witness);
+
+            if let Some((coefficient, term_witness)) = terms.get(offset) {
+                constraint = constraint.right(*coefficient).b(*term_witness);
+            }
+
+            if let Some((coefficient, term_witness)) = terms.get(offset + 1) {
+                constraint = constraint.fourth(*coefficient).d(*term_witness);
+            }
+
+            witness = self.composer.gate_add(constraint);
+            offset += 2;
+        }
+
+        witness
+    }
+
+    fn materialize_expression(
+        &mut self,
+        expression: &LinearExpression,
+    ) -> Witness {
+        match expression.terms.as_slice() {
+            [] if expression.constant == BlsScalar::zero() => Composer::ZERO,
+            [] if expression.constant == BlsScalar::one() => Composer::ONE,
+            [] => self.composer.append_constant(expression.constant),
+            [(coefficient, witness)]
+                if *coefficient == BlsScalar::one()
+                    && expression.constant == BlsScalar::zero() =>
+            {
+                *witness
+            }
+            terms => self.gate_add_expression(terms, expression.constant),
+        }
+    }
+
+    fn quintic_s_box_with_constants(
+        &mut self,
+        value: &mut Witness,
+        pre_constant: BlsScalar,
+        post_constant: BlsScalar,
+    ) {
+        let pre_constant_squared = pre_constant * pre_constant;
+        let constraint = Constraint::new()
+            .mult(1)
+            .left(pre_constant)
+            .right(pre_constant)
+            .a(*value)
+            .b(*value)
+            .constant(pre_constant_squared);
+        let v2 = self.composer.gate_mul(constraint);
+
+        let constraint = Constraint::new().mult(1).a(v2).b(v2);
+        let v4 = self.composer.gate_mul(constraint);
+
+        let constraint = Constraint::new()
+            .mult(1)
+            .left(pre_constant)
+            .a(v4)
+            .b(*value)
+            .constant(post_constant);
+        *value = self.composer.gate_mul(constraint);
+    }
+
+    fn apply_sparse_matrix_as_expressions(
+        &mut self,
+        round: usize,
+        state: &mut [LinearExpression; WIDTH],
+    ) {
+        let previous_state = state.clone();
+        let mut result: [LinearExpression; WIDTH] =
+            core::array::from_fn(|_| LinearExpression::zero());
+
+        for (i, expression) in previous_state.iter().enumerate() {
+            result[0]
+                .add_scaled_expression(Self::sparse(round, i, 0), expression);
+        }
+
+        for j in 1..WIDTH {
+            result[j]
+                .add_scaled_expression(BlsScalar::one(), &previous_state[j]);
+            result[j].add_scaled_expression(
+                Self::sparse(round, 0, j),
+                &previous_state[0],
+            );
+        }
+
+        *state = result;
     }
 }
 
@@ -44,91 +217,121 @@ impl<'a> Safe<Witness, WIDTH> for GadgetPermutation<'a> {
 }
 
 impl<'a> Hades<Witness> for GadgetPermutation<'a> {
-    fn add_round_constants(
-        &mut self,
-        round: usize,
-        state: &mut [Witness; WIDTH],
-    ) {
-        // To save constraints we only add the constants here in the first
-        // round. The remaining constants will be added in the matrix
-        // multiplication.
-        if round == 0 {
-            state.iter_mut().enumerate().for_each(|(i, w)| {
-                let constant = ROUND_CONSTANTS[0][i];
-                let constraint =
-                    Constraint::new().left(1).a(*w).constant(constant);
-
-                *w = self.composer.gate_add(constraint);
-            });
-        }
+    fn quintic_s_box(&mut self, value: &mut Witness, post_constant: BlsScalar) {
+        self.quintic_s_box_with_constants(
+            value,
+            BlsScalar::zero(),
+            post_constant,
+        );
     }
 
-    fn quintic_s_box(&mut self, value: &mut Witness) {
-        let constraint = Constraint::new().mult(1).a(*value).b(*value);
-        let v2 = self.composer.gate_mul(constraint);
-
-        let constraint = Constraint::new().mult(1).a(v2).b(v2);
-        let v4 = self.composer.gate_mul(constraint);
-
-        let constraint = Constraint::new().mult(1).a(v4).b(*value);
-        *value = self.composer.gate_mul(constraint);
-    }
-
-    /// Adds a constraint for each matrix coefficient multiplication
-    fn mul_matrix(&mut self, round: usize, state: &mut [Witness; WIDTH]) {
+    /// Adds constraints for a dense matrix multiplication.
+    fn mul_matrix(&mut self, state: &mut [Witness; WIDTH]) {
         let mut result = [Composer::ZERO; WIDTH];
 
         // Implementation optimized for WIDTH = 5
-        //
-        // The resulting array `r` will be defined as
-        // r[x] = sum_{j=0..WIDTH} ( MDS[x][j] * state[j] ) + c
-        // with c being the constant for the next round.
-        //
-        // q_l = MDS[x][0]
-        // q_r = MDS[x][1]
-        // q_4 = MDS[x][2]
-        // w_l = state[0]
-        // w_r = state[1]
-        // w_4 = state[2]
-        // r[x] = q_l · w_l + q_r · w_r + q_4 · w_4;
-        //
-        // q_l = MDS[x][3]
-        // q_r = MDS[x][4]
-        // q_4 = 1
-        // w_l = state[3]
-        // w_r = state[4]
-        // w_4 = r[x]
-        // r[x] = q_l · w_l + q_r · w_r + q_4 · w_4 + c;
-        for j in 0..WIDTH {
-            // c is the next round's constant and hence zero for the last round.
-            let c = match round + 1 < ROUNDS {
-                true => ROUND_CONSTANTS[round + 1][j],
-                false => BlsScalar::zero(),
-            };
-
+        for (j, result) in result.iter_mut().enumerate() {
             let constraint = Constraint::new()
-                .left(MDS_MATRIX[j][0])
+                .left(Self::reversed_mds(j, 0))
                 .a(state[0])
-                .right(MDS_MATRIX[j][1])
+                .right(Self::reversed_mds(j, 1))
                 .b(state[1])
-                .fourth(MDS_MATRIX[j][2])
+                .fourth(Self::reversed_mds(j, 2))
                 .d(state[2]);
 
-            result[j] = self.composer.gate_add(constraint);
+            let partial = self.composer.gate_add(constraint);
 
             let constraint = Constraint::new()
-                .left(MDS_MATRIX[j][3])
+                .left(Self::reversed_mds(j, 3))
                 .a(state[3])
-                .right(MDS_MATRIX[j][4])
+                .right(Self::reversed_mds(j, 4))
                 .b(state[4])
                 .fourth(1)
-                .d(result[j])
-                .constant(c);
+                .d(partial);
 
-            result[j] = self.composer.gate_add(constraint);
+            *result = self.composer.gate_add(constraint);
         }
 
         state.copy_from_slice(&result);
+    }
+
+    fn mul_pre_sparse_matrix(&mut self, state: &mut [Witness; WIDTH]) {
+        let mut result = [Composer::ZERO; WIDTH];
+
+        for (j, result) in result.iter_mut().enumerate() {
+            let constraint = Constraint::new()
+                .left(Self::pre_sparse(0, j))
+                .a(state[0])
+                .right(Self::pre_sparse(1, j))
+                .b(state[1])
+                .fourth(Self::pre_sparse(2, j))
+                .d(state[2]);
+
+            let partial = self.composer.gate_add(constraint);
+
+            let constraint = Constraint::new()
+                .left(Self::pre_sparse(3, j))
+                .a(state[3])
+                .right(Self::pre_sparse(4, j))
+                .b(state[4])
+                .fourth(1)
+                .d(partial);
+
+            *result = self.composer.gate_add(constraint);
+        }
+
+        state.copy_from_slice(&result);
+    }
+
+    fn apply_first_full_round(
+        &mut self,
+        constants_offset: &mut usize,
+        state: &mut [Witness; WIDTH],
+    ) {
+        for (i, value) in state.iter_mut().enumerate() {
+            self.quintic_s_box_with_constants(
+                value,
+                OPT_ROUND_CONSTANTS[i],
+                OPT_ROUND_CONSTANTS[WIDTH + i],
+            );
+        }
+        *constants_offset = WIDTH * 2;
+
+        self.mul_matrix(state);
+    }
+
+    fn apply_partial_rounds(
+        &mut self,
+        constants_offset: &mut usize,
+        state: &mut [Witness; WIDTH],
+    ) {
+        let mut expression_state: [LinearExpression; WIDTH] =
+            core::array::from_fn(|i| LinearExpression::witness(state[i]));
+
+        for round in 0..PARTIAL_ROUNDS {
+            let mut sbox_input =
+                self.materialize_expression(&expression_state[0]);
+
+            self.quintic_s_box(
+                &mut sbox_input,
+                OPT_ROUND_CONSTANTS[*constants_offset],
+            );
+            *constants_offset += 1;
+
+            expression_state[0] = LinearExpression::witness(sbox_input);
+            self.apply_sparse_matrix_as_expressions(
+                round,
+                &mut expression_state,
+            );
+
+            if round % 2 == 1 || round == PARTIAL_ROUNDS - 1 {
+                for i in 0..WIDTH {
+                    state[i] =
+                        self.materialize_expression(&expression_state[i]);
+                    expression_state[i] = LinearExpression::witness(state[i]);
+                }
+            }
+        }
     }
 }
 
@@ -172,8 +375,6 @@ mod tests {
         fn circuit(&self, composer: &mut Composer) -> Result<(), Error> {
             let zero = Composer::ZERO;
 
-            let mut perm: [Witness; WIDTH] = [zero; WIDTH];
-
             let mut i_wit: [Witness; WIDTH] = [zero; WIDTH];
             self.i.iter().zip(i_wit.iter_mut()).for_each(|(i, w)| {
                 *w = composer.append_witness(*i);
@@ -186,9 +387,6 @@ mod tests {
 
             // Apply Hades gadget permutation.
             GadgetPermutation::new(composer).permute(&mut i_wit);
-
-            // Copy the result of the permutation into the perm.
-            perm.copy_from_slice(&i_wit);
 
             // Check that the Gadget perm results = BlsScalar perm results
             i_wit.iter().zip(o_wit.iter()).for_each(|(p, o)| {

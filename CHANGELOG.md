@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reduce the Poseidon ZK gadget constraint count while preserving existing hash outputs [#281]
 - Set MSRV to 1.85, Rust edition 2024, and switch to stable toolchain [#274]
 - Update `dusk-plonk` to `0.22.0-rc.0`
 
@@ -527,6 +528,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#281]: https://github.com/dusk-network/Poseidon252/issues/281
 [#274]: https://github.com/dusk-network/poseidon252/issues/274
 [#260]: https://github.com/dusk-network/poseidon252/issues/260
 [#259]: https://github.com/dusk-network/poseidon252/issues/259
