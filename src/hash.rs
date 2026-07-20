@@ -6,7 +6,7 @@
 
 use alloc::vec::Vec;
 
-use dusk_curves::bls12_381::BlsScalar;
+use dusk_bls12_381::BlsScalar;
 use dusk_jubjub::JubJubScalar;
 use dusk_safe::{Call, Sponge};
 

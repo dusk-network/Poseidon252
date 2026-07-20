@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use dusk_curves::bls12_381::BlsScalar;
+use dusk_bls12_381::BlsScalar;
 use dusk_jubjub::{GENERATOR_EXTENDED, JubJubAffine, JubJubScalar};
 use dusk_plonk::prelude::{Error as PlonkError, *};
 use dusk_poseidon::{encrypt, encrypt_gadget};
