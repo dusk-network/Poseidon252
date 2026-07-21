@@ -34,8 +34,6 @@ Run `make help` for the full target list.
 
 - `zk` — PLONK circuit gadgets (gates `dusk-plonk`)
 - `encryption` — encrypt/decrypt module (gates `dusk-safe/encryption`)
-- `bls-backend-dusk` / `bls-backend-blst` — forwarded BLS backend
-  selection for `dusk-curves` and `dusk-plonk`; select exactly one
 
 ## Elevated Care Zones
 
@@ -55,9 +53,7 @@ and on-chain encryption.
 
 - `no_std` with `alloc` — do not add `std` dependencies
 - **Always use `--release` for tests** — the `zk` feature pulls in
-  `dusk-plonk`, which is extremely slow in debug mode. Local test commands
-  use `bls-backend-blst` explicitly; do not use `--all-features` because the
-  BLS backends are mutually exclusive.
+  `dusk-plonk`, which is extremely slow in debug mode
 - No `unwrap()`/`expect()` outside of tests — return errors instead
 - No `#[allow(...)]` lint suppression — fix the underlying issue
 - Run `make fmt` before committing (requires nightly toolchain)

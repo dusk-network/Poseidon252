@@ -7,13 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.43.0] - 2026-06-03
-
 ### Changed
 
 - Set MSRV to 1.85, Rust edition 2024, and switch to stable toolchain [#274]
-- Update `dusk-plonk` to `0.23` and use `dusk-curves` `0.2`
-- Expose selectable `bls-backend-dusk` and `bls-backend-blst` features
+- Update `dusk-plonk` to `0.22.0-rc.0`
 
 ## [0.41.0] - 2025-02-06
 
@@ -574,8 +571,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
 
 <!-- VERSIONS -->
-[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.43.0...HEAD
-[0.43.0]: https://github.com/dusk-network/poseidon252/compare/v0.41.0...v0.43.0
+[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.41.0...HEAD
 [0.41.0]: https://github.com/dusk-network/poseidon252/compare/v0.40.0...v0.41.0
 [0.40.0]: https://github.com/dusk-network/poseidon252/compare/v0.39.0...v0.40.0
 [0.39.0]: https://github.com/dusk-network/poseidon252/compare/v0.38.0...v0.39.0
