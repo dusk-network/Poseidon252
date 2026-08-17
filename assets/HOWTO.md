@@ -113,3 +113,52 @@ fn write_mds() -> std::io::Result<()> {
     Ok(())
 }
 ```
+
+## Derive the optimized schedule
+
+The checked-in `OPT_ROUND_CONSTANTS`, `PRE_SPARSE_MATRIX`, and
+`SPARSE_MATRICES` tables in `src/hades/optimized_constants.rs` are derived from
+`arc.bin` and `mds.bin` by `derive_optimized_constants.py`. The script uses only
+the Python standard library and implements the optimized Poseidon derivation
+described in the [Neptune specification].
+
+The derivation first reverses the source constants and both axes of the MDS
+matrix. This is a basis change that moves the legacy schedule's partial S-box
+from the last state element to the first. It then performs the following two
+transformations over the BLS12-381 scalar field:
+
+- It folds round constants through inverse MDS layers. Full-round vectors are
+  multiplied by the inverse MDS matrix. Across the partial-round block, the
+  constants are accumulated backwards through the inverse layers; the first
+  coordinate is retained for the next partial S-box and the remaining
+  coordinates are folded into the preceding round. This produces 100 optimized
+  constants instead of the original 340.
+- It repeatedly factors the current dense matrix as `M' * M''`, where `M'` has
+  first row and column zero except for `M'[0][0] = 1`, and `M''` contains only
+  its first row, first column, and an identity lower-right block. The next
+  factorization starts from `MDS * M'`. After 60 factorizations, the final dense
+  factor is the pre-sparse matrix and the `M''` factors, in reverse order, are
+  the per-round sparse matrices.
+
+The pre-sparse and sparse tables are stored for right multiplication of a row
+vector: `result[column] += state[row] * matrix[row][column]`. Their access is
+therefore transposed relative to the dense MDS multiplication in the Rust
+permutation. The generator emits the tables in this storage orientation.
+
+From the repository root, verify that the checked-in Rust tables match the
+binary source assets exactly:
+
+```console
+python3 assets/derive_optimized_constants.py --check
+```
+
+To regenerate the Rust module and format it:
+
+```console
+python3 assets/derive_optimized_constants.py \
+    --output src/hades/optimized_constants.rs
+make fmt
+python3 assets/derive_optimized_constants.py --check
+```
+
+[Neptune specification]: https://spec.filecoin.io/algorithms/crypto/poseidon/

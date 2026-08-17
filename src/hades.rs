@@ -18,13 +18,22 @@
 //! - 340 round constants which are generated using [this algorithm](https://extgit.iaik.tugraz.at/krypto/hadesmimc/blob/master/code/calc_round_numbers.py)
 //! - The MDS matrix is a cauchy matrix, the method used to generate it, is
 //!   noted in section "Concrete Instantiations Poseidon and Starkad"
+//!
+//! The implementation uses an optimized schedule derived from these constants:
+//! round constants are folded into the following S-Box where possible, and the
+//! partial rounds use precomputed sparse MDS matrices. This preserves the
+//! original Hades252 permutation output.
 
 mod mds_matrix;
+mod optimized_constants;
 mod permutation;
+#[cfg(test)]
 mod round_constants;
 
 use mds_matrix::MDS_MATRIX;
-use round_constants::ROUND_CONSTANTS;
+use optimized_constants::{
+    OPT_ROUND_CONSTANTS, PRE_SPARSE_MATRIX, SPARSE_MATRICES,
+};
 
 const FULL_ROUNDS: usize = 8;
 

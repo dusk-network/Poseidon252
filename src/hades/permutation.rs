@@ -13,7 +13,12 @@
 //! scalar Field of the bls12_381 curve so over a modulus
 //! `p = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001`.
 
-use crate::hades::{FULL_ROUNDS, PARTIAL_ROUNDS, WIDTH};
+use dusk_bls12_381::BlsScalar;
+
+use crate::hades::{
+    FULL_ROUNDS, MDS_MATRIX, OPT_ROUND_CONSTANTS, PARTIAL_ROUNDS,
+    PRE_SPARSE_MATRIX, SPARSE_MATRICES, WIDTH,
+};
 
 /// Hades permutation struct operating in a plonk-circuit.
 #[cfg(feature = "zk")]
@@ -32,93 +37,116 @@ pub(crate) mod scalar;
 /// This structure allows to minimize the number of non-linear ops while
 /// maintaining the security.
 pub(crate) trait Hades<T> {
-    /// Add round constants to the state.
+    /// Computes `input ^ 5 + post_constant (mod p)`.
     ///
-    /// This constants addition, also known as `ARC`, is used to reach
-    /// `Confusion and Diffusion` properties for the algorithm.
-    ///
-    /// Basically it allows to destroy any connection between the inputs and the
-    /// outputs of the function.
-    fn add_round_constants(&mut self, round: usize, state: &mut [T; WIDTH]);
-
-    /// Computes `input ^ 5 (mod p)`
-    ///
-    /// The modulo depends on the input you use. In our case the modulo is done
-    /// in respect of the scalar field of the bls12_381 curve
+    /// `post_constant` is the compressed constant for the following round. The
+    /// modulo is taken with respect to the scalar field of the bls12_381 curve
     /// `p = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001`.
-    fn quintic_s_box(&mut self, value: &mut T);
+    fn quintic_s_box(&mut self, value: &mut T, post_constant: BlsScalar);
 
-    /// Multiply the MDS matrix with the state.
-    fn mul_matrix(&mut self, round: usize, state: &mut [T; WIDTH]);
+    /// Multiply the reversed MDS matrix with the state.
+    fn mul_matrix(&mut self, state: &mut [T; WIDTH]);
 
-    /// Applies a `Partial Round` also known as a `Partial S-Box layer` to a set
-    /// of inputs.
-    ///
-    /// One partial round consists of 3 steps:
-    /// - ARC: Add round constants to the elements of the state.
-    /// - Sub Words: Apply `quintic S-Box` just to **the last element of the
-    ///   state** generated from the first step.
-    /// - Mix Layer: Multiplies the output state from the second step by the
-    ///   `MDS_MATRIX`.
-    fn apply_partial_round(&mut self, round: usize, state: &mut [T; WIDTH]) {
-        // Add round constants to each state element
-        self.add_round_constants(round, state);
+    /// Multiply the pre-sparse matrix with the state.
+    fn mul_pre_sparse_matrix(&mut self, state: &mut [T; WIDTH]);
 
-        // Then apply quintic s-box to the last element of the state
-        self.quintic_s_box(&mut state[WIDTH - 1]);
+    /// Applies the first optimized full round.
+    fn apply_first_full_round(
+        &mut self,
+        constants_offset: &mut usize,
+        state: &mut [T; WIDTH],
+    );
 
-        // Multiply this result by the MDS matrix
-        self.mul_matrix(round, state);
+    /// Applies all optimized partial rounds.
+    fn apply_partial_rounds(
+        &mut self,
+        constants_offset: &mut usize,
+        state: &mut [T; WIDTH],
+    );
+
+    /// Applies one optimized full round.
+    fn apply_full_round(
+        &mut self,
+        round: usize,
+        constants_offset: &mut usize,
+        state: &mut [T; WIDTH],
+        last_round: bool,
+    ) {
+        for (i, value) in state.iter_mut().enumerate() {
+            let post_constant = match last_round {
+                true => BlsScalar::zero(),
+                false => OPT_ROUND_CONSTANTS[*constants_offset + i],
+            };
+            self.quintic_s_box(value, post_constant);
+        }
+
+        if !last_round {
+            *constants_offset += WIDTH;
+        }
+
+        if round == FULL_ROUNDS / 2 - 1 {
+            self.mul_pre_sparse_matrix(state);
+        } else {
+            self.mul_matrix(state);
+        }
     }
 
-    /// Applies a `Full Round` also known as a `Full S-Box layer` to a set of
-    /// inputs.
-    ///
-    /// One full round consists of 3 steps:
-    /// - ARC: Add round constants to the elements of the state.
-    /// - Sub Words: Apply `quintic S-Box` to **all of the state-elements**
-    ///   generated from the first step.
-    /// - Mix Layer: Multiplies the output state from the second step by the
-    ///   `MDS_MATRIX`.
-    fn apply_full_round(&mut self, round: usize, state: &mut [T; WIDTH]) {
-        // Add round constants to each state element
-        self.add_round_constants(round, state);
-
-        // Then apply quintic s-box to each element of the state
-        state.iter_mut().for_each(|w| self.quintic_s_box(w));
-
-        // Multiply this result by the MDS matrix
-        self.mul_matrix(round, state);
-    }
-
-    /// Applies one Hades permutation.
-    ///
-    /// This permutation is a 3-step process that:
-    /// - Applies half of the `FULL_ROUNDS` (which can be understood as linear
-    ///   ops).
-    /// - Applies the `PARTIAL_ROUNDS` (which can be understood as non-linear
-    ///   ops).
-    /// - Applies the other half of the `FULL_ROUNDS`.
-    ///
-    /// This structure allows to minimize the number of non-linear ops while
-    /// maintaining the security.
+    /// Applies one Hades permutation using the optimized Poseidon schedule.
     fn perm(&mut self, state: &mut [T; WIDTH]) {
-        // Apply R_f full rounds
-        for round in 0..FULL_ROUNDS / 2 {
-            self.apply_full_round(round, state);
+        state.reverse();
+
+        let mut constants_offset = 0;
+        self.apply_first_full_round(&mut constants_offset, state);
+
+        for round in 1..FULL_ROUNDS / 2 {
+            self.apply_full_round(round, &mut constants_offset, state, false);
         }
 
-        // Apply R_P partial rounds
-        for round in 0..PARTIAL_ROUNDS {
-            self.apply_partial_round(round + FULL_ROUNDS / 2, state);
+        self.apply_partial_rounds(&mut constants_offset, state);
+
+        for round in
+            FULL_ROUNDS / 2 + PARTIAL_ROUNDS..FULL_ROUNDS + PARTIAL_ROUNDS - 1
+        {
+            self.apply_full_round(round, &mut constants_offset, state, false);
         }
 
-        // Apply R_f full rounds
-        for round in 0..FULL_ROUNDS / 2 {
-            self.apply_full_round(
-                round + FULL_ROUNDS / 2 + PARTIAL_ROUNDS,
-                state,
-            );
+        self.apply_full_round(
+            FULL_ROUNDS + PARTIAL_ROUNDS - 1,
+            &mut constants_offset,
+            state,
+            true,
+        );
+
+        debug_assert_eq!(constants_offset, OPT_ROUND_CONSTANTS.len());
+
+        state.reverse();
+    }
+
+    /// Coefficient of the reversed MDS matrix.
+    fn reversed_mds(row: usize, column: usize) -> BlsScalar {
+        MDS_MATRIX[WIDTH - 1 - row][WIDTH - 1 - column]
+    }
+
+    /// Coefficient of the pre-sparse matrix.
+    ///
+    /// The optimized tables are stored for right multiplication of a row
+    /// vector: `result[column] += state[row] * matrix[row][column]`. This is
+    /// transposed relative to the dense matrix accessor above.
+    fn pre_sparse(row: usize, column: usize) -> BlsScalar {
+        PRE_SPARSE_MATRIX[row][column]
+    }
+
+    /// Coefficient of a sparse matrix.
+    ///
+    /// Like [`Hades::pre_sparse`], the sparse coefficients are stored for
+    /// right multiplication of a row vector and are therefore transposed
+    /// relative to [`Hades::reversed_mds`].
+    fn sparse(round: usize, row: usize, column: usize) -> BlsScalar {
+        match column {
+            0 => SPARSE_MATRICES[round][row],
+            _ if row == 0 => SPARSE_MATRICES[round][WIDTH + column - 1],
+            _ if row == column => BlsScalar::one(),
+            _ => BlsScalar::zero(),
         }
     }
 }
