@@ -45,6 +45,44 @@ fn encrypt_decrypt() -> Result<(), Error> {
 }
 
 #[test]
+fn non_prime_order_shared_secrets_fail() {
+    let message = [BlsScalar::from(42)];
+    let cipher = [BlsScalar::from(1), BlsScalar::from(2)];
+    let nonce = BlsScalar::from(3);
+    let identity = JubJubAffine::identity();
+    let low_order =
+        JubJubAffine::from_raw_unchecked(BlsScalar::zero(), -BlsScalar::one());
+    let off_curve =
+        JubJubAffine::from_raw_unchecked(BlsScalar::zero(), BlsScalar::zero());
+    let mixed_order = JubJubAffine::from(GENERATOR_EXTENDED + low_order);
+
+    assert!(bool::from(identity.is_on_curve()));
+    assert!(bool::from(identity.is_torsion_free()));
+    assert!(bool::from(identity.is_identity()));
+    assert!(bool::from(low_order.is_on_curve()));
+    assert!(!bool::from(low_order.is_torsion_free()));
+    assert!(!bool::from(low_order.is_identity()));
+    assert!(!bool::from(off_curve.is_on_curve()));
+    assert!(bool::from(mixed_order.is_on_curve()));
+    assert!(!bool::from(mixed_order.is_torsion_free()));
+    assert!(!bool::from(mixed_order.is_identity()));
+    assert!(!bool::from(mixed_order.is_small_order()));
+
+    let invalid_secrets = [identity, low_order, off_curve, mixed_order];
+
+    for shared_secret in invalid_secrets {
+        assert_eq!(
+            encrypt(message, &shared_secret, &nonce).unwrap_err(),
+            Error::InvalidPoint
+        );
+        assert_eq!(
+            decrypt(cipher, &shared_secret, &nonce).unwrap_err(),
+            Error::InvalidPoint
+        );
+    }
+}
+
+#[test]
 fn incorrect_shared_secret_fails() -> Result<(), Error> {
     let mut rng = StdRng::seed_from_u64(0x42424242);
     let message_len = 21usize;

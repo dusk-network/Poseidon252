@@ -14,7 +14,9 @@ use crate::{Domain, Error};
 /// This function encrypts a given message with a shared secret point on the
 /// jubjub-curve and a bls-scalar nonce using the poseidon hash function.
 ///
-/// The shared secret is expected to be a valid point on the jubjub-curve.
+/// The caller must constrain the shared secret to a non-identity point in the
+/// prime-order subgroup of the jubjub curve. This gadget only consumes its
+/// coordinate witnesses.
 ///
 /// The cipher-text will always yield exactly one element more than the message.
 pub fn encrypt_gadget(
@@ -36,7 +38,9 @@ pub fn encrypt_gadget(
 /// secret point on the jubjub-curve and a bls-scalar nonce using the poseidon
 /// hash function.
 ///
-/// The shared secret is expected to be a valid point on the jubjub-curve.
+/// The caller must constrain the shared secret to a non-identity point in the
+/// prime-order subgroup of the jubjub curve. This gadget only consumes its
+/// coordinate witnesses.
 ///
 /// The cipher-text will always yield exactly one element more than the message.
 pub fn decrypt_gadget(

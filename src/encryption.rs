@@ -56,7 +56,16 @@ use crate::{Domain, Error};
 /// This function encrypts a given message with a shared secret point on the
 /// jubjub-curve and a bls-scalar nonce using the poseidon hash function.
 ///
-/// The shared secret is expected to be a valid point on the jubjub-curve.
+/// The shared secret must be a non-identity point in the prime-order subgroup
+/// of the jubjub curve.
+/// Invalid shared secrets return [`Error::InvalidPoint`]. This validation costs
+/// one jubjub scalar multiplication per call.
+///
+/// This check does not make DHKE with an unchecked peer point safe. Callers
+/// must validate untrusted peer public points as on-curve, non-identity, and
+/// prime-order before scalar multiplication. Protocol-facing code should not
+/// expose [`Error::InvalidPoint`] separately from authentication or decryption
+/// failures.
 ///
 /// The cipher-text will always yield exactly one element more than the message.
 pub fn encrypt(
@@ -64,6 +73,8 @@ pub fn encrypt(
     shared_secret: &JubJubAffine,
     nonce: &BlsScalar,
 ) -> Result<Vec<BlsScalar>, Error> {
+    validate_shared_secret(shared_secret)?;
+
     Ok(dusk_safe::encrypt(
         ScalarPermutation::new(),
         Domain::Encryption,
@@ -77,7 +88,16 @@ pub fn encrypt(
 /// secret point on the jubjub-curve and a bls-scalar nonce using the poseidon
 /// hash function.
 ///
-/// The shared secret is expected to be a valid point on the jubjub-curve.
+/// The shared secret must be a non-identity point in the prime-order subgroup
+/// of the jubjub curve.
+/// Invalid shared secrets return [`Error::InvalidPoint`]. This validation costs
+/// one jubjub scalar multiplication per call.
+///
+/// This check does not make DHKE with an unchecked peer point safe. Callers
+/// must validate untrusted peer public points as on-curve, non-identity, and
+/// prime-order before scalar multiplication. Protocol-facing code should not
+/// expose [`Error::InvalidPoint`] separately from authentication or decryption
+/// failures.
 ///
 /// The cipher-text will always yield exactly one element more than the message.
 pub fn decrypt(
@@ -85,6 +105,8 @@ pub fn decrypt(
     shared_secret: &JubJubAffine,
     nonce: &BlsScalar,
 ) -> Result<Vec<BlsScalar>, Error> {
+    validate_shared_secret(shared_secret)?;
+
     Ok(dusk_safe::decrypt(
         ScalarPermutation::new(),
         Domain::Encryption,
@@ -92,4 +114,16 @@ pub fn decrypt(
         &[shared_secret.get_u(), shared_secret.get_v()],
         nonce,
     )?)
+}
+
+fn validate_shared_secret(shared_secret: &JubJubAffine) -> Result<(), Error> {
+    if !bool::from(shared_secret.is_on_curve()) {
+        return Err(Error::InvalidPoint);
+    }
+
+    if !bool::from(shared_secret.is_prime_order()) {
+        return Err(Error::InvalidPoint);
+    }
+
+    Ok(())
 }
