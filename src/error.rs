@@ -27,7 +27,7 @@ pub enum Error {
     /// and nonce.
     DecryptionFailed,
 
-    /// Invalid point on the jubjub-curve
+    /// Invalid shared-secret point on the jubjub curve.
     InvalidPoint,
 }
 
