@@ -6,14 +6,15 @@
 
 #![cfg(feature = "zk")]
 
+use std::sync::LazyLock;
+
 use dusk_plonk::prelude::{Error as PlonkError, *};
 use dusk_poseidon::{Domain, Hash, HashGadget};
 use ff::Field;
-use once_cell::sync::Lazy;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
-static PUB_PARAMS: Lazy<PublicParameters> = Lazy::new(|| {
+static PUB_PARAMS: LazyLock<PublicParameters> = LazyLock::new(|| {
     let mut rng = StdRng::seed_from_u64(0xbeef);
 
     const CAPACITY: usize = 12;

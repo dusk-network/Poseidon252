@@ -7,16 +7,17 @@
 #![cfg(feature = "encryption")]
 #![cfg(feature = "zk")]
 
+use std::sync::LazyLock;
+
 use dusk_bls12_381::BlsScalar;
 use dusk_jubjub::{GENERATOR_EXTENDED, JubJubAffine, JubJubScalar};
 use dusk_plonk::prelude::{Error as PlonkError, *};
 use dusk_poseidon::{decrypt_gadget, encrypt, encrypt_gadget};
 use ff::Field;
-use once_cell::sync::Lazy;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
-static PUB_PARAMS: Lazy<PublicParameters> = Lazy::new(|| {
+static PUB_PARAMS: LazyLock<PublicParameters> = LazyLock::new(|| {
     let mut rng = StdRng::seed_from_u64(0xfab);
 
     const CAPACITY: usize = 13;
