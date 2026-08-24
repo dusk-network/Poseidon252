@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Raise the MSRV to Rust 1.96.1 [#287]
 - Reject invalid shared secrets in encryption and decryption [#284]
 - Reduce the Poseidon ZK gadget constraint count while preserving existing hash outputs [#281]
 - Set MSRV to 1.85, Rust edition 2024, and switch to stable toolchain [#274]
@@ -529,6 +530,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#287]: https://github.com/dusk-network/Poseidon252/issues/287
 [#284]: https://github.com/dusk-network/Poseidon252/issues/284
 [#281]: https://github.com/dusk-network/Poseidon252/issues/281
 [#274]: https://github.com/dusk-network/poseidon252/issues/274
