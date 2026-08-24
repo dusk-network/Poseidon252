@@ -4,19 +4,20 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use std::sync::LazyLock;
+
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use dusk_bls12_381::BlsScalar;
 use dusk_jubjub::{GENERATOR_EXTENDED, JubJubAffine, JubJubScalar};
 use dusk_plonk::prelude::{Error as PlonkError, *};
 use dusk_poseidon::{decrypt, decrypt_gadget, encrypt};
 use ff::Field;
-use once_cell::sync::Lazy;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
 const MESSAGE_LEN: usize = 2;
 
-static PUB_PARAMS: Lazy<PublicParameters> = Lazy::new(|| {
+static PUB_PARAMS: LazyLock<PublicParameters> = LazyLock::new(|| {
     let mut rng = StdRng::seed_from_u64(0xfab);
 
     const CAPACITY: usize = 11;
