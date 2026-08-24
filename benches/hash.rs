@@ -4,7 +4,9 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use std::hint::black_box;
+
+use criterion::{Criterion, criterion_group, criterion_main};
 use dusk_plonk::prelude::*;
 use dusk_poseidon::{Domain, HADES_WIDTH, Hash, HashGadget};
 use ff::Field;
