@@ -50,13 +50,3 @@ codegen-units = 1
 name = "hash"
 harness = false
 required-features = ["zk"]
-
-[[bench]]
-name = "encrypt"
-harness = false
-required-features = ["zk", "encryption"]
-
-[[bench]]
-name = "decrypt"
-harness = false
-required-features = ["zk", "encryption"]
