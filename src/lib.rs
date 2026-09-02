@@ -5,6 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #![no_std]
+#![forbid(unsafe_code)]
 #![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
 
