@@ -3,8 +3,7 @@
 ## Care Level: Cryptographic — Elevated
 
 Core hash function used across the Dusk stack (nullifiers, Merkle trees,
-encryption). A bug here affects consensus and privacy. See the root
-`CLAUDE.md` at `~/dusk/CLAUDE.md` for cross-repo propagation rules.
+encryption). A bug here affects consensus and privacy.
 
 ## Overview
 

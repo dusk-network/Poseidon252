@@ -47,9 +47,14 @@ impl<'a> HashGadget<'a> {
     /// Finalize the hash.
     ///
     /// # Panics
-    /// This function panics when the io-pattern can not be created with the
-    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
-    /// anything other than 4 Scalar.
+    /// This function panics when:
+    /// - no input was given, i.e. [`HashGadget::update`] was never called,
+    /// - a chunk passed to [`HashGadget::update`] is empty,
+    /// - a chunk passed to [`HashGadget::update`] has more than 2^31 - 1
+    ///   elements,
+    /// - [`HashGadget::output_len`] sets an output length above 2^31 - 1,
+    /// - [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with a total input
+    ///   length other than 2 or 4 respectively.
     pub fn finalize(&self, composer: &mut Composer) -> Vec<Witness> {
         // Generate the hash using the sponge framework:
         // initialize the sponge
@@ -82,9 +87,14 @@ impl<'a> HashGadget<'a> {
     /// Finalize the hash and output JubJubScalar.
     ///
     /// # Panics
-    /// This function panics when the io-pattern can not be created with the
-    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
-    /// anything other than 4 Scalar.
+    /// This function panics when:
+    /// - no input was given, i.e. [`HashGadget::update`] was never called,
+    /// - a chunk passed to [`HashGadget::update`] is empty,
+    /// - a chunk passed to [`HashGadget::update`] has more than 2^31 - 1
+    ///   elements,
+    /// - [`HashGadget::output_len`] sets an output length above 2^31 - 1,
+    /// - [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with a total input
+    ///   length other than 2 or 4 respectively.
     pub fn finalize_truncated(&self, composer: &mut Composer) -> Vec<Witness> {
         // finalize the hash as bls-scalar witnesses
         let bls_output = self.finalize(composer);
@@ -99,9 +109,11 @@ impl<'a> HashGadget<'a> {
     /// Digest an input and calculate the hash immediately
     ///
     /// # Panics
-    /// This function panics when the io-pattern can not be created with the
-    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
-    /// anything other than 4 Scalar.
+    /// This function panics when:
+    /// - the input is empty,
+    /// - the input has more than 2^31 - 1 elements,
+    /// - [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with an input
+    ///   length other than 2 or 4 respectively.
     pub fn digest(
         composer: &mut Composer,
         domain: Domain,
@@ -115,9 +127,11 @@ impl<'a> HashGadget<'a> {
     /// Digest an input and calculate the hash as jubjub-scalar immediately
     ///
     /// # Panics
-    /// This function panics when the io-pattern can not be created with the
-    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
-    /// anything other than 4 Scalar.
+    /// This function panics when:
+    /// - the input is empty,
+    /// - the input has more than 2^31 - 1 elements,
+    /// - [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with an input
+    ///   length other than 2 or 4 respectively.
     pub fn digest_truncated(
         composer: &mut Composer,
         domain: Domain,

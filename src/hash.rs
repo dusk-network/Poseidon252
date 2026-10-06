@@ -55,10 +55,13 @@ impl From<Domain> for u64 {
     }
 }
 
-// This function, which is called during the finalization step of the hash, will
-// always produce a valid io-pattern based on the input.
+// This function, which is called during the finalization step of the hash,
+// builds the io-pattern from the input.
 // The function will return an error if a merkle domain is selected but the
 // given input elements don't add up to the specified arity.
+// The returned io-pattern is not validated: no input, an empty input chunk, or
+// an input chunk or output length above 2^31 - 1 yields a pattern that
+// `Sponge::start` rejects.
 fn io_pattern<T>(
     domain: Domain,
     input: &[&[T]],
@@ -122,46 +125,79 @@ impl<'a> Hash<'a> {
     /// Finalize the hash.
     ///
     /// # Panics
-    /// This function panics when the io-pattern can not be created with the
-    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
-    /// anything other than 4 Scalar.
+    /// This function panics when:
+    /// - no input was given, i.e. [`Hash::update`] was never called,
+    /// - a chunk passed to [`Hash::update`] is empty,
+    /// - a chunk passed to [`Hash::update`] has more than 2^31 - 1 elements,
+    /// - the output length set with [`Hash::output_len`] is above 2^31 - 1,
+    /// - [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with a total input
+    ///   length other than 2 or 4 respectively.
+    ///
+    /// Use [`Hash::try_finalize`] to get an error instead.
     pub fn finalize(&self) -> Vec<BlsScalar> {
+        self.try_finalize()
+            .expect("the hash input should match the io-pattern rules")
+    }
+
+    /// Finalize the hash and return an error instead of a panic on invalid
+    /// input.
+    ///
+    /// # Errors
+    /// This function returns [`Error::IOPatternViolation`] when
+    /// [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with a total input
+    /// length other than 2 or 4 respectively, including no input at all.
+    ///
+    /// Otherwise, it returns [`Error::InvalidIOPattern`] when:
+    /// - no input was given, i.e. [`Hash::update`] was never called,
+    /// - a chunk passed to [`Hash::update`] is empty,
+    /// - a chunk passed to [`Hash::update`] has more than 2^31 - 1 elements,
+    /// - the output length set with [`Hash::output_len`] is above 2^31 - 1.
+    pub fn try_finalize(&self) -> Result<Vec<BlsScalar>, Error> {
         // Generate the hash using the sponge framework:
         // initialize the sponge
         let mut sponge = Sponge::start(
             ScalarPermutation::new(),
-            io_pattern(self.domain, &self.input, self.output_len)
-                .expect("io-pattern should be valid"),
+            io_pattern(self.domain, &self.input, self.output_len)?,
             self.domain.into(),
-        )
-        .expect("at this point the io-pattern is valid");
+        )?;
 
         // absorb the input
         for input in self.input.iter() {
-            sponge
-                .absorb(input.len(), input)
-                .expect("at this point the io-pattern is valid");
+            sponge.absorb(input.len(), input)?;
         }
 
         // squeeze output_len elements
-        sponge
-            .squeeze(self.output_len)
-            .expect("at this point the io-pattern is valid");
+        sponge.squeeze(self.output_len)?;
 
         // return the result
-        sponge
-            .finish()
-            .expect("at this point the io-pattern is valid")
+        Ok(sponge.finish()?)
     }
 
     /// Finalize the hash and output the result as a `JubJubScalar` by
     /// truncating the `BlsScalar` output to 250 bits.
     ///
     /// # Panics
-    /// This function panics when the io-pattern can not be created with the
-    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
-    /// anything other than 4 Scalar.
+    /// This function panics when:
+    /// - no input was given, i.e. [`Hash::update`] was never called,
+    /// - a chunk passed to [`Hash::update`] is empty,
+    /// - a chunk passed to [`Hash::update`] has more than 2^31 - 1 elements,
+    /// - the output length set with [`Hash::output_len`] is above 2^31 - 1,
+    /// - [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with a total input
+    ///   length other than 2 or 4 respectively.
+    ///
+    /// Use [`Hash::try_finalize_truncated`] to get an error instead.
     pub fn finalize_truncated(&self) -> Vec<JubJubScalar> {
+        self.try_finalize_truncated()
+            .expect("the hash input should match the io-pattern rules")
+    }
+
+    /// Finalize the hash and output the result as a `JubJubScalar` by
+    /// truncating the `BlsScalar` output to 250 bits. Return an error instead
+    /// of a panic on invalid input.
+    ///
+    /// # Errors
+    /// This function returns the same errors as [`Hash::try_finalize`].
+    pub fn try_finalize_truncated(&self) -> Result<Vec<JubJubScalar>, Error> {
         // bit-mask to 'cast' a bls-scalar result to a jubjub-scalar by
         // truncating the 6 highest bits
         const TRUNCATION_MASK: BlsScalar = BlsScalar::from_raw([
@@ -172,40 +208,80 @@ impl<'a> Hash<'a> {
         ]);
 
         // finalize the hash as bls-scalar
-        let bls_output = self.finalize();
+        let bls_output = self.try_finalize()?;
 
-        bls_output
+        Ok(bls_output
             .iter()
             .map(|bls| {
                 JubJubScalar::from_raw((bls & &TRUNCATION_MASK).reduce().0)
             })
-            .collect()
+            .collect())
     }
 
     /// Digest an input and calculate the hash immediately
     ///
     /// # Panics
-    /// This function panics when the io-pattern can not be created with the
-    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
-    /// anything other than 4 Scalar.
+    /// This function panics when:
+    /// - the input is empty,
+    /// - the input has more than 2^31 - 1 elements,
+    /// - [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with an input
+    ///   length other than 2 or 4 respectively.
+    ///
+    /// Use [`Hash::try_digest`] to get an error instead.
     pub fn digest(domain: Domain, input: &'a [BlsScalar]) -> Vec<BlsScalar> {
+        Self::try_digest(domain, input)
+            .expect("the hash input should match the io-pattern rules")
+    }
+
+    /// Digest an input and calculate the hash immediately. Return an error
+    /// instead of a panic on invalid input.
+    ///
+    /// # Errors
+    /// This function returns [`Error::IOPatternViolation`] when
+    /// [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with an input length
+    /// other than 2 or 4 respectively, including an empty input.
+    ///
+    /// Otherwise, it returns [`Error::InvalidIOPattern`] when:
+    /// - the input is empty,
+    /// - the input has more than 2^31 - 1 elements.
+    pub fn try_digest(
+        domain: Domain,
+        input: &'a [BlsScalar],
+    ) -> Result<Vec<BlsScalar>, Error> {
         let mut hash = Self::new(domain);
         hash.update(input);
-        hash.finalize()
+        hash.try_finalize()
     }
 
     /// Digest an input and calculate the hash as jubjub-scalar immediately
     ///
     /// # Panics
-    /// This function panics when the io-pattern can not be created with the
-    /// given domain and input, e.g. using [`Domain::Merkle4`] with an input
-    /// anything other than 4 Scalar.
+    /// This function panics when:
+    /// - the input is empty,
+    /// - the input has more than 2^31 - 1 elements,
+    /// - [`Domain::Merkle2`] or [`Domain::Merkle4`] is used with an input
+    ///   length other than 2 or 4 respectively.
+    ///
+    /// Use [`Hash::try_digest_truncated`] to get an error instead.
     pub fn digest_truncated(
         domain: Domain,
         input: &'a [BlsScalar],
     ) -> Vec<JubJubScalar> {
+        Self::try_digest_truncated(domain, input)
+            .expect("the hash input should match the io-pattern rules")
+    }
+
+    /// Digest an input and calculate the hash as jubjub-scalar immediately.
+    /// Return an error instead of a panic on invalid input.
+    ///
+    /// # Errors
+    /// This function returns the same errors as [`Hash::try_digest`].
+    pub fn try_digest_truncated(
+        domain: Domain,
+        input: &'a [BlsScalar],
+    ) -> Result<Vec<JubJubScalar>, Error> {
         let mut hash = Self::new(domain);
         hash.update(input);
-        hash.finalize_truncated()
+        hash.try_finalize_truncated()
     }
 }
