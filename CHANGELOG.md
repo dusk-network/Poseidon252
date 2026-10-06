@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `Hash::try_finalize`, `Hash::try_finalize_truncated`, `Hash::try_digest` and `Hash::try_digest_truncated`, which return an `Error` instead of a panic [#300]
+
 ### Changed
 
 - Consolidate Criterion benchmarks into one target [#291]
@@ -532,6 +536,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#300]: https://github.com/dusk-network/Poseidon252/issues/300
 [#291]: https://github.com/dusk-network/Poseidon252/issues/291
 [#289]: https://github.com/dusk-network/Poseidon252/issues/289
 [#287]: https://github.com/dusk-network/Poseidon252/issues/287
