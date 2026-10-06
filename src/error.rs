@@ -9,7 +9,7 @@ use dusk_safe::Error as SafeError;
 /// Defines all possible error variants for SAFE
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Error {
-    /// A call to during the lifetime of the [`safe::Sponge`] that doesn't fit
+    /// A call during the lifetime of the [`dusk_safe::Sponge`] that doesn't fit
     /// the io-pattern.
     IOPatternViolation,
 
