@@ -213,7 +213,9 @@ impl<'a> Hash<'a> {
         Ok(bls_output
             .iter()
             .map(|bls| {
-                JubJubScalar::from_raw((bls & &TRUNCATION_MASK).reduce().0)
+                JubJubScalar::from_raw(
+                    *(bls & &TRUNCATION_MASK).reduce().internal_repr(),
+                )
             })
             .collect())
     }

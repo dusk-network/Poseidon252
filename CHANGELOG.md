@@ -17,7 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reject invalid shared secrets in encryption and decryption [#284]
 - Reduce the Poseidon ZK gadget constraint count while preserving existing hash outputs [#281]
 - Set MSRV to 1.85, Rust edition 2024, and switch to stable toolchain [#274]
-- Update `dusk-plonk` to `0.22.0-rc.0`
+- Update `dusk-plonk` to `0.24` [#303]
+- Update `dusk-safe` to `0.4` [#303]
+- Update `dusk-bls12_381` to `0.16` [#303]
+- Update `dusk-jubjub` to `0.16` [#303]
+
+### Fixed
+
+- Bind the output of `HashGadget::finalize_truncated` and `HashGadget::digest_truncated` to the hash [#303]
 
 ## [0.41.0] - 2025-02-06
 
@@ -534,6 +541,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#303]: https://github.com/dusk-network/Poseidon252/issues/303
 [#300]: https://github.com/dusk-network/Poseidon252/issues/300
 [#287]: https://github.com/dusk-network/Poseidon252/issues/287
 [#284]: https://github.com/dusk-network/Poseidon252/issues/284

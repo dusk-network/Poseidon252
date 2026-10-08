@@ -29,13 +29,15 @@
 //! // Alice encrypts a message of 3 BlsScalar using Diffie-Hellman key exchange
 //! // with Bob's public key
 //! let message = vec![BlsScalar::from(10), BlsScalar::from(20), BlsScalar::from(30)];
-//! let shared_secret = dhke(&alice_secret, &bob_public);
+//! let shared_secret = dhke(&alice_secret, &bob_public)
+//!     .expect("Bob's public key should be valid");
 //! let cipher = encrypt(&message, &shared_secret, &nonce)
 //!     .expect("Encryption should pass");
 //!
 //! // Bob decrypts the cipher using Diffie-Hellman key exchange with Alice's
 //! // public key
-//! let shared_secret = dhke(&bob_secret, &alice_public);
+//! let shared_secret = dhke(&bob_secret, &alice_public)
+//!     .expect("Alice's public key should be valid");
 //! let decrypted_message = decrypt(&cipher, &shared_secret, &nonce)
 //!     .expect("Decryption should pass");
 //!
