@@ -28,7 +28,7 @@ fn compile_and_verify<C>(
     pi: &Vec<BlsScalar>,
 ) -> Result<(), PlonkError>
 where
-    C: Circuit,
+    C: Circuit + Default,
 {
     let label = b"hash-gadget-tester";
     let (prover, verifier) = Compiler::compile::<C>(&PUB_PARAMS, label)?;
@@ -307,4 +307,32 @@ fn test_multiple_output() -> Result<(), Error> {
     // test for input of 15 scalar
     let circuit = MultipleOutputCircuit::<4, 7>::random(&mut rng);
     compile_and_verify(&mut rng, &circuit, &circuit.public_inputs())
+}
+
+/// Pins the gate counts of the hash gadgets for four inputs. A changed count
+/// changes the verifier key of every circuit that uses the gadget, so update
+/// these values only for an intended layout change.
+#[test]
+fn hash_gadget_constraint_counts() {
+    let count = |truncated: bool| {
+        let mut composer = Composer::initialized();
+        let input: Vec<Witness> = (0..4u64)
+            .map(|i| composer.append_witness(BlsScalar::from(i)))
+            .collect();
+
+        let gates = composer.constraints();
+        if truncated {
+            let _ = HashGadget::digest_truncated(
+                &mut composer,
+                Domain::Other,
+                &input,
+            );
+        } else {
+            let _ = HashGadget::digest(&mut composer, Domain::Other, &input);
+        }
+        composer.constraints() - gates
+    };
+
+    assert_eq!(count(false), 655);
+    assert_eq!(count(true), 743);
 }

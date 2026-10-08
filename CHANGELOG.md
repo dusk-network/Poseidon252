@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-10-08
+
 ### Added
 
 - Add `Hash::try_finalize`, `Hash::try_finalize_truncated`, `Hash::try_digest` and `Hash::try_digest_truncated`, which return an `Error` instead of a panic [#300]
@@ -16,8 +18,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Raise the MSRV to Rust 1.96.1 [#287]
 - Reject invalid shared secrets in encryption and decryption [#284]
 - Reduce the Poseidon ZK gadget constraint count while preserving existing hash outputs [#281]
+- Set Rust edition 2024 and switch to the stable toolchain [#274]
+- Update `dusk-plonk` to `0.24` [#303]
+- Update `dusk-safe` to `0.4` [#303]
+- Update `dusk-bls12_381` to `0.16` [#303]
+- Update `dusk-jubjub` to `0.16` [#303]
+- Truncate in `HashGadget::finalize_truncated` and `HashGadget::digest_truncated` with fewer gates and the same outputs [#304]
+
+### Fixed
+
+- Bind the output of `HashGadget::finalize_truncated` and `HashGadget::digest_truncated` to the hash [#303]
+
+## [0.43.0] - 2026-06-03 [yanked]
+
+Republishes 0.42.0 under a new version number. Replaced by 0.44.0.
+
+## [0.42.0] - 2026-06-02 [yanked]
+
+Replaced by 0.44.0.
+
+### Changed
+
 - Set MSRV to 1.85, Rust edition 2024, and switch to stable toolchain [#274]
-- Update `dusk-plonk` to `0.22.0-rc.0`
+- Update `dusk-plonk` to `0.23` and use `dusk-curves` `0.2`
+- Expose selectable `bls-backend-dusk` and `bls-backend-blst` features
 
 ## [0.41.0] - 2025-02-06
 
@@ -534,6 +558,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#304]: https://github.com/dusk-network/Poseidon252/issues/304
+[#303]: https://github.com/dusk-network/Poseidon252/issues/303
 [#300]: https://github.com/dusk-network/Poseidon252/issues/300
 [#287]: https://github.com/dusk-network/Poseidon252/issues/287
 [#284]: https://github.com/dusk-network/Poseidon252/issues/284
@@ -582,7 +608,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#112]: https://github.com/dusk-network/poseidon252/issues/112
 
 <!-- VERSIONS -->
-[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.41.0...HEAD
+[Unreleased]: https://github.com/dusk-network/poseidon252/compare/v0.44.0...HEAD
+[0.44.0]: https://github.com/dusk-network/poseidon252/compare/v0.41.0...v0.44.0
+[0.43.0]: https://github.com/dusk-network/poseidon252/compare/v0.42.0...v0.43.0
+[0.42.0]: https://github.com/dusk-network/poseidon252/compare/v0.41.0...v0.42.0
 [0.41.0]: https://github.com/dusk-network/poseidon252/compare/v0.40.0...v0.41.0
 [0.40.0]: https://github.com/dusk-network/poseidon252/compare/v0.39.0...v0.40.0
 [0.39.0]: https://github.com/dusk-network/poseidon252/compare/v0.38.0...v0.39.0

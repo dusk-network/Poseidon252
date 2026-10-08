@@ -151,7 +151,7 @@ impl Circuit for EncryptionCircuit {
                 *witness = composer.append_witness(message);
             },
         );
-        let secret_wit = composer.append_point(self.shared_secret);
+        let secret_wit = composer.append_point(self.shared_secret)?;
         let nonce_wit = composer.append_witness(self.nonce);
 
         let _cipher_result =
@@ -242,7 +242,7 @@ impl Circuit for DecryptionCircuit {
             .iter()
             .map(|cipher| composer.append_witness(*cipher))
             .collect();
-        let secret_wit = composer.append_point(self.shared_secret);
+        let secret_wit = composer.append_point(self.shared_secret)?;
         let nonce_wit = composer.append_witness(self.nonce);
 
         let _message_result =

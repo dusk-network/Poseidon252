@@ -69,7 +69,7 @@ impl Safe<BlsScalar, WIDTH> for ScalarPermutation {
     }
 
     fn tag(&mut self, input: &[u8]) -> BlsScalar {
-        BlsScalar::hash_to_scalar(input)
+        BlsScalar::hash_to_scalar(None, input)
     }
 
     fn add(&mut self, right: &BlsScalar, left: &BlsScalar) -> BlsScalar {

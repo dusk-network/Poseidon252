@@ -205,7 +205,7 @@ impl<'a> Safe<Witness, WIDTH> for GadgetPermutation<'a> {
     }
 
     fn tag(&mut self, input: &[u8]) -> Witness {
-        let tag = BlsScalar::hash_to_scalar(input);
+        let tag = BlsScalar::hash_to_scalar(None, input);
         // append the tag as a constant
         self.composer.append_constant(tag)
     }
