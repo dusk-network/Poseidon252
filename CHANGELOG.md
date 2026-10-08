@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `dusk-safe` to `0.4` [#303]
 - Update `dusk-bls12_381` to `0.16` [#303]
 - Update `dusk-jubjub` to `0.16` [#303]
+- Truncate in `HashGadget::finalize_truncated` and `HashGadget::digest_truncated` with fewer gates and the same outputs [#304]
 
 ### Fixed
 
@@ -541,6 +542,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Variants of sponge for `Scalar` & `Gadget(Variable/LC)`.
 
 <!-- ISSUES -->
+[#304]: https://github.com/dusk-network/Poseidon252/issues/304
 [#303]: https://github.com/dusk-network/Poseidon252/issues/303
 [#300]: https://github.com/dusk-network/Poseidon252/issues/300
 [#287]: https://github.com/dusk-network/Poseidon252/issues/287

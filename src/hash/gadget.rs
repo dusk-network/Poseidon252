@@ -102,7 +102,7 @@ impl<'a> HashGadget<'a> {
         // truncate the bls witnesses to 250 bits
         bls_output
             .iter()
-            .map(|bls| composer.append_logic_xor::<125>(*bls, Composer::ZERO))
+            .map(|bls| composer.component_truncate::<250>(*bls))
             .collect()
     }
 

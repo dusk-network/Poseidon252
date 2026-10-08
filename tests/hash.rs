@@ -334,5 +334,5 @@ fn hash_gadget_constraint_counts() {
     };
 
     assert_eq!(count(false), 655);
-    assert_eq!(count(true), 889);
+    assert_eq!(count(true), 743);
 }
