@@ -77,12 +77,16 @@ Cross-cutting prefixes (`ci`, `docs`, `chore`) for non-code changes.
 
 ## Changelog
 
-- Update `CHANGELOG.md` under `[Unreleased]` for any user-visible
-  change
-- Use the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
-  format
-- Only link to GitHub issues — no other tracking identifiers
-- Follow standard markdown formatting: separate headings from
-  surrounding content with blank lines, leave a blank line before and
-  after lists, and never have two headings back-to-back without a blank
-  line between them
+Update `CHANGELOG.md` under `[Unreleased]` for user-visible changes
+only. Exclude tests, CI, tooling, and refactors.
+
+- One fact per entry. Name the public item and behavior, including the
+  affected released item if breaking. Leave implementation, rationale,
+  consequences, and migration to the linked issue.
+- Use existing `Added`, `Changed`, or `Removed` sections. Use `Fixed`
+  only for released bugs. Correct unreleased bugs in their original
+  entry.
+- Link only the GitHub issue, not the PR. Match existing link style and
+  define references below. Preserve other entries and follow
+  [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and Markdown
+  blank-line spacing.
