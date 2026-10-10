@@ -215,3 +215,140 @@ fn incorrect_public_input_fails() -> Result<(), Error> {
 
     Ok(())
 }
+
+#[derive(Debug)]
+struct DecryptionCircuit<const L: usize> {
+    pub cipher: Vec<BlsScalar>,
+    pub message: [BlsScalar; L],
+    pub shared_secret: JubJubAffine,
+    pub nonce: BlsScalar,
+}
+
+impl<const L: usize> DecryptionCircuit<L> {
+    pub fn random(rng: &mut StdRng) -> Self {
+        let EncryptionCircuit {
+            message,
+            cipher,
+            shared_secret,
+            nonce,
+        } = EncryptionCircuit::<L>::random(rng);
+
+        Self {
+            cipher,
+            message,
+            shared_secret,
+            nonce,
+        }
+    }
+}
+
+impl<const L: usize> Default for DecryptionCircuit<L> {
+    fn default() -> Self {
+        Self {
+            cipher: vec![BlsScalar::zero(); L + 1],
+            message: [BlsScalar::zero(); L],
+            shared_secret: JubJubAffine::identity(),
+            nonce: BlsScalar::zero(),
+        }
+    }
+}
+
+impl<const L: usize> Circuit for DecryptionCircuit<L> {
+    fn circuit(&self, composer: &mut Composer) -> Result<(), PlonkError> {
+        // the cipher-text enters the circuit as private witnesses, so only the
+        // gadget's own constraints can reject it
+        let cipher_wit: Vec<Witness> = self
+            .cipher
+            .iter()
+            .map(|c| composer.append_witness(*c))
+            .collect();
+        let secret_wit = composer.append_point(self.shared_secret)?;
+        let nonce_wit = composer.append_witness(self.nonce);
+
+        let message_result =
+            decrypt_gadget(composer, &cipher_wit, &secret_wit, &nonce_wit)
+                .expect("decryption should pass");
+
+        // expose the decrypted message as public inputs
+        assert_eq!(message_result.len(), L);
+        message_result
+            .iter()
+            .zip(self.message)
+            .for_each(|(r, m)| composer.assert_equal_constant(*r, 0, Some(m)));
+
+        Ok(())
+    }
+}
+
+#[test]
+fn decrypt_gadget_rejects_forged_cipher_texts() -> Result<(), Error> {
+    let mut rng = StdRng::seed_from_u64(0x42424242);
+    const MESSAGE_LEN: usize = 3;
+
+    let (prover, verifier) = Compiler::compile::<DecryptionCircuit<MESSAGE_LEN>>(
+        &PUB_PARAMS,
+        LABEL,
+    )?;
+
+    // the honest cipher-text decrypts in-circuit
+    let honest = DecryptionCircuit::<MESSAGE_LEN>::random(&mut rng);
+    let (proof, public_inputs) = prover.prove(&mut rng, &honest)?;
+    assert_eq!(public_inputs, honest.message);
+    verifier.verify(&proof, &public_inputs)?;
+
+    // A forged tag leaves the decrypted message unchanged, and shifting a
+    // cipher-text element shifts the decrypted message by the same amount.
+    // Both forgeries keep the claimed message consistent with the
+    // cipher-text, so only the in-circuit tag check can reject them.
+    let mut forged_tag = DecryptionCircuit::<MESSAGE_LEN>::random(&mut rng);
+    forged_tag.cipher[MESSAGE_LEN] += BlsScalar::one();
+
+    let mut forged_element = DecryptionCircuit::<MESSAGE_LEN>::random(&mut rng);
+    forged_element.cipher[1] += BlsScalar::one();
+    forged_element.message[1] += BlsScalar::one();
+
+    for forged in [forged_tag, forged_element] {
+        assert_eq!(
+            prover.prove(&mut rng, &forged).err(),
+            Some(Error::CircuitUnsatisfied),
+            "the decryption gadget must reject a cipher-text with a forged tag"
+        );
+    }
+
+    Ok(())
+}
+
+/// Pins the gate counts of the encryption gadgets for a message of three
+/// elements. A changed count changes the verifier key of every circuit that
+/// uses the gadgets, so update these values only for an intended layout
+/// change.
+#[test]
+fn encryption_gadget_constraint_counts() {
+    let count = |decrypt: bool| {
+        let mut composer = Composer::initialized();
+        let input: Vec<Witness> = (0..4u64)
+            .map(|i| composer.append_witness(BlsScalar::from(i)))
+            .collect();
+        let shared_secret = composer
+            .append_point(JubJubAffine::identity())
+            .expect("the identity is a valid point");
+        let nonce = composer.append_witness(BlsScalar::zero());
+
+        let gates = composer.constraints();
+        if decrypt {
+            let _ =
+                decrypt_gadget(&mut composer, &input, &shared_secret, &nonce);
+        } else {
+            let _ = encrypt_gadget(
+                &mut composer,
+                &input[..3],
+                &shared_secret,
+                &nonce,
+            );
+        }
+        composer.constraints() - gates
+    };
+
+    assert_eq!(count(false), 1310);
+    assert_eq!(count(true), 1311);
+}
