@@ -336,3 +336,41 @@ fn hash_gadget_constraint_counts() {
     assert_eq!(count(false), 655);
     assert_eq!(count(true), 743);
 }
+
+#[test]
+fn gadget_output_len_only_overrides_the_other_domain() {
+    let input: [BlsScalar; 4] =
+        core::array::from_fn(|i| BlsScalar::from(i as u64 + 1));
+
+    // the witness values of the gadget output for a requested output length
+    let gadget_digest = |domain: Domain, input: &[BlsScalar], len: usize| {
+        let mut composer = Composer::initialized();
+        let input: Vec<Witness> =
+            input.iter().map(|i| composer.append_witness(*i)).collect();
+
+        let mut hash = HashGadget::new(domain);
+        hash.update(&input);
+        hash.output_len(len);
+        let output = hash.finalize(&mut composer);
+
+        output.iter().map(|w| composer[*w]).collect::<Vec<_>>()
+    };
+
+    // a zero output length is ignored, keeping the default single element
+    assert_eq!(
+        gadget_digest(Domain::Other, &input, 0),
+        Hash::digest(Domain::Other, &input)
+    );
+
+    // the merkle and encryption domains always output a single element
+    for (domain, input) in [
+        (Domain::Merkle2, &input[..2]),
+        (Domain::Merkle4, &input[..]),
+        (Domain::Encryption, &input[..]),
+    ] {
+        assert_eq!(
+            gadget_digest(domain, input, 3),
+            Hash::digest(domain, input)
+        );
+    }
+}
