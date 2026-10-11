@@ -172,3 +172,24 @@ fn finalize_panics_on_empty_chunk() {
     hash.update(&[]);
     hash.finalize();
 }
+
+#[test]
+fn output_len_only_overrides_the_other_domain() {
+    // a zero output length is ignored, keeping the default single element
+    let mut hash = Hash::new(Domain::Other);
+    hash.update(&INPUT);
+    hash.output_len(0);
+    assert_eq!(hash.try_finalize(), Ok(Hash::digest(Domain::Other, &INPUT)));
+
+    // the merkle and encryption domains always output a single element
+    for (domain, input) in [
+        (Domain::Merkle2, &INPUT[..2]),
+        (Domain::Merkle4, &INPUT[..]),
+        (Domain::Encryption, &INPUT[..]),
+    ] {
+        let mut hash = Hash::new(domain);
+        hash.update(input);
+        hash.output_len(3);
+        assert_eq!(hash.try_finalize(), Ok(Hash::digest(domain, input)));
+    }
+}
